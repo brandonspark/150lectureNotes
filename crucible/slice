@@ -20,7 +20,7 @@ do
     for file in code/$lecture/**;
     do
         if [ ! -d "$file" ]; then
-        csplit --silent --suppress-matched "$file" "/(\* \(FRAGMENT\|END\) $i \*)/" "{*}";
+        gcsplit --silent --suppress-matched "$file" "/(\* \(FRAGMENT\|END\) $i \*)/" "{*}";
         if [ -s xx01 ];
         then
             mv xx01 "code/$lecture/fragments/$i";

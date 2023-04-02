@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=54]{beamer}
+    \documentclass[aspectratio=169]{beamer}
  
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -19,7 +19,7 @@
     \title{Test Slides} % TODO
     \subtitle{Awesome slides with an awesome subtitle} % TODO
     \date{01 January 2020} % TODO
-    \author{Author's Name} % TODO
+    \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
     % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
@@ -53,29 +53,40 @@
 
 % SOLID COLOR TITLE (see SETTINGS.sty)
 {
-\setbeamercolor{background canvas}{bg=white}
 \begin{frame}[plain]
     \colorlambdatrue
     \titlepage
 \end{frame}
 }
-{
-\setbeamercolor{background canvas}{bg=white}
-\begin{frame}[plain]
-    \colorlambdafalse
-    \pictureTitle{stars}
+
+\begin{frame}[fragile]
+    \frametitle{The Course Staff}
+
+    \begin{center} \includegraphics[scale=0.25]{me_smaller.jpg} \end{center}
+    \begin{center} \Large Brandon Wu \end{center}
+    
+    \vspace{\fill}
+
+    \begin{center}\begin{tabular}{c c c c c c}
+      TA 1 & TA 2 & TA 3 & TA 4 & TA 5 & TA 6 \\  
+      \includegraphics[scale=0.15]{default} &
+      \includegraphics[scale=0.15]{default} &
+      \includegraphics[scale=0.15]{default} &
+      \includegraphics[scale=0.15]{default} &
+      \includegraphics[scale=0.15]{default} &
+      \includegraphics[scale=0.15]{default} \\
+    \end{tabular}\end{center}
 \end{frame}
-}
 
 \begin{frame}
-    \frametitle{\texttt{\textbackslash smlFrag\{N\}} example}
+    \frametitle{A title goes here}
     The following is produced with \texttt{\textbackslash smlFrag\{0\}}. See \texttt{content/code/template/code.sml}. \pause
 
     \smlFrag{0}
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{\texttt{codeblock} example}
+    \frametitle{Structural induction}
     Note the \texttt{[fragile]} on this frame.\pause
 
     \begin{codeblock}

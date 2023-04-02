@@ -3,4 +3,4 @@
 dateString=$(date '+%Y%m%d')
 
 ./slice $1
-make pdf "SRC=slides/$1.tex" "PREFIX=lecture$1-$dateString" "NUM=$1"
+make pdf "SRC=slides/$1.tex" "PREFIX=$1" "NUM=$1"

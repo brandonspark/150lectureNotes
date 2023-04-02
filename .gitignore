@@ -11,6 +11,8 @@
 *.fdb_latexmk
 *.fls
 *.__afs*
+content/img
+title.png
 __pycache__/
 outbox/*template*
 content/code/*/fragments

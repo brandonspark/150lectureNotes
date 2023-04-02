@@ -7,6 +7,7 @@
     \newcommand{\paren}[1]{\left(#1\right)}
 
     \usepackage{caption}
+    \usepackage{inter}
     \captionsetup{justification=centering,labelformat=empty}
 
     \newcommand{\codeboxoptions}{frame=shadowbox,rulesepcolor=\color{altBg}}
@@ -85,46 +86,28 @@
     \setbeamerfont{subtitle}{size=\Large\normalfont\slshape}
     \setbeamerfont{lambda}{size=\Huge}
 
+    \setbeamertemplate{frametitle}
+    {
+        \nointerlineskip
+        \begin{beamercolorbox}[sep=0.2cm,ht=1.3em,wd=\paperwidth]{frametitle}
+            \vbox{}\vskip-2ex%
+            \intermedium\fontsize{10.5}{12.5}\selectfont
+            \strut\insertframetitle\strut
+            \hfill
+            \raisebox{-2mm}{\includegraphics[width=0.6cm]{white_lambda.png}}
+            \vskip-1ex%
+        \end{beamercolorbox}
+    }
+
     \setbeamertemplate{title page}{%
-    \begin{tikzpicture}[remember picture,overlay]
+    \makebox[\textwidth][c]{\begin{tikzpicture}[remember picture,overlay]
 
-        % Main color rectangle
-        \fill[presentColor]
-            ([yshift=15pt]current page.west) rectangle (current page.south east);
+      % This sets the title page to be the pre-generated image!
+      % The image needs to be 16:9 resolution, and preferably at high quality.
+      \node at (0, -0.9) {\resizebox{\paperwidth}{!}{\includegraphics{title.png}}};
 
-            % Backdrop color for lambda (*)
-        \fill[lambdaColor]
-            ([yshift=-40pt]current page.north west) rectangle ([yshift=15pt, xshift=70pt]current page.west);
-
-        % Top-right text
-        \node[anchor=north east]
-            at ([yshift=-15pt]current page.north east) (stuff)
-            {\parbox[t]{.78\paperwidth}{\raggedleft%
-            \usebeamerfont{stuff}\textcolor{gray}
-            {Lecture \LECTNUM\\Principles of Functional Programming\\ Summer 2020}}};
-
-        % Title
-        \node[anchor=west]
-            at ([yshift=-15pt, xshift=20pt]current page.west) (title)
-            {\parbox[t]{\textwidth}{\raggedright%
-            \usebeamerfont{title}\textcolor{white}{%
-                \textpdfrender{
-                    TextRenderingMode=FillStroke,%
-                    FillColor=white,%
-                    LineWidth=.1ex,%
-                }
-            {\inserttitle}}}};%
-
-        % Put the white negative of lambda, so you see the lambda in the color of (*)
-        \node[anchor=west]%
-            at ([yshift=60pt, xshift=-20pt]current page.west) (lambda)%
-            {\includegraphics[width=90pt]{lambda-inv.png}};%
-
-        % Subtitle
-        \node[anchor=west]%
-            at ([yshift=-60pt,xshift=20pt]current page.west) (subtitle)%
-            {\parbox[t]{.6\paperwidth}{\raggedright\usebeamerfont{subtitle}\textcolor{white}{\insertsubtitle}}};%
     \end{tikzpicture}%
+    }
     }
 
 
