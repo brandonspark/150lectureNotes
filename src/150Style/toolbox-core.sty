@@ -84,6 +84,7 @@
 \RequirePackage{amssymb, amsmath, amsthm, amsfonts}
 
 \newrobustcmd{\stepsTo}{\Longrightarrow}
+\newrobustcmd{\stepsToStar}{\Longrightarrow}
 \newrobustcmd{\stepsToIn}[1]{\Longrightarrow^{#1}}
 
 \newrobustcmd{\set}[1]{\left\lbrace #1 \right\rbrace}
@@ -173,6 +174,8 @@
 
 % code block
 \lstnewenvironment{codeblock}[1][]{\lstset{language=sml,style=15150code,numbers=none,#1}}{}
+% Python code block
+\lstnewenvironment{pythoncodeblock}[1][]{\lstset{language=python,style=15150code,numbers=none,#1}}{}
 % code file
 \newrobustcmd{\codefile}[2][]{\lstinputlisting[language=sml,style=15150code,frame=shadowbox,#1]{#2}}
 % Labelled fragment
@@ -195,6 +198,16 @@
 \newrobustcmd{\thmBox}[2][white]{\par%
     \colorbox{auxColor}{%
         {\color{#1} Thm. #2}%
+    }%
+}
+\newrobustcmd{\defBox}[1][white]{\par%
+    \colorbox{auxColor}{%
+        {\color{#1} Def.}%
+    }%
+}
+\newrobustcmd{\keyBox}[1][white]{\par%
+    \colorbox{auxColor}{%
+        {\color{#1} Key Fact}%
     }%
 }
 
