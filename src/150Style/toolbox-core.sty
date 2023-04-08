@@ -210,6 +210,33 @@
         {\color{#1} Key Fact}%
     }%
 }
+\newrobustcmd{\noteBox}[1][white]{\par%
+    \colorbox{auxColor}{%
+        {\color{#1} Note}%
+    }%
+}
+
+\newrobustcmd{\sectionSlide}[2]{
+\section{#2}
+\begin{frame}[plain]
+  \begin{center}
+    \huge \color{presentColor} \intermedium{#1 - #2}
+  \end{center}
+\end{frame}
+}
+
+\newrobustcmd{\lectureBreak}{
+\begin{frame}[plain]
+  \begin{center}
+    \huge \color{presentColor} \intermedium{5 minute break!}
+  \end{center}
+\end{frame}
+}
+
+\newrobustcmd{\eeq}{\cong}
+
+
+\newrobustcmd{\term}[1]{{\color{auxColor}\textbf{#1}}}
 
 \newrobustcmd{\lemmaBox}[2][white]{\par%
     \colorbox{auxColor}{%

@@ -1,0 +1,713 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+
+    \newcommand{\auxColor}{655DBB}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{3E54AC} % the primary color of the slide borders
+    \newcommand{\bgColor}{fafafa}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Title} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  In the last lecture, we learned about \textbf{expressions}, \textbf{values}, and \textbf{types}.
+
+  \vspace{5pt}
+
+  We learned that \textbf{only well-typed expressions are evaluated}, and that expressions can 
+  exhibit one of three behaviors:
+
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item Evaluate to a value
+    \item Raise an exception
+    \item Loop forever
+  \end{itemize}
+\end{frame}
+
+\sectionSlide{1}{More Types}
+
+\begin{frame}[fragile]
+  \frametitle{More on types}
+
+  There are a few basic types to know in SML.
+
+  \vspace{10pt}
+
+  The \term{base types} comprise of a few simple primitives:
+
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item \code{int} (\code{1}, \code{150}, \code{412})
+    \item \code{real} (\code{1.0}, \code{1.50})
+    \item \code{char} (\code{#"a"}, \code{#"1"})
+    \item \code{bool} (\code{true}, \code{false})
+    \item \code{string} (\code{"functions"}, \code{"are"}, \code{"values"})
+  \end{itemize}
+
+  \vspace{\fill}
+
+  Types get a lot more interesting, though!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tuples}
+
+  SML has \term{tuples}, which are just collections of values of 
+  other types.
+
+  \vspace{\fill}
+
+  So for instance, valid tuples include:
+
+  \vspace{5pt}
+
+  \begin{itemize} 
+    \item \code{(1, 2) : int * int}
+    \item \code{(1, "hi") : int * string}
+    \item \code{("a", true, 1.0) : string * bool * real}
+  \end{itemize}
+
+  \vspace{\fill}
+
+  \defBox{ We call a type like \code{int * int} or \code{string * bool * real} a \term{tuple type},
+  or \term{product type}.
+  }
+
+  \vspace{\fill}
+
+  \noteBox{ Tuples evaluate from \textbf{left to right}. So \code{(1 + 1, 2 + 2)} $\stepsTo$ \code{(2, 2 + 2)} $\stepsTo$ \code{(2, 4)}}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More on Tuples}
+
+  \defBox{\, The typing rule for tuples is that if \code{e1 : t1}, \code{e2 : t2}, ..., \code{en : tn}, then \code{(e1, e2, ..., en) : t1 * t2 * ... * tn}}
+
+  \vspace{\fill}
+
+  \noteBox{\, Parentheses matter! The type \code{int * string * bool} is \textbf{different} than \code{int * (string * bool)}}
+
+  \vspace{5pt}
+
+  The first type is a tuple of three things, but the second is a tuple of two things, where the second part is itself a tuple.
+
+\end{frame}
+
+\sectionSlide{2}{Functions}
+
+\begin{frame}[fragile]
+  \frametitle{Functions}
+
+  Similarly to how we can use \code{*} to make tuple types out of other types, we can use \code{->} to make 
+  function types out of other types.
+
+  \vspace{\fill}
+
+  \defBox{\, We call a type like \code{int -> int} a \term{function type}, which takes in a value of
+  type \code{int} and evaluates to an expression of type \code{int}}.
+
+  \vspace{\fill}
+
+  For instance, we have \code{not : bool -> bool}, such that \code{not true} $\stepsTo$ \code{false}.
+
+  \vspace{\fill}
+
+  \noteBox{\, In SML, parentheses are not needed to separate a function from its argument!}
+
+  \vspace{5pt}
+
+  Writing \code{e1 e2} means the \term{application} of the function \code{e1} to its argument \code{e2}.
+
+  \vspace{\fill}
+
+  \defBox{\, The typing rule for function application is \code{e1 e2 : t2} if \code{e1 : t1 -> t2} and \code{e2 : t1}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lambda Expressions}
+
+  Similarly to how we can create expressions with tuple type, we can create expressions
+  with function type.
+
+  \vspace{\fill}
+
+  We write \code{fn (x : int) => x + 1} for the function which takes in an int, and adds one to it. 
+  We call this a \term{lambda expression}.
+
+  \vspace{5pt}
+
+  \noteBox{\, Lambda expressions are expressions! They do not declare a function that can be referenced,
+  they are \textbf{anonymous}, and do not have names}.
+
+  \vspace{\fill}
+
+  So \code{(fn (x : int) => x + 1) 2} $\stepsTo$ \code{3}.
+
+  \vspace{\fill}
+
+  Lambda expressions are themselves values, meaning that they do not reduce to anything else.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Function Evaluation}
+
+  \noteBox{\, An expression \code{e1 e2} \textbf{first evaluates} \code{e1}, and then \code{e2}}.
+
+  \vspace{5pt}
+
+  SML is an \term{eagerly evaluated} language, meaning that arguments to functions are 
+  \textbf{always} reduced to values, before the function can be called.
+
+  \vspace{\fill}
+
+  \begin{align*}
+    & \code{(fn (x : int * int) => 150) (1 + 1, 3 * 4)} \\ 
+    & \stepsTo \code{(fn (x : int * int) => 150) (2, 3 * 4)} \\
+    & \stepsTo \code{(fn (x : int * int) => 150) (2, 12)} \\
+    & \stepsTo \code{150} \\ 
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Function Declarations}
+
+  What if we wanted to declare a function, rather than just use a lambda expression?
+
+  \vspace{\fill}
+
+  We can write something like
+  \begin{codeblock} 
+    fun double (x : int) : int = x + x
+  \end{codeblock}
+
+  to declare a function \code{double : int -> int} which doubles its input.
+
+  \vspace{\fill}
+
+  Then, we could write an expression like \code{double 2} $\stepsTo$ \code{4}.
+\end{frame}
+
+\sectionSlide{3}{Binding and Scope}
+
+\begin{frame}[fragile]
+  \frametitle{Variable Declarations}
+
+  So far we've talked a lot about expressions, values, and types, but not about one of the
+  most important things in a programming language - variables!
+
+  \vspace{\fill}
+
+  The syntax: 
+
+  \begin{codeblock}
+    val x : int = 2
+  \end{codeblock}
+
+  \textbf{binds} the value \code{2} to the variable \code{x}. 
+
+  \vspace{\fill}
+
+  \defBox{\,\term{Binding} is the act of producing a new association of a value to
+  a variable name.}
+
+  \vspace{\fill}
+
+  \noteBox{ \textbf{Binding is not assignment}. }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Binding vs. Assignment}
+
+  The easy way to see how binding differs from assignment is to consider 
+  the following code:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    val x : int = 2 
+    fun foo (y : int) : int = x + y
+    val x : int = 4 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  After this code, what is the value of \code{foo 1}?
+  
+  \vspace{\fill}
+
+  The imperative answer is \code{5}. 
+
+  \vspace{\fill}
+
+  \textbf{The SML answer is \code{3}}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Binding vs. Assignment}
+
+  \begin{codeblock}
+    val x : int = 2 
+    fun foo (y : int) : int = x + y
+    val x : int = 4 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  In an imperative language, you \textbf{change the world} by \textbf{reassigning} the 
+  value of the variable \code{x}.
+
+  \vspace{5pt}
+
+  This changes the value referenced by \code{fun foo (y : int) = x + y}.
+
+  \vspace{\fill}
+
+  In a functional language, you bind a \textbf{new, unrelated} variable called \code{x},
+  whose value is \code{4}, but is \textbf{not} the same as the one referenced in \code{foo}.
+
+  \vspace{\fill}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Binding Analogy}
+
+  Suppose you are named Brandon, and you have a 9-5 job. 
+
+  \vspace{\fill}
+
+  Your manager walks in and says "Your performance
+  has been suffering lately", and walks out. 
+
+  \vspace{\fill}
+
+  Then, another engineer named Brandon walks in and sits down.
+
+  \vspace{\fill}
+
+  \textbf{You are still in trouble.}
+
+  \vspace{\fill}
+
+  The point: Just because something (or someone) named the same walked in, doesn't
+  change who your manager was talking about!
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Environments}
+
+  \defBox{\, The \term{environment} at a particular point in a program is the 
+  collection of all currently active bindings.}
+
+  \vspace{\fill}
+
+  \code{val} bindings and \code{fun} declarations introduce \textbf{new bindings} into 
+  the environment, and displace old ones. This is called \term{shadowing}.
+  
+  \vspace{5pt}
+
+  When a binding is shadowed, we say the old binding leaves \term{scope}.
+
+  \vspace{\fill}
+
+  We use the mathematical notation $[\code{5}/\code{x}, \code{true}/\code{y}]$, for instance, for the environment
+  where \code{5} is bound to \code{x} and \code{true} is bound to \code{y}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Trace of Environment}
+
+  Let's look at an example of a trace with environments attached. 
+
+  \vspace{10pt}
+
+  Suppose our program is:
+
+  \begin{codeblock}
+    val x : int = 1
+    val y : int = 1 + x
+    val x : int = 3
+    val z : int = x + y
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \begin{align*}
+    & \code{val x : int = 1} &\implies &&[\code{1}/\code{x}] \\ 
+    & \code{val y : int = 1 + x} &\implies &&[\code{1}/\code{x}, \code{2}/\code{y}] \\ 
+    & \code{val x : int = 3} &\implies &&[\code{3}/\code{x}, \code{2}/\code{y}] \\ 
+    & \code{val z : int = x + y} &\implies &&[\code{3}/\code{x}, \code{2}/\code{y}, \code{5}/\code{z}] \\ 
+  \end{align*}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Functions and Environments}
+
+  It might seem like this is no different than assignment.
+
+  \vspace{5pt}
+
+  Environments and bindings are shown as different when functions get involved.
+
+  \vspace{\fill}
+
+  \defBox{\, A function binding is composed of two things, a lambda expression and the 
+  environment \textbf{at the time of binding}. This is known as a \term{closure}.}
+
+  \vspace{5pt}
+
+  This means that a function always only knows about what was in the environment when
+  it was first bound. It doesn't see any bindings that happen later.
+
+  \vspace{\fill}
+
+  \noteBox{\,Functions are elephants. (they remember everything)
+  }
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Functions and Environments}
+
+  \begin{codeblock}
+    val x : int = 2 
+    fun foo (y : int) : int = x + y
+    val x : int = 4 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  After the first binding of \code{x}, we have the environment $[\code{2}/\code{x}]$.
+
+  \vspace{\fill}
+
+  Then, we could represent the closure as:
+
+  \vspace{5pt}
+
+  \makebox[\textwidth][c]{
+    \begin{tikzpicture}
+      \node[rectangle,draw, minimum width=2.5in, fill=auxColor] (r) at (0,0) {[\code{2}/\code{x}]};
+      \node[rectangle,draw, minimum width=2.5in, fill=cyan] (r) at (0,0.75) {\code{fn (y : int) => x + y}};
+    \end{tikzpicture}
+  }
+
+  \vspace{5pt}
+
+  which is bound to the identifier \code{foo}. Future bindings will not change this.
+\end{frame}
+
+\lectureBreak
+
+\sectionSlide{4}{Equivalence}
+
+\begin{frame}[fragile]
+  \frametitle{What's the point?}
+
+  We have now described the difference between variable binding in SML and 
+  assignment in other languages.
+
+  \vspace{5pt}
+
+  A question remains - \textbf{what's the point?}
+
+  \vspace{\fill}
+
+  In the first lecture, we described some of the ideals of a good programming language,
+  and one of them was \textbf{modularity}. We should be able to change a part of a 
+  program without affecting another. 
+
+  \vspace{5pt}
+  
+  Remember that functions in SML are like mathematical functions, they always 
+  give the same outputs for the same inputs (purity).
+
+  \vspace{\fill}
+
+  Variable binding allows a stronger property, which is that \textbf{no binding after
+  a function declaration can change that function's behavior}.
+
+  \vspace{5pt}
+
+  In other words, \textbf{binding preserves function} \term{equivalence}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Extensional Equivalence}
+
+  Functional programming lends itself to reasoning mathematically about code.
+
+  \vspace{5pt}
+
+  To supplement that, we will have a notion of when code is equivalent.
+
+  \vspace{\fill}
+
+  \defBox{\,Two expressions \textbf{of the same type} are said to be \term{extensionally equivalent} if they:}
+  \begin{itemize}
+    \item evaluate to the same value,
+    \item both loop forever,
+    \item or both raise the same kind of exception
+  \end{itemize}
+
+  \vspace{5pt}
+
+  We write \code{e1} $\eeq$ \code{e2} when \code{e1} and \code{e2} are extensionally equivalent.
+
+  \vspace{\fill}
+
+  So for instance, \code{2 + 2} $\eeq$ \code{4} $\eeq$ \code{1 + 3}. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Referential Transparency}
+
+  It turns out that this idea gives us some very nice properties.
+
+  \vspace{\fill}
+
+  \defBox{\, \term{Referential Transparency} - If \code{e1} $\eeq$ \code{e2}, then 
+  replacing \code{e1} with \code{e2} anywhere in a program will produce an extensionally 
+  equivalent program.
+  }
+  \vspace{\fill}
+
+  So for instance, you could replace \code{2 + 2} with \code{1 + 3} anywhere, and always
+  be assured that program behavior \textbf{will not change}.
+  
+  \vspace{5pt}
+
+  In other words, you can swap "equals for equals".
+
+  \vspace{\fill}
+
+  \noteBox{\, This is the foundation of \textbf{equational reasoning}, which lets us 
+  reason about code like we would reason about math.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On the Equivalence of Values}
+
+  Up until this point, we've said that a value is a "final answer". You should be able
+  to tell if values are the same just by looking at them, like with \code{2} and \code{2},
+  or with \code{(3, 4)} and \code{(3, 4)}.
+
+  \vspace{\fill}
+
+  But what about functions?
+
+  \vspace{5pt}
+
+  Are \code{fn (x : int) => x + x} and \code{fn (x : int) => 2 * x} extensionally equivalent?
+
+  \vspace{\fill}
+
+  It's now hard to tell, because these lambda expressions are values, but it's not obvious 
+  if they are extensionally equivalent or not.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Extensional Equivalence for Functions}
+
+  Functions necessitate their own rule for extensional equivalence.
+
+  \vspace{\fill}
+
+  \defBox{\, Two functions \code{f : t1 -> t2} and \code{g : t1 -> t2} are \term{extensionally equivalent}
+  if for all values \code{x : t1}, \code{f x} $\eeq$ \code{g x}}.
+
+  \vspace{5pt}
+
+  In other words, two functions are equivalent if \textbf{for all inputs, they give equivalent outputs}.
+
+  \vspace{\fill}
+  
+  \noteBox{\, Note that we specified that \code{f x} $\eeq$ \code{g x}, not that \code{f x} and \code{g x}
+  reduce to the same value. Why?}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Totality}
+
+  The reason why is simple - some functions do not have defined outputs!
+
+  \vspace{\fill}
+
+  We described functions in SML as mathematical functions, which is true, but not exactly in the
+  same way as some mathematical functions, such as $+$, or $sin$.
+
+  \vspace{5pt}
+
+  \textbf{SML functions can be partial}, that is, undefined on some input. There may be \code{f}
+  and \code{x} such that there is no \code{v} where \code{f x} $\hookrightarrow$ \code{v}.  
+
+  \vspace{\fill}
+
+  \defBox{\, We say that \code{f : t1 -> t2} is \term{total} if for all values \code{v : t1},
+  there is a value \code{v' : t2} such that \code{f v} $\hookrightarrow$ \code{v'}.}
+
+  \vspace{5pt}
+
+  For example, the SML functions \code{+}, \code{not}, and \code{^} are all total.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Specification}
+
+  Concepts like purity, extensional equivalence, and totality are all just means to
+  an end, which is being able to \textbf{specify} the behavior of code.
+
+  \vspace{\fill}
+
+  In particular, for functions, we are interested in writing \textbf{descriptive} code,
+  that accurately reflects the function's behavior.
+  
+  \vspace{5pt}
+
+  To that end, it is helpful to write alongside a function the conditions which 
+  must be true \textbf{prior} to calling the function, and must be true \textbf{after}
+  calling the function.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    (* REQUIRES: x is not 0 *)
+    (* ENSURES: divide x is total *)
+    fun divide (x : int) : int = 2 div x 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Specification, pt. 2}
+
+  We use comments in the form of \code{REQUIRES} and \code{ENSURES} to describe 
+  what must be true of the inputs the function receives, and what then is guaranteed 
+  to hold of the function's behavior. 
+
+  \vspace{\fill}
+
+  It is often unrealistic to have a function which has meaning on \textit{every} possible 
+  input (like \code{div}, or square root, or logarithm). The \code{REQUIRES} helps to
+  describe the range of "relevant inputs", and the \code{ENSURES} helps to describe
+  what the function does.
+
+  \vspace{\fill}
+
+  These "contracts" pop up in real code all the time:
+  \begin{itemize}
+    \item this function must be called with only safe values,
+    \item this library can only be invoked in single-threaded programs,  
+    \item this API is not guaranteed to work with non-ASCII characters 
+  \end{itemize}
+
+  \vspace{\fill}
+
+  It is important that code is documented so users and maintainers know pertinent
+  information about it! 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Specific Specification}
+
+  For example, take the factorial function.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    (* REQUIRES: n >= 0 *)
+    (* ENSURES: fact n reduces to the factorial of n *)
+    fun fact (n : int) : int = 
+      if n = 0 then 
+        1
+      else 
+        fact (n - 1) 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
