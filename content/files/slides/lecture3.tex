@@ -1,0 +1,776 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{1A5F7A}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{002B5B} % the primary color of the slide borders
+    \newcommand{\bgColor}{a6c4e3}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Title} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  In the last lecture, we learned about some of the more complex types in 
+  SML, like tuples and functions. 
+
+  \vspace{\fill}
+  
+  We learned about how to declare variables and functions. We learned that declaring
+  a variable \textbf{binds} it, which is different than assignment. 
+  
+  \vspace{\fill}
+
+  We also learned how we can mathematically prove things 
+  about SML code using a notion of \textbf{extensional equivalence}. 
+\end{frame}
+
+\sectionSlide{1}{Induction and Recursion}
+
+\begin{frame}[fragile]
+  \frametitle{Recursion}
+
+  In the first lecture, we mentioned how we will be focusing on
+  \term{recursion} in this class.
+
+  \vspace{\fill}
+
+  \defBox{\, We call a function \term{recursive} if it calls itself. 
+  More generally, something which refers to itself is recursive.}
+
+  \vspace{5pt}
+
+  \exBox{ This sentence is recursive. }
+
+  \vspace{\fill}
+
+  SML doesn't have for loops, so recursion will be our preferred method
+  for repeating some computation. We will find that, in conjunction with
+  purity and binding, this will greatly help us reason about our code. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Recursive Example}
+
+  In the last lecture, we saw this example of a recursive function:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    (* REQUIRES: n >= 0 *)
+    (* ENSURES: fact n reduces to the factorial of n *)
+    fun fact (n : int) : int = 
+      if n = 0 then 
+        1
+      else 
+        n * fact (n - 1) 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  How do we know that it works, though?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Recursion, Mathematically}
+
+  While recursion is a concept which is usually taught in programming classes, 
+  it's just as much a mathematical concept.
+
+  \vspace{\fill}
+
+  The factorial function is usually specified as: 
+
+  \vspace{5pt}
+
+  \begin{equation}
+    fact(n) = 
+    \left\{
+        \begin{array}{lr}
+            1, & \text{if } n = 0\\
+            n * fact(n - 1), & \text{if } n > 0
+        \end{array}
+    \right\}
+  \end{equation}
+
+  \vspace{5pt}
+
+  which references the factorial function in its own definition. In other words, it's 
+  recursive.
+
+  \vspace{\fill}
+
+  We see that the SML code for the factorial function closely resembles the mathematical
+  definition. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Recursive Formula}
+
+  There is a simple four-step formula to writing any recursive function:
+
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item Identify and write the \term{base case},
+    \item Identify the recursive case, 
+    \item Assume that the function \textbf{already works} on a "smaller" input,
+    \item Write the recursive case under that assumption.
+  \end{itemize}
+
+  \vspace{\fill}
+
+  \defBox{\, We say that the \term{base case} for a recursive function is the
+  branch of the function which does not recurse.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Matter of Fact}
+
+  Let's try to write out the factorial function using this formula. 
+
+  \vspace{\fill}
+
+  In this case, we identify that the base case is \code{0}, and that
+  the factorial of \code{0} is \code{1}. 
+
+  \vspace{10pt}
+
+  The recursive case must be any other case, given that we \code{REQUIRE}
+  a non-negative input. Assuming that \code{fact (n - 1)} is the factorial of
+  \code{n - 1} (where \code{n - 1} is a "smaller" input), then it follows that 
+  the factorial of \code{n} should just be \code{n * fact(n - 1)}.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun fact (0 : int) : int = 1 
+      | fact (n : int) : int = n * fact (n - 1)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Function Clauses}
+
+  \begin{codeblock}
+    fun fact (0 : int) : int = 1 
+      | fact (n : int) : int = n * fact (n - 1)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This syntax we introduced in the last example demonstrates 
+  \term{function clauses}, which allow you to specify the
+  behavior of the function on different inputs.
+
+  \vspace{\fill}
+
+  When the \code{fact} function receives an input, it tries to 
+  "match" it against \code{0}. If it succeeds, then it evaluates to
+  \code{1}. Otherwise, it tries the remaining cases.
+
+  \vspace{5pt}
+
+  It's basically just a more powerful \code{if}!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Inductive Proof}
+
+  Recall:
+
+  \vspace{\fill}
+
+  \defBox{\, The principle of mathematical \term{induction} is a proof technique
+  for theorems on the natural numbers. In particular, it has the logical form:}
+
+  \vspace{5pt}
+
+  \begin{center}
+     $P(0) \land (\forall n. P(n) \implies P(n + 1)) \implies \forall n. P(n)$
+  \end{center}
+
+  \vspace{\fill}
+
+  In other words: "if you can prove $P(0)$, and that any step follows from the 
+  previous, then the statement is true for all numbers".
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Inductive Formula}
+
+  There is a simple four-step formula to proving any simple inductive theorem: 
+
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item Identify and write the \term{base case},
+    \item Identify the recursive case, 
+    \item Assume that the induction hypothesis holds, 
+    \item Prove the recursive case under that assumption. 
+  \end{itemize}
+
+  \vspace{\fill}
+
+  \defBox{\, We say that the \term{base case} for an inductive proof is the
+  case of the proof which does not require an inductive hypothesis.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Example Inductive Proof}
+ 
+  { \small
+  Let $S_n$ be the sum of the first $n$ odd natural numbers.
+
+  \vspace{\fill}
+
+  \thmBox{}{\, Prove that $S_n$ is $n^2$}
+
+  \vspace{\fill}
+
+  We proceed by mathematical induction on $n$. 
+
+  \vspace{\fill}
+  
+  \bcBox{\, $n = 1$} 
+  Then, $1 = 1^2$.
+
+  \vspace{\fill}
+
+  \ihBox{}{\, Let $k$ be arbitrary and fixed. Assume that $S_k = k^2$.}
+
+  \isBox{}{\, Then, we want to show that $S_{k + 1} = (k + 1)^2$.}
+
+  \vspace{\fill}
+
+  We know the $k + 1$th odd natural number is $2k + 1$, so: 
+  \begin{align*} 
+    S_{k + 1} &= S_k + 2k + 1 \\
+              &= k^2 + 2k + 1 \\
+              &= (k + 1)^2 
+  \end{align*}
+
+  Therefore, by the principle of mathematical induction, the theorem holds 
+  for all natural numbers $n$.
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Seeing Double} 
+
+  We see that \term{recursion} and \term{induction} are really just two sides of the same coin.
+
+  \vspace{\fill}
+
+  Recursion is about using the answers to sub-problems to solve a bigger one.
+
+  \vspace{\fill}
+
+  Induction is about using the inductive assumption to prove the $n + 1$th case.
+
+  \vspace{\fill}
+
+  The key thing to remember is the \term{recursive leap of faith}, which entails
+  assuming that the function already works on a smaller input.
+\end{frame}
+
+\sectionSlide{2}{Patterns and Constructors}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Matching}
+
+  Function clauses demonstrate a more general concept called 
+  \term{pattern matching}.
+
+  \vspace{\fill}
+
+  \defBox{\, A \term{pattern} is a way to describe the \textbf{form} of a value. A
+  value can either match to a pattern, or not. }
+
+  \vspace{5pt}
+
+  The goal is that patterns should be used to describe the values that you are interested
+  in.
+
+  \vspace{\fill}
+
+  Here are some examples of patterns:
+  \begin{itemize}
+    \item variables, such as \code{x}, \code{y}, \code{z}. These produce a binding on a successful match.
+    \item the \term{wildcard} pattern, \code{_}. This matches \textbf{all} values, and 
+    produces no binding.
+    \item constants, such as \code{1}, \code{"hi"}, and \code{true}
+    \item tuples, where each entry is itself a pattern. For instance, \code{(_, x, 2)} is 
+    a valid pattern.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Matching and Function Clauses}
+
+  We write function clauses in the general form as:
+  
+  \begin{codeblock}
+    fun f (<pat1> : <ty1>) : <ty2> = <expr1> 
+      | f (<pat2> : <ty1>) : <ty2> = <expr2>
+      ...
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \code{val} bindings also use patterns!
+
+  \begin{codeblock}
+    val <pat> : <ty> = <expr>
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Case Expressions}
+
+  An alternative to matching on an input in a function clause is to
+  use a \textit{case expression}.
+
+  \begin{codeblock}
+    case <expr> of
+      <pat1> => <expr1>
+    | <pat2> => <expr2>
+    ...
+    | <patn> => <exprn> 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \noteBox{\, The first "arm" of a case expression has no bar! }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Typing Case Expressions}
+
+  Case expressions also follow typing rules!
+
+  \vspace{\fill}
+
+  If we have
+  \begin{codeblock}
+    case <expr> of
+      <pat1> => <expr1>
+    | <pat2> => <expr2>
+    ...
+    | <patn> => <exprn> 
+  \end{codeblock}
+  then we require that, for some \code{t}, \code{expr1 : t}, \code{expr2 : t}, ..., \code{exprn : t}. 
+
+  \vspace{\fill}
+
+  Why? Because otherwise \textit{the type of an expression could change during execution}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Typing Gone Wrong}
+
+  Consider the following example of ill-typed code:
+
+  \begin{codeblock}
+    case x of
+      0 => "15" 
+    | _ => 150 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Then, the type of the value the expression would reduce to is unclear! It could
+  be either \code{int} or \code{string}.   
+
+  \vspace{\fill}
+
+  As such, this program will be rejected as \textbf{ill-typed}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Case Expressions}
+  So for instance, we could rewrite the \code{fact} function as:
+
+  \begin{codeblock}
+    fun fact (n : int) : int = 
+      case n of
+        0 => 1
+      | _ => n * fact (n - 1)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \noteBox{\, We could have written this with \code{n} instead of the wildcard pattern,
+  which would have shadowed the original \code{n} with a new binding with
+  exactly the same value.}
+
+  \vspace{\fill}
+
+  It's still an expression, though, so it's totally OK to write something like
+  \begin{codeblock}
+    (case 2 of
+      2 => 3
+    | _ => 5) + 1 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lists}
+
+  To write more interesting functions, we will also introduce \term{lists}.
+
+  \vspace{\fill}
+
+  \defBox{\, For any type \code{t}, there is a type \code{t list}, which
+  describes an ordered collection of 0 or more elements of type \code{t}.}
+
+  \vspace{\fill}
+
+  Here are some examples of lists:
+  \begin{itemize}
+    \item \code{[1, 2, 3] : int list}
+    \item \code{["hi", "there" : string list]}
+    \item \code{[] : int list}
+    \item \code{[] : bool list}
+    \item \code{[[1, 2]] : int list list}
+  \end{itemize}
+
+  \vspace{\fill}
+  
+  What if we want to add to an existing list, though? We can also construct lists out of other lists, using a \term{constructor}!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{List Constructors}
+
+  A list is characterized by two \term{constructors}, which are used to construct
+  values of some list type. These constructors are 
+  \begin{itemize}
+    \item \code{[]}\footnotemark, which is the empty list of type \code{t list}
+    \item \code{::} (pronounced "cons"), an infix operator such that 
+    \code{x :: xs : t list} if \code{x : t} and \code{xs : t list}.
+  \end{itemize}
+
+  \vspace{\fill}
+
+  While the bracket notation is simple, it's actually just syntactic sugar! The 
+  list \code{[1, 2, 3]} is really just \code{1::2::3::[]}
+
+  \vspace{\fill}
+
+  \noteBox{ The \code{::} operator is \textit{right-associative}, meaning that
+  \code{1::2::3::[]} is implicitly understood to be \code{1::(2::(3::[]))}}
+
+  \footnotetext[1]{If you're viewing this presentation online, after the lecture, it's
+  important to me that you know this is pronounced "nil". Hard to convey digitally.}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{List Constructors}
+
+  Constructors are patterns too! 
+
+  \vspace{\fill}
+
+  This means that we can \code{case} upon a list to figure out what kind of 
+  \term{variant} it is. For instance, we can write a function to check whether
+  a list is empty as:
+  
+  \begin{codeblock}
+    fun isEmpty ([] : int list) : bool = true
+      | isEmpty (x::xs) = false
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  We might say that these constructors are all that characterize a list. A list 
+  \textit{must be} either empty (\code{[]}) or have a first element, and the rest of 
+  the list (\code{x::xs}). Pattern matching just lets us handle either case.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{List Constructors}
+
+  Let's apply the recursion formula on a simple length function on lists.
+
+  \vspace{\fill}
+
+  The base case must be the empty list \code{[]}, in which case we just return \code{0}. 
+
+  \vspace{10pt}
+
+  In the recursive case \code{x::xs}, we also assume that \code{length} works on a smaller
+  input. 
+
+  \vspace{5pt}
+  
+  In this case, \code{xs} happens to be exactly a smaller input than the entire 
+  list \code{x::xs}, so we assume \code{length xs} works, and we get: 
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun length ([] : int list) : int = 0 
+      | length (x::xs) = 1 + length xs
+  \end{codeblock}
+
+\end{frame}
+
+\sectionSlide{3}{Case Study: The Division Algorithm}
+
+\begin{frame}[fragile]
+  \frametitle{A \code{case} Study}
+
+  Let's use our knowledge of patterns, induction, and recursion to implement 
+  a function. Specifically, we will be interested in the \code{divmod} function.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    (* divmod : int * int -> int * int
+       REQUIRES: d is not 0 
+       ENSURES: divmod (n, d) evaluates to (q, r), where 
+       q * d + r = n 
+     *)
+    fun divmod (n : int, d : int) : int * int = 
+      (* to be implemented *)
+  \end{codeblock}
+
+  The \code{divmod} function computes the quotient and remainder of a numerator
+  and denominator via repeated subtraction.
+
+  \vspace{\fill}
+
+  In math, we want $q, r$ such that $qd + r = n$, for a prospective $\frac{n}{d}$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Establishing a Base}
+
+  First step in our recursion formula is figuring out the base case. 
+
+  \vspace{\fill}
+
+  But what should that be? We could case on the value of \code{n} or \code{d},
+  but \code{d} was already specified to be nonzero, and it probably won't help
+  us to know what the divisor specifically is. 
+
+  \vspace{\fill}
+
+  Another way of putting it is: what is the thing that is being inducted on?
+
+  \vspace{\fill}
+
+  In this case, our goal will be to decrease the value of \code{n}, and through 
+  recursion obtain our answer, so our induction focus will be \code{n}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Establishing a Base}
+
+  We specified what a base case is in the context of recursion, earlier, as 
+  the \textbf{branch of the function which does not recurse.}
+
+  \vspace{\fill}
+
+  So, put another way, \textbf{when do we not need to make a recursive call}?
+
+  \vspace{5pt}
+
+  This occurs when the answer is obvious. If the numerator is less than the
+  denominator, obviously there is no need to decrease it and try again.
+
+  \vspace{\fill}
+
+  The base case is when \code{n < d}.
+
+  \vspace{\fill}
+  \begin{codeblock}
+    fun divmod (n : int, d : int) : int * int = 
+      if n < d then
+        (0, d)
+      else
+        (* to be implemented *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Recursive Call}
+
+  Recall that our "induction hypothesis" will be to assume that the \code{divmod}
+  function satisfies its specification on smaller values of \code{n}.
+
+  \vspace{\fill}
+
+  We will, in particular, try to make the recursive call on the smaller numerator 
+  of \code{n - d}. But how should we use the results of the recursive call?
+
+  \vspace{\fill}
+
+  We will first explore \code{let} expressions, which allow us to produce bindings
+  within an expression.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Let Expressions}
+
+  {\small
+  The syntax for binding a variable for use within another expression is as follows:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    let 
+      <declarations>
+    in 
+      <expr>
+    end
+  \end{codeblock}
+
+  where the declarations are much the same as the \code{val} and \code{fun} declarations
+  that we saw earlier. This means there can be multiple of them!
+
+  \vspace{\fill}
+
+  \noteBox{\, Similarly to what we saw earlier with \code{case} expressions, \code{let}
+  expressions are expressions in their own right, so it is valid to write}
+  \begin{codeblock}
+    (let 
+      val x = 2
+    in 
+      x + x
+    end) + 3
+  \end{codeblock}
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lexical Scoping}
+
+  SML is a \term{lexically scoped} language, which means that the scope in which
+  variable bindings are visible depends on its context in the text of the program.
+  
+  \vspace{\fill}
+
+  This means, for instance, that anything declared within a \code{let} expression
+  is only potentially visible within the expression included with it. This means,
+  for instance, that this is invalid code: 
+
+  \begin{codeblock}
+    (* INVALID CODE! What is `y`? *)
+    val x = 
+      (let 
+        val y = 3
+      in 
+        4 
+      end) + y 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Recursive Call}
+
+  We will finish off our function by assuming that \code{divmod (n - d, d)}
+  returns a correct solution. That is, it returns the quotient and remainder 
+  of \code{n - d} by \code{d}. 
+
+  \vspace{\fill}
+
+  In which case, the remainder is the same, but \code{d} goes into \code{n}
+  once more than it does into \code{n - d}. Thus our finished function is:
+
+  \begin{codeblock}
+    fun divmod (n : int, d : int) : int * int = 
+      if n < d then
+        (0, d)
+      else
+        let 
+          val (q, r) = divmod (n - d, d) 
+        in
+          (q + 1, r)
+        end
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+

@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{1 - Prologue} % TODO
     \subtitle{Awesome slides with an awesome subtitle} % TODO
-    \date{01 January 2020} % TODO
+    \date{19 April 2023} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -69,14 +69,10 @@
 \setbeamertemplate{itemize items}[circle]
 
 % SOLID COLOR TITLE (see SETTINGS.sty)
-\begin{comment}
-{
 \begin{frame}[plain]
     \colorlambdatrue
     \titlepage
 \end{frame}
-}
-\end{comment}
 
 \begin{comment}
   Future Retro from ANIMUSIC plays as students walk in
@@ -263,6 +259,21 @@
 
   \begin{center}
     Good programming should be \textbf{maintainable}.
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    Programs should be written with future maintainability in mind. 
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    This goes hand-in-hand with descriptivity and modularity, but code which is written
+    expressively, and has future expansion in mind, will be easiest to maintain.
   \end{center}
 
   \note {
@@ -479,6 +490,74 @@
 
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Recursive Problems, Recursive Solutions}
+
+  In this class, \textbf{almost every single function you write will be recursive}.
+
+  \vspace{\fill}
+
+  Many problems in computer science lend themselves to a recursive formulation. These
+  are naturally solved by recursive solutions.
+
+  \vspace{\fill}
+
+  We will see that lists, trees, and other important structures employ a simple 
+  recursive description.
+
+  \vspace{\fill}
+
+  \code{semgrep-ext}: So do programs!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Programmatic Thinking is Mathematical Thinking}
+
+  Programs are simpler and more understandable when viewed in a mathematical lens.
+  
+  \vspace{\fill}
+
+  Functional programming allows reasoning about programs and their subcomponents
+  in the same way that you would reason about a mathematical expression. 
+
+  \vspace{\fill}
+
+  Furthermore, mathematical analysis of code grants techniques to reason about 
+  things like time complexity, parallel time complexity, and program correctness.
+  Functional programs are very amenable to proofs of correctness! 
+
+  \vspace{\fill}
+
+  We're not just in the business of writing code, but \textit{correct} code!
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Types Guide Structure}
+
+  Before, we described programming as an explanatory, communicative process.
+
+  \vspace{\fill}
+
+  We also stated how \textit{descriptivity} and \textit{maintainability} are 
+  key goals for good programming.
+
+  \vspace{\fill}
+
+  Functional programming places a great emphasis on \textit{types}, which serve 
+  the purpose of documenting the purpose of code, and restricting the range of 
+  behaviors that a program is allowed to exhibit.
+  
+  \vspace{\fill}
+
+  In this way, types guide the structure of a program, by providing clean interfaces
+  for how different parts should interact, and what it should be allowed to do. 
+
+\end{frame}
+
+
+
+
 \begin{frame}[plain]
 
   \begin{center}
@@ -689,7 +768,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, The typing rule for \code{^} is: \code{e1 + e2 : string} if \code{e1 : string} 
+  \defBox{\, The typing rule for \code{^} is: \code{e1 ^ e2 : string} if \code{e1 : string} 
   and \code{e2 : string}
   }
 
@@ -738,12 +817,6 @@
 
   \keyBox{\, \textbf{Ill-typed programs are not evaluated.} } 
 \end{frame}
-
-
-
-
-
-
 
 \begin{comment}
   So here's my prolegomena for you. Before we can do any functional programming, I need to
