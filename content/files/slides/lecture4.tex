@@ -1,0 +1,642 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=169]{beamer}
+ 
+% Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+\newif\ifcolorlambda
+\colorlambdafalse % DEFAULT: false
+
+% Use auxcolor for syntax highlighting
+\newif\ifuseaux
+\useauxfalse % DEFAULT: false
+
+% Color settings
+\useauxtrue
+
+\newcommand{\auxColor}{018B6A}     % the color of note boxes and stuff
+\newcommand{\presentColor}{1FAB89} % the primary color of the slide borders
+\newcommand{\bgColor}{f5fff5}      % the color of the background of the slide
+\newcommand{\darkBg}{8b98ad}
+\newcommand{\lambdaColor}{\auxColor}
+
+\colorlambdatrue
+
+\usepackage{comment} % comment blocks
+\usepackage{soul} % strikethrough
+\usepackage{listings} % code
+\usepackage{makecell}
+
+\setbeamertemplate{itemize items}[circle]
+% \setbeameroption{show notes on second screen=right}
+
+\usepackage{lectureSlides}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{Structural Induction and Tail Recursion} % TODO
+\subtitle{Awesome slides with an awesome subtitle} % TODO
+\date{01 January 2020} % TODO
+\author{Brandon Wu} % TODO
+
+\graphicspath{ {./img/} }
+% DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+    %\begin{frame}[fragile]
+    %\begin{codeblock}
+    %fun fact 0 = 1
+    %  | fact n = n * fact(n-1)
+    %\end{codeblock}
+    %\end{frame}
+
+% INCLUDING codefile:
+    % 1. In some file under code/NN (where NN is the lecture id num), include:
+%       (* FRAGMENT KK *)
+%           <CONTENT>
+%       (* END KK *)
+
+%    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+    %  2. On the slide where you want code fragment K
+            % \smlFrag[color]{KK}
+    %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+%  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+            % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+\renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+\colorlambdatrue
+\titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+\frametitle{Lesson Plan}
+
+\tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  In the last lecture, we learned about the relationship between recursion 
+  and induction. 
+
+  \vspace{\fill}
+  
+  We learned about some more fundamental concepts to the Standard ML language, such
+  as \term{patterns}, \term{constructors}, and \term{case} and \code{let} expressions. 
+  
+  \vspace{\fill}
+
+  We then used these concepts to write the \code{divmod} function, demonstrating the
+  recursive formula for writing recursive functions. 
+\end{frame}
+
+\sectionSlide{1}{Structural Induction}
+
+\begin{frame}[fragile]
+  \frametitle{Induction, another way}
+
+  The induction principle on natural numbers lets us prove things about numbers by
+  viewing them as \textit{built up from other numbers}. In essence, we are expanding our
+  store of numbers for which we know the theorem to be true.
+
+  \vspace{\fill}
+
+  By way of analogy, we might imagine a bucket.
+
+  \vspace{\fill}
+
+  image
+
+  \vspace{\fill}
+
+  This bucket is meant to contain all the things that we know satisfy our theorem-to-prove.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Induction, another way}
+
+  By default, the bucket is empty. Our first action as theorem provers is to throw our base case
+  into the bucket. In the case of induction on the natural numbers, this is zero.
+
+  \vspace{\fill}
+  
+  image but with a single thing in it
+
+  \vspace{\fill}
+
+  The bucket still has a ways to go, however! To prove our statement for the next number, 1, we
+  will apply our \textit{inductive step}. 
+
+  \vspace{\fill}
+
+  This tells us that, from $P(0)$, we can achieve $P(1)$.
+
+  \vspace{\fill}
+
+  image but with two things in it
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Induction, another way}
+
+  By analogy, you should be able to convince yourself that eventually, we can throw every single
+  natural number into the bucket.
+
+  \vspace{\fill}
+
+  This means that, for any natural number $n$, we can \textit{eventually}, in finitely many
+  applications of this logic, prove $P(n)$.
+
+  \vspace{\fill}
+
+  This is the "bucket" view of mathematical induction.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Induction Is Not Just For Cookware}
+
+  In the last lecture, we learned about the \code{list} type constructor, which allows us
+  to talk about types like \code{int list} and \code{string list}.
+
+  \vspace{\fill}
+
+  Lists are not just good for storing data, but they admit a simple structure which allows 
+  us to easily prove things about lists. For instance, consider the following function:
+
+  \begin{codeblock}
+    fun length ([] : int list) : int = 0
+      | length (x::xs) = 1 + length xs
+  \end{codeblock}
+
+  How might we convince ourselves that the \code{length} function is total?
+
+  \vspace{\fill}
+
+  Recall that a function \code{f : t1 -> t2} is total if, for all values \code{v : t1}, there exists a
+  \code{v' : t2} such that \code{f v} $\hookrightarrow$ \code{v'}. In other words, the function 
+  reduces to a value for each valuable input.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Informal Proof}
+
+  Intuitively, it seems like we could reason about the function like so:
+
+  \vspace{\fill}
+
+  Clearly, the function \code{length} must terminate, because when given any list, 
+  it must be either empty or have a first element. If it's the first case, then we 
+  terminate, because \code{length} will return \code{0}. If not, then we will recurse
+  and enter a shorter case, which is always guaranteed to enter a smaller case, which
+  will eventually reach \code{[]}. 
+
+  \vspace{\fill}
+
+  This is what is called a \term{paragraph proof}. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Informal Proof}
+
+  We would prefer to see formal proofs of correctness! Intuitive reasoning and 
+  colloquial wording can mask errors, and precision is necessary when reasoning 
+  about complex programs.
+
+  \vspace{\fill}
+
+  Similarly to how we will avoid "dot dot dot" reasoning when proving claims 
+  on the natural numbers, by using the technique of \term{mathematical induction},
+  we will employ the technique of \term{structural induction} when proving claims
+  about lists.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Structural Induction (Lists)}
+
+  \defBox{\, The principle of \term{structural induction on lists} is as follows:}
+
+  \vspace{\fill}
+
+  Let $P$ be a theorem on values \code{v : t list}, for some type \code{t}. We would
+  like to show that, for all \code{v : t list}, $P(\code{v})$ holds.
+
+  \vspace{\fill}
+
+  It suffices to show that:
+  \begin{itemize}
+    \item $P(\code{[]})$ holds
+    \item Assuming that $P(\code{xs})$ holds, for some \code{xs : int list}, show that
+    $P(\code{x::xs})$ holds, for an arbitrary \code{x : int}.
+  \end{itemize}
+
+  \vspace{\fill}
+
+  We call this \term{proof by structural induction}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Totally Total}
+
+  \thmBox{}\, \code{length} is total
+  
+  \vspace{\fill}
+
+  We proceed by \term{structural induction} on \code{L : int list}.
+
+  \vspace{\fill}
+
+  \bcBox{\, \code{L = []}}
+  \begin{align*}
+    \code{length []} &\eeq 0 & \text{(def. of \code{length})}
+  \end{align*}
+  \ihBox{}{\, Case: \code{L = xs}, for some \code{xs : int list}. Assume that \code{length xs} $\hookrightarrow$ \code{v}.}
+
+  \isBox{}{\, Case: \code{L = x::xs}, for some \code{x : int}. Let's show that \code{length (x::xs)} $\hookrightarrow$ \code{v}.}
+  \begin{align*}
+    \code{length (x::xs)} &\eeq \code{1 + length xs} & \text{(def. of \code{length})} \\
+                          &\eeq \code{1 + v}         & \text{(inductive hypothesis)} \\
+                          &\eeq \code{v'}            & \text{(totality of \code{+})}
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Buckets of Fun}
+
+  The principle of structural induction on lists looks very similar to that of mathematical
+  induction on the natural numbers!
+
+  \vspace{\fill}
+
+  It's key to remember that the principle is just the same, in terms of what is "really happening"
+  with the proof. We are showing that, through finite applications of the same inductive step,
+  we can prove the claim for any list, from the empty list.
+
+  \vspace{\fill}
+
+  To visualize this, our bucket for structural induction would start with just the empty list in it:
+
+  image
+
+  but upon the first application of the inductive step, we would throw in \code{x::[]}, for any 
+  \code{x : int}. Our bucket would then contain the empty list, along with every singleton list.
+
+  \vspace{\fill}
+
+  Repeated application of this technique will eventually produce every single list of integers. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Quantity is Quality}
+
+  One thing to be wary of is to be sure you have correct quantification in your inductive proof.
+
+  \vspace{\fill}
+
+  A surefire way to lose points on a homework is to write the following statement:
+
+  "Assume that, for all \code{xs : int list}, $P(\code{xs})$ holds"
+
+  Why? This is assuming the theorem!
+
+  \vspace{\fill}
+
+  Technically, the structural induction principle for lists looks like:
+  $$P(\code{[]}) \land (\forall \code{xs}, \code{x}:[P(\code{xs}) \implies P(\code{x::xs})]) \implies (\forall \code{L} : [P(\code{L})])\footnotemark$$
+
+  We do not assume that $P(\code{xs})$ holds for all \code{xs}, we show that for all \code{xs}, 
+  if $P(\code{xs})$ holds, then we also have $P(\code{x::xs})$!
+
+  \vspace{\fill}
+
+  It is best to be safe and explicit in your proofs by writing the case out explicitly, as well as what variables
+  you are introducing for it.
+
+  \footnotetext[1]{Where \code{x, xs, L} range over values such that \code{x : int}, \code{xs : int list}, and \code{L : int list}}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Template for Induction on Lists}
+
+  We proceed by structural induction on \code{L : int list}.
+
+  \vspace{\fill}
+
+  \bcBox{\, Case: \code{L = []}} 
+
+  \vspace{5pt}
+
+  $\langle$ proof that $P(\code{[]})$ holds $\rangle$
+
+  \vspace{\fill}
+
+  \ihBox{}{\, Case: \code{L = xs}}. Assume that the theorem holds for \code{xs}. 
+
+  \vspace{5pt}
+
+  \isBox{}{\, Case: \code{L = x::xs}}. We would like to show that $P(\code{x::xs})$ holds. 
+
+  \vspace{5pt}
+  
+  $\langle$ proof of $P(\code{x::xs})$, under hypothesis that $P(\code{xs})$ holds $\rangle$
+
+  \vspace{\fill}
+
+  Thus, by the principle of structural induction, the theorem holds for all \code{L}.
+\end{frame}
+
+\sectionSlide{2}{Tail Recursion}
+
+\begin{frame}[fragile]
+  \frametitle{Reference Implementations and Correctness}
+
+  So now, after proving that \code{length} is total, we might be a little more assured about its 
+  behavior.
+
+  \vspace{\fill}
+
+  What do we say about its correctness, though? Can we prove that \code{length} is correct?
+
+  \vspace{\fill}
+
+  Usually, when trying to prove a function correct, we will start with a single, correct implementation
+  (called the \term{reference implementation}), then attempt to prove that they are equivalent. We will
+  take \code{length} as our reference implementation, on faith.
+
+  \vspace{\fill}
+
+  We can try it out on a few values, to see what happens.
+
+  \note {
+    At this point, I will open up `mulligan` and show the students a few inputs.
+    
+    We will eventually try `length` on an extremely long list, at which point we will run 
+    into the very large memory usage.
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{}
+
+  Woah! Trying out \code{length} on a very long list ends up producing an extremely large trace.
+  What gives? 
+
+  \vspace{\fill}
+
+  Recall that the body of the \code{length} function is written as \code{1 + length xs}. 
+  
+  \vspace{\fill}
+
+  Because SML is an eagerly evaluated language, this means that both \code{1} and \code{length xs}
+  must be independently evaluated to values, before they can be summed, in that order. 
+
+  \vspace{\fill}
+
+  This means that we end up on a very large rabbit hole of computing \code{length L} on successively
+  smaller lists \code{L}, before we ever get to add the first \code{1}!
+
+  \vspace{\fill}
+
+  We say that \code{length} is not \term{tail recursive}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tail Recursion}
+
+  For recursive functions like \code{length}, we can write a version that, instead of making a
+  recursive call and then doing some work with it, first does some work and then computes the
+  answer by making a recursive call.
+
+  \vspace{\fill}
+
+  This sounds like a small distinction, but it makes a big difference! Such functions never have
+  to \textbf{remember what they have to do next} after the recursive call, meaning they use less
+  memory.
+  
+  \vspace{\fill}
+
+  \defBox{}{\, A function is \term{tail recursive} if the last thing that it does is call itself, 
+  in the recursive case. }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tail Recursive or Not?}
+
+  Let's look at some functions we already implemented:
+
+  \begin{codeblock}
+    fun length ([] : int list) : int = 0
+      | length (x::xs) = 1 + length xs
+  \end{codeblock}
+
+  We already saw this was not tail recursive.
+
+  \begin{codeblock}
+    fun fact (0 : int) : int = 1 
+      | fact n = n * fact (n - 1)
+  \end{codeblock}
+
+  Similarly, this one ends up not being tail recursive.
+
+  \begin{codeblock}
+    fun isEmpty ([] : int list) : bool = true
+      | isEmpty (x :: xs) = false
+  \end{codeblock}
+
+  Let's call this one "vacuously" tail recursive.
+
+  \vspace{\fill}
+
+  Most of the functions we've seen so far are not tail recursive! Let's write one.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Better \code{length}}
+
+  Let's write a tail-recursive version of \code{length}!
+
+  \vspace{\fill}
+
+  We will use an idea which will come up multiple times this semester, of an \term{accumulator}.
+
+  \vspace{\fill}
+
+  \defBox{}{\, An \term{accumulator} is an additional argument to a function, which is meant to
+  store the final answer, carrying it forward into future recursive calls.}
+
+  \vspace{\fill}
+
+  In this case, we will make \code{length} take in an \code{int} as an argument. 
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun tlength ([] : int list, acc : int) : int = acc
+      | tlength (x::xs, acc) = tlength (xs, 1 + acc) 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Better \code{length}}
+
+  \begin{codeblock}
+    fun tlength ([] : int list, acc : int) : int = acc
+      | tlength (x::xs, acc) = tlength (xs, 1 + acc) 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  We see that in the recursive case, we first compute the sum of \code{1} and \code{acc},
+  and then make a tail-recursive call.
+
+  \vspace{\fill}
+
+  Then, we can define our original \code{length} function as simply:
+  \begin{codeblock}
+    fun length (L : int list) : int = tlength (L, 0)
+  \end{codeblock}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+  \frametitle{\code{tlength} in Action}
+
+  We can see our new \code{length} function put to the test!
+
+  image goes here
+\end{frame}
+
+\sectionSlide{3}{More List Functions}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{@} function}
+
+  We've seen that we can use \code{::} to add a single element to the beginning of a list, 
+  but what about multiple? 
+
+  \vspace{\fill}
+
+  For concatenating two lists together, we have the \code{@}\footnotemark \, function, which 
+  can be defined as follows:
+
+  \begin{codeblock}
+    infix @ 
+
+    fun ([] : int list) @ (R : int list) : int list = R  
+      | (x::xs) @ R = x :: (xs @ R) 
+  \end{codeblock}
+
+  \footnotetext[2]{Pronounced "append"}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{rev} function}
+
+  Sometimes we're interested in reversing a list.
+
+  \vspace{\fill}
+
+  The \code{rev}\footnotemark \, function can be implemented as follows:
+
+  \begin{codeblock}
+    fun rev ([] : int list) : int list = []
+      | rev (x::xs) = rev xs @ [x] 
+  \end{codeblock}
+
+  \footnotetext[3]{Pronounced "rev"}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{rev} is Not Tail Recursive}
+
+  We will take both of these as our reference implementations for the \code{@} and \code{rev}
+  functions.
+
+  \vspace{\fill}
+
+  There's a catch, though. While relatively simple to define, \code{rev} leaves something to be
+  desired, because it makes a non tail-recursive call to itself!
+
+  \begin{codeblock}
+    fun rev ([] : int list) : int list = []
+      | rev (x::xs) = rev xs @ [x] 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Looking at the recursive call for \code{rev}, it makes a call to the \code{@} function. What's
+  the time complexity of \code{@}?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Cons of \code{@}}
+
+  \begin{codeblock}
+    infix @ 
+
+    fun ([] : int list) @ (R : int list) : int list = R  
+      | (x::xs) @ R = x :: (xs @ R) 
+  \end{codeblock}
+
+  From the definition of \code{@}, we see that it never inspects the second argument that it
+  is given, namely the right list.
+
+  \vspace{\fill}
+
+  However, it deconstructs the first list by one element each time, and then adds it to the
+  resulting recursive call. This ends up being a linear amount of operations, in the length
+  of the first list.
+
+  \vspace{\fill}
+
+  This means that any operation like \code{L @ [x]} is very costly, because it is spending
+  \code{length L} operations to add to a singleton list! In general, we call \code{L @ [x]} an
+  \term{anti-pattern} that should hopefully be avoided, if possible.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Back to \code{rev}}
+
+  The \code{rev} function uses this very anti-pattern. Can we avoid it, using an accumulator
+  and tail recursion?
+
+  \vspace{\fill}
+
+  We will use an accumulator of type \code{int list} to achieve this: 
+
+  \begin{codeblock}
+    fun trev ([] : int list, acc : int list) : int list = acc
+      | trev (x::xs, acc) = trev (xs, x :: acc)
+
+    fun rev (L : int list) : int list = trev (L, [])
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This \code{trev} function runs in less space, and as we will see in the next lecture,
+  less time!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Totally Total}
+
+  possibly do a proof of equivalence if there is time
+\end{frame}
+
+\begin{frame}[plain]
+\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
