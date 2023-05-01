@@ -1,0 +1,622 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{ED6ABE}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{FFABE1} % the primary color of the slide borders
+    \newcommand{\bgColor}{fef7ff}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Trees} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  Last time, we learned about the technique of \term{structural induction} for lists, and
+  used it to prove some theorems about functions on lists.
+
+  \vspace{\fill}
+
+  We also learned about \term{tail recursion}, and how it can help make code more efficient. We
+  used \term{accumulators} to facilitate the implementation. We also implemented some useful
+  functions on lists.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\sectionSlide{1}{Trees}
+
+\begin{frame}[fragile]
+  \frametitle{Data Structures}
+
+  In computer science, there are only a few fundamental data structures, from which everything
+  else pretty much is derived from.
+
+  \vspace{\fill}
+
+  One of them is lists, which we've already covered. The other is \term{trees}.
+
+  \vspace{\fill}
+
+  \defBox{}{\, A \term{binary tree} is a data structure of nodes, where each node may have up
+  to two children that are also binary trees.}
+
+  \vspace{\fill}
+
+  They look something like this:
+  image
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Trees}
+
+  SML doesn't have an in-built notion of trees, the same way that it does lists, but we can
+  define our own. We can use a \term{datatype declaration} to achieve this.
+
+  \vspace{\fill}
+
+  \defBox{}{\, A \term{datatype declaration} is a declaration in SML, which declares a new
+  type.}
+
+  \vspace{\fill}
+
+  A datatype declaration for binary trees on integers would look something like this:
+  \begin{codeblock}
+    datatype tree = Empty | Node of tree * int * tree
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Constructors}
+
+  \begin{codeblock}
+    datatype tree = Empty | Node of tree * int * tree
+  \end{codeblock}
+  
+  \vspace{\fill}
+
+  This datatype declaration does two things. Firstly, it declares a new type, named \code{tree}.
+  Secondly, it provides that type with two \term{constructors}, in the same way as the constructors 
+  that we saw earlier for lists.
+
+  \vspace{\fill}
+
+  This declaration says that:
+  \begin{itemize}
+    \item \code{Empty : tree}
+    \item \code{Node (L, x, R) : tree} if and only if \code{L : tree}, \code{x : int}, and \code{R : tree}.
+  \end{itemize}
+
+  \vspace{\fill}
+
+  In essence, it's saying that a tree only takes two forms, \code{Empty} or \code{Node (L, x, R)}. A tree
+  is one of those two things, and \textbf{no more}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Examples}
+
+  Let's see some examples of trees, and how they would be pictured visually:
+
+  \code{Empty : tree}
+
+  \code{Node(Empty, 150, Empty) : tree}
+
+  \code{Node(Node(Empty, 1, Empty), 5, Node(Empty, 0, Empty)) : tree}
+
+  \code{Node(Node(Empty, 1, Empty), 5, Empty) : tree}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constructors}
+
+  The syntax is important to get used to.
+
+  \vspace{\fill}
+
+  Of our two constructors for the \code{tree} datatype, only one takes an argument. The other is
+  \code{Empty}, which is called a \textit{constant constructor}. It requires no arguments in order
+  to be a value of type \code{tree}.
+
+  \vspace{\fill}
+
+  The constructor that takes an argument is \code{Node}, which takes in a tuple of type
+  \code{tree * int * tree}. This type uses the \code{tree} type we are in the middle of defining!
+
+  \vspace{\fill}
+
+  This is allowed, and called a \term{recursive type}. Datatypes are allowed to be recursive,
+  in essence saying that the \code{tree} type can be built out of other \code{tree}s, with the
+  \code{Node} constructor.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Functions}
+
+  We can write functions on trees using pattern matching, in the same way that we
+  write functions on lists.
+
+  For instance, let's write a function which sums all the nodes of a tree:
+
+  \begin{codeblock}
+    fun treesum (Empty : tree) : int = 0
+      | treesum (Node (L, x, R)) = treesum L + x + treesum R
+  \end{codeblock}
+
+  When writing recursive functions on trees, we need two recursive calls instead of one
+  for lists!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Getting In-\code{depth}}
+
+  Let's write a simple function for computing the depth of a tree.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun max (x : int, y : int) : int =
+      if x < y then x else y
+
+    fun depth (Empty : tree) : int = 0
+      | depth (Node (L, x, R)) = 1 + max (depth L, depth R) 
+  \end{codeblock}
+
+  \note {
+    Why did I not write it by just comparing depth L and depth R?
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lists and Trees}
+
+  We mentioned that lists and trees are some of the most important
+  data structures in computer science. Trees are nice, but it's not
+  so easy to do some operations on them, as it is on lists.
+
+  For instance, how should we easily insert an element into a tree?
+
+\end{frame}
+
+
+\sectionSlide{2}{Structural Induction (Trees)}
+
+\begin{frame}[fragile]
+  \frametitle{Proving Theorems on Trees}
+
+  Now that we've introduced trees, we are still interested in proving
+  mathematical guarantees on our code!
+
+  We will be able to do this for trees in the same flavor as we were
+  able to do for lists.
+  
+  In the same way that natural numbers are built
+  from other natural numbers, and lists are made of other lists, trees 
+  are made from other trees! This means that they admit a principle of
+  structure induction. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Structural Induction (Trees)}
+
+  \defBox{\, The principle of \term{structural induction on trees} is as follows:}
+
+  \vspace{\fill}
+
+  Let $P$ be a theorem on values \code{v : tree}. We would
+  like to show that, for all \code{v : tree}, $P(\code{v})$ holds.
+
+  \vspace{\fill}
+
+  It suffices to show that:
+  \begin{itemize}
+    \item $P(\code{Empty})$ holds
+    \item Assuming that $P(\code{L})$ and $P(\code{R})$ hold, for some \code{L, R : tree}, show that
+    $P(\code{Node(L, x, R)})$ holds, for an arbitrary \code{x : int}.
+  \end{itemize}
+
+  \vspace{\fill}
+
+  \noteBox{\, This means that, when proving a theorem on trees, you get two 
+  inductive hypotheses!}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{depth} is Total}
+
+  Let's prove that the \code{depth} function we wrote earlier is total.
+
+  \vspace{\fill}
+
+  \lemmaBox{}{\, \code{max} is total}
+
+  \vspace{\fill}
+
+  We proceed by \term{structural induction} on \code{T : tree}.
+
+  \vspace{\fill}
+
+  \bcBox{\, \code{T = Empty}}
+  \begin{align*}
+    \code{depth Empty} &\eeq 0 & \text{(clause 1 of \code{depth})}
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{depth} is Total}
+
+  \ihBox{1}{\, Case: \code{T = L}, for some \code{L : tree}. Assume that \code{depth L} $\hookrightarrow$ \code{v1}.}
+  \ihBox{2}{\, Case: \code{T = R}, for some \code{L : tree}. Assume that \code{depth R} $\hookrightarrow$ \code{v2}.}
+
+  \vspace{\fill}
+
+  \isBox{}{\, Case: \code{T = Node(L, x, R)}, for some \code{x : int}. Let's show that \code{depth (Node (L, x, R))} $\hookrightarrow$ \code{v}.}
+  \begin{align*}
+    \code{depth T} &\eeq \code{1 + max (depth L, depth R)} & \text{(clause 2 of \code{depth})} \\
+                          &\eeq \code{1 + max (v1, v2)}         & \text{(inductive hypotheses)} \\
+                          &\eeq \code{1 + v3}            & \text{(totality of \code{max})} \\
+                          &\eeq \code{v}            & \text{(totality of \code{+})}
+  \end{align*}
+\end{frame}
+
+\sectionSlide{3}{Datatypes}
+
+\begin{frame}[fragile]
+  \frametitle{Back to Lists}
+
+  Now that we've seen trees, let's return to lists for a bit.
+
+  We've seen that we can extract the first element of a list easily by
+  using pattern matching. It's not as clear what to do, however, to obtain
+  the last element in the list!
+
+  Let's write a recursive \code{last} function to achieve this.
+
+  \begin{codeblock}
+    fun last ([] : int list) : int = (* ??? *)
+  \end{codeblock}
+
+  We find that we immediately encounter a problem, however.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Slide to the Left}
+
+  Before we even write the recursive case, we have to write the case for
+  the empty list.
+
+  \vspace{\fill}
+
+  What is the last element in the empty list? We want to return an
+  \code{int}, so it could be \code{0}, or \code{1}, or something arbitrary.
+
+  \vspace{\fill}
+
+  The bigger issue is that it simply doesn't make sense to return an integer
+  for this function. We want to return something else, to distinguish the
+  cases of "found 0" and "found nothing".
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Optional Type}
+
+  There are quite often times where we want to write a function, where some inputs
+  do not have a well-defined answer.
+
+  We've seen this with the \code{div} and \code{fact} functions, where \code{0} and 
+  negative numbers cause an exception to be raised, and infinite looping, respectively.
+
+  Sometimes, we don't want such things to happen, however. We would prefer to return
+  a value, which is a more predictable and safe behavior.
+
+  To facilitate this, we have the \code{option} \term{type constructor}. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Constructors}
+
+  A \term{type constructor} is something which makes a type out of other types. 
+
+  We were brief about this previously, but that is exactly what \code{list} is!
+  Out of the types \code{int}, \code{bool}, and \code{int list}, we can make
+  the types \code{int list}, \code{bool list}, and \code{int list list}.
+
+  Similarly, we will be able to construct the types \code{int option}, \code{string option},
+  and \code{int list option}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{option} Type Constructor}
+
+  \defBox{}{\, For any type \code{t}, there is a type \code{t option}, which describes
+  a value that is \textit{possibly} a value of type \code{t}}.
+  
+  \vspace{\fill}
+
+  The type \code{t option} has the following constructors:
+  \begin{itemize}
+    \item \code{NONE}, which is a constant constructor of no arguments
+    \item \code{SOME : t -> t option}, which is a constructor that takes
+    a single argument of type \code{t}.
+  \end{itemize}
+
+  \vspace{\fill}
+
+  So for instance, here are some examples of options:
+  \begin{itemize}
+    \item \code{SOME 5 : int option}
+    \item \code{SOME [] : int list option}
+    \item \code{NONE : int option}
+    \item \code{NONE : bool option}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Get Thee To A \code{NONE}-ery}
+
+  Let's rewrite \code{last} with this knowledge!
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun last ([] : int list) : int option = NONE
+      | last [x] = SOME x
+      | last (x::xs) = last xs 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  We could have raised an exception, but this behavior gives more
+  agency to the caller of the function, in case they want to do something
+  when the list has no output value.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Datatypes}
+
+  So far, we've seen a few examples of type which have different \term{variants},
+  or kinds of constructors that make up the values of the type.
+
+  \vspace{\fill}
+
+  Lists, for instance, can be \code{[]} or \code{x::xs}, trees can be \code{Empty}
+  or \code{Node(L, x, R)}, and options can be \code{NONE} or \code{SOME x}.
+
+  \vspace{\fill}
+
+  These are all known as \term{variant types}, or \term{sum types}, and can be 
+  defined using the \code{datatype} keyword! They define all the forms that
+  values of a type can take, and \textit{no more}.
+
+  \vspace{\fill}
+  
+  \begin{codeblock}
+    datatype int_option = NONE | SOME of int
+
+    datatype int_list = [] | :: of int * int list
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Framing the Problem}
+
+  Defining types that fit the shape of the problem is one of the strongest
+  aspects of a functional programming language. These types are known as 
+  \term{algebraic datatypes}.
+
+  \vspace{\fill}
+
+  For instance, suppose we are interested in an ordering function on integers, 
+  which has type \code{int * int -> order}. What should we define the type of
+  \code{order} to be?
+
+  \vspace{\fill}
+
+  There are three possibilities. The first is less than the second, they are
+  equal, or the first is greater than the second. \code{bool} will not suffice
+  here!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{order} type}
+
+  We could use the description of their relationship as the output value.
+  We can use a \term{type alias} to alias the name \code{order} to be the
+  same as the name \code{string}.
+
+  \vspace{\fill}
+
+  Then, we define our \code{compare} function:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    type order = string 
+
+    fun compare (x : int, y : int) : order = 
+      if x < y then
+        "less"
+      else if x = y then
+        "equal" 
+      else
+        "greater" 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Fragile Approach}
+
+  This approach is needlessly fragile, however. What does the code look like
+  for a consumer of this function?
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    case compare (x, y) of
+      "LESS" => (* code for the less case *)
+    | "EQUAL" => (* code for the equal case *) 
+    | "GREATER" => (* code for the greater case *)
+    | _ => (* shouldn't be possible??? *)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  When casing on the result of \code{compare}, the compiler doesn't know that
+  any case other than \code{"less"}, \code{"equal"}, and \code{"greater"} is
+  impossible! This necessitates a redundant extra case.
+  
+  \vspace{\fill}
+
+  What's another issue with the above code?
+
+  \note {
+    It's all wrong! I intentionally misspelled the strings, so actually the code
+    we wrote would always enter the "impossible" case.
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Fragile Approach}
+
+  The point is that, although it is \textit{possible} to have \code{order} be the
+  same as \code{string}, it comes with a great deal of flaws.
+
+  \vspace{\fill}
+
+  Programming isn't about the possibility of the solution, it's about finding the
+  \textit{best} solution. It's an inherently linguistic process, and we're interested
+  in having good grammatical structure.
+
+  \vspace{\fill}
+
+  We can use datatype declarations to solve this problem in a better way.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{order} datatype}
+
+  Let's define our own \code{datatype} that fully captures the cases that
+  we are interested in.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    datatype order = LESS | EQUAL | GREATER
+
+    fun compare (x : int, y : int) : order = 
+      if x < y then
+        LESS
+      else if x = y then
+        EQUAL 
+      else
+        GREATER 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Communication, Better}
+
+  Now, downstream consumers of this function can write the following code:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    case compare (x, y) of
+      LESS => (* code for the less case *)
+    | EQUAL => (* code for the equal case *) 
+    | GREATER => (* code for the greater case *)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  There's no need to have an extra redundant case, and now the compiler will
+  warn if you misspell one of the variants.
+
+  \vspace{\fill}
+
+  This leads to much more polished, streamlined code! Remember the mantra,
+  \term{Types Guide Structure}. We use the power of types to structure our
+  solution to a problem.
+\end{frame}
+
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
