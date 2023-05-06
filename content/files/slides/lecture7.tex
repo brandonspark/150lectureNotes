@@ -1,0 +1,864 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{5725E4}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{FABC60} % the primary color of the slide borders
+    \newcommand{\bgColor}{fff8ed}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Sorting and Parallelism} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  Last time, we reviewed the idea of \term{asymptotic analysis}, which is the analysis
+  of the performance of programs, as the input size grows.
+
+  We learned that for recursive, functional programs, we could write mathematical
+  \term{recurrences} that described the \code{work} of the code, and that could be solved
+  via the \term{unrolling} method to obtain a closed form, and a bound.
+
+  We also learned that, by assuming we had infinitely many processors, we could
+  obtain recurrences that measured the \code{span} of the code, or the amount of time
+  using parallelism. We saw that this gave performance benefits for \code{treesum} on 
+  balanced trees. 
+\end{frame}
+
+\sectionSlide{1}{Analyzing a Tree via Depth}
+
+\begin{frame}[fragile]
+  \frametitle{Measuring a Tree (again)} 
+
+  Before, we discussed how we could use the number of nodes in a tree as the input
+  size, and obtain two recurrences for \code{treesum} -- $O(n)$ in the imbalanced
+  case, and $O(\log n)$ in the balanced case.
+
+  That's not the only way to measure a tree, though. The other way is that we could
+  use the \term{depth} of the tree, which is the longest path through the tree to
+  get to the bottom.
+
+  Let's try it!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Recurrence: Depth} 
+
+  Where $d$ is the depth of the tree \code{T}, in the expression \code{treesum T}:
+  $$S_{\code{treesum}}(0) = c_0$$
+  $$S_{\code{treesum}}(d) = ???$$
+
+  Again, we don't know how deep the tree is in the left and right subtrees. We find 
+  ourselves in the same situation as before, and we'll solve it the same way, by
+  assuming the worst case. In the worst case, the tree is just a line, so the depth
+  of the left is $d - 1$, and the depth of the right is $0$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Recurrence: Depth (Unbalanced)} 
+
+  So:
+  $$S_{\code{treesum}}(d) = \max(S_{\code{treesum}}(d - 1), S_{\code{treesum}}(0)) + c_1$$
+  $$S_{\code{treesum}}(d) = S_{\code{treesum}}(d - 1) + c_1$$
+
+  If we exchange $d$ for $n$, we've seen this recurrence before. This solves to $O(d)$.
+
+  So the complexity is linear in the case of an unbalanced tree. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Recurrence: Depth (Balanced)} 
+
+  What if it's balanced? Then, the left subtree still has depth $d - 1$, as does the
+  right subtree.
+
+  So:
+  $$S_{\code{treesum}}(d) = \max(S_{\code{treesum}}(d - 1), S_{\code{treesum}}(d - 1)) + c_1$$
+  $$S_{\code{treesum}}(d) = S_{\code{treesum}}(d - 1) + c_1$$
+
+  What gives?? This is the same recurrence! Span is $O(d)$ in both the unbalanced and
+  balanced cases.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Depth and Balance}
+
+  This might be counterintuitive, because we expect a better bound, but it makes sense if
+  you remember the task dependency graphs we discussed earlier.
+
+  In a task dependency graph, the cost of executing some amount of tasks in parallel is
+  just the \textit{longest path through the graph}, or tree. The length of the longest
+  path through a tree is just $d$, the depth of the tree!
+
+  We can relate it to our previous bounds, $O(n)$ and $O(\log n)$, for unbalanced and
+  balanced trees, in the number of nodes $n$, to see they are the same.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Depth and Balance}
+
+  In an unbalanced tree, the depth of the tree $d$ is just the number of nodes $n$! So 
+  $d = n$, so $O(d)$ is the same as $O(n)$, which is the same bound we received earlier.
+
+  What is the number of nodes in a balanced tree of depth $d$ though? Well, each level has
+  double the nodes of the previous, so it's equal to
+  $$1 + 2 + 4 + ... + 2^d$$
+
+  There's a lovely geometric proof that shows that this is in $O(2^d)$.
+
+  So in a balanced tree, $n = 2^d$, so our previous bound is $O(\log n) = O(\log (2^d)) = O(d)$.
+  We get the same thing either way, so this is perfectly consistent!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Nodes or Depth}
+
+  Ultimately, if you do the math and reason it out, you find that getting bounds in terms of
+  depth and nodes looks different, but ultimately say the same thing.
+
+  Whichever is "easier" is up to your discretion. Both are valid ways of solving a 
+  recurrence\footnotemark.
+
+  \footnotetext[1]{We will usually specify whenever we have a particular way we want to 
+  see you solve it, which is often.}
+\end{frame}
+
+\sectionSlide{2}{The Tree Method}
+
+% TODO: move this to lecture6, move parallelism stuff here?
+% actually, inclined to keep it this way, i think...
+\begin{frame}[fragile]
+  \frametitle{Ordering a Tree}
+
+  Recall our notion of an \textit{ordering} on a tree, which produces
+  a list from a tree by traversing the tree in some prescribed order.
+
+  We are interested in \textit{inorder} traversal, which traverses a
+  tree the same way that someone would traverse it by reading from
+  left-to-right. 
+
+  \begin{codeblock}
+    fun inord (Empty : tree) : int list = []
+      | inord (Node (L, x, R)) = inord L @ [x] @ inord R 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{inord}, Naively}
+
+  When you see recursive calls being given as arguments to append, you
+  should double-check, because something fishy is probably going on. 
+
+  But, better than thinking about it, we can mathematically solve for the
+  performance! Let's assume a balanced tree, and solve for the work of this
+  function, in terms of the nodes of the tree.
+
+  Where $n$ 
+  $$W_{\code{inord}}(0) = c_0$$
+  $$W_{\code{inord}}(n) = W_{\code{@}}(\frac{n}{2}) + 2 \cdot W_{\code{inord}}(\frac{n}{2})$$
+
+  (because we append a list of half the size, and compute \code{inord} recursively twice)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Solving \code{inord}}
+
+  $$W_{\code{inord}}(n) = W_{\code{@}}(\frac{n}{2}) + 2 \cdot W_{\code{inord}}(\frac{n}{2}) + c_1$$
+
+  So we have:
+  \begin{align*} 
+    &= W_{\code{inord}}(n) 
+    &= W_{\code{@}}(\frac{n}{2}) + 2 \cdot W_{\code{inord}}(\frac{n}{2}) + c_1
+    &= O(n) + c_1 + 2 \cdot W_{\code{inord}}(\frac{n}{2})
+    &= O(n) + c_1 + 2 \cdot (O(\frac{n}{2}) + W_{\code{inord}}(\frac{n}{4}) + c_1)
+    &= ... 
+    &= ??? 
+  \end{align*}
+
+  This is... messy.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Unrolling in the Deep}
+
+  Sometimes, unrolling is messy. Sometimes, like in \code{length}, we only get
+  one extra term per "unrolling", and so it's not hard to solve by just 
+  finding the pattern.
+  
+  In the case of functions on trees, this usually isn't the case! We actually
+  get \textit{two} terms per unrolling, which quickly becomes four by the
+  next unrolling, and so on.
+
+  We will employ a new technique of solving for such recurrences, using the
+  \term{tree method}, instead of the unrolling method.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Tree Method}
+
+  The tree method gets its name, from noticing that the amount of recursive
+  calls done by a function like \code{inord} induces a tree structure.
+
+  We see that calling \code{inord} on a tree with $n$ nodes causes two
+  calls, to \code{inord} with $\frac{n}{2}$ nodes (in the balanced case).
+
+  So we get a tree which looks like:
+
+  image
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Call Structure}
+
+  But those two calls to \code{inord} have their own recursive calls,
+  which have size $\frac{n}{4}$.
+
+  So our "call tree" expands to:
+
+  image
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Call Structure}
+
+  We can think of the following recurrence as two parts:
+  $$W_{\code{@}}(\frac{n}{2}) + 2 \cdot W_{\code{inord}}(\frac{n}{2}) + c_1$$
+
+  \begin{itemize}
+    \item the \textit{nonrecursive work}, $W_{\code{@}}(\frac{n}{2}) + c_1$
+    \item the \textit{recursive work}, $W_{\code{inord}}(\frac{n}{2})$ 
+  \end{itemize}
+
+  With respect to the call tree, the nonrecursive work is present at each
+  node, but the recursive work is taken care of by all its children.
+
+  So, if we sum all the nonrecursive work in each node, we'll get the work
+  done by the entire function.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Work of a Node}
+
+  To do this, we'll need to somehow figure out the nonrecursive work
+  done by each node. This is $O(n) + c_1$ for a node with size $n$, 
+  except each node has a different size!  
+
+  In addition, there's a differing number of nodes of each size,
+  since there's 2 of size $\frac{n}{2}$, and 4 of size $\frac{n}{4}$,
+  and so on.
+  
+  This isn't easier at all!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Get On My Level}
+
+  The innovation comes from noticing that the nonrecursive work
+  at each \textit{level} of the tree might come out to the same thing.
+
+  If the work at each level was the same, then we could just multiply
+  that quantity by $\log n$, the number of times we can recursively
+  call \code{inord} by halving the input. 
+
+  Let's try it out.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Tree Method, Concluded}
+
+  Let the \textit{level} of a tree denote how far we are from the root.
+  So the root is at level $0$, and there are two nodes at level $1$, and 
+  so on.
+
+  Then, level $i$ has $2^i$ nodes. In addition, each node has size
+  $\frac{n}{2^i}$, and thus work $O(\frac{n}{2^i}) + c_1$.
+
+  So this is 
+  \begin{align*} 
+    &= 2^i \cdot (O(\frac{n}{2^i}) + c_1)
+    &= O(n) + 2^i \cdot c_1
+  \end{align*}
+
+  So the work at level $i$, in total, is still in $O(n)$! There's
+  $\log n$ levels, so we ultimately come out with a bound of 
+  $O(n \log n)$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tail \code{inord}}
+
+  It feels like we should be able to do better than that. Let's do 
+  \code{inord} again, but this time with an accumulator argument.
+
+  \begin{codeblock}
+    fun tinord (Empty : tree, acc : int list) = acc
+      | tinord (Node (L, x, R), acc) = 
+          tinord (L, x :: tinord (R, acc))
+  \end{codeblock}
+
+  Theoretically, the complexity should be better. Let's figure it out!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{tinord}: Work (Balanced)}
+
+  Let's deal with the balanced case first.
+
+  Where $n$ is the number of nodes in \code{T} in the expression \code{tinord (T, L)}:
+  $$W_{\code{tinord}}(0) = c_0$$
+  $$W_{\code{tinord}}(n) = 2 \cdot W_{\code{tinord}}(\frac{n}{2}) + c_1$$
+
+  We get two calls to $W_{\code{tinord}}(\frac{n}{2})$, because we first compute
+  \code{tinord(R, acc)}, and then pass that in as \code{acc'} to \code{tinord (L, x :: acc')}.
+
+  In either case, the size of the tree is roughly half.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{tinord}: Work}
+
+  So we solve to:
+
+  \begin{align*}
+    &= W_{\code{tinord}}(n) 
+    &= 2 \cdot W_{\code{tinord}}(\frac{n}{2}) + c_1
+    &= 4 \cdot (W_{\code{tinord}}(\frac{n}{4}) + c_1) + c_1 
+    &= ... 
+  \end{align*}
+
+  Same issue as before, now we have two recursive calls at each unrolling. Better to solve this
+  with the tree method!   
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{tinord}: Call Structure}
+
+  $$W_{\code{tinord}}(n) = 2 \cdot W_{\code{tinord}}(\frac{n}{2}) + c_1$$
+
+  As before, we have a structure where we have one node with size $n$ at the top, which calls
+  itself twice with size $\frac{n}{2}$, so we get the same call tree as before.
+
+  But what is the nonrecursive work done at each node? This time, there's no append, so the
+  work is just $c_1$, the constant cost of consing, and various other things.
+
+  So we have that each level has $2^i$ nodes, and does $c_1$ work, so our summation looks
+  like
+  $$\sum_{i = 0}^{\log n} 2^i c_1 = c_1 \sum_{i = 0}^{\log n} 2^i$$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{tinord}: Call Structure}
+
+  $$\sum_{i = 0}^{\log n} 2^i c_1 = c_1 \sum_{i = 0}^{\log n} 2^i$$
+
+  This expands to a term like:
+  $$c_1(1 + 2 + 4 + ... + n)$$ 
+
+  where we know the inner term to be in $O(n)$. So ultimately, our
+  bound is $O(n)$. That's a logarithmic improvement over $\code{inord}$!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{tinord}: Work (Unbalanced)}
+
+  What if our tree were to be unbalanced?
+
+  \begin{codeblock}
+    fun tinord (Empty : tree, acc : int list) = acc
+      | tinord (Node (L, x, R), acc) = 
+          tinord (L, x :: tinord (R, acc))
+  \end{codeblock}
+
+  Then we would get:
+  $$W_{\code{tinord}}(0) = c_0$$
+  $$W_{\code{tinord}}(n) = W_{\code{tinord}}(n - 1) + W_{\code{tinord}}(0) + c_1$$
+
+  By analogy, we've seen this recurrence before. This solves to 
+  $$W_{\code{tinord}}(n) = W_{\code{tinord}}(n - 1) + c_0 + c_1$$
+  which is in $O(n)$. So we do the same amount of work.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{tinord}: Span}
+
+  \begin{codeblock}
+    fun tinord (Empty : tree, acc : int list) = acc
+      | tinord (Node (L, x, R), acc) = 
+          tinord (L, x :: tinord (R, acc))
+  \end{codeblock}
+
+  Now finally, let's do the span analysis. Let's assume the best case, which is a balanced tree.
+
+  $$S_{\code{tinord}}(0) = c_0$$
+  $$S_{\code{tinord}}(n) = 2 \cdot S_{\code{tinord}}(\frac{n}{2}) + c_1$$
+
+  What gives? We still have two calls to $S_{\code{tinord}}(\frac{n}{2})$, even though we usually
+  get to take the max of them.
+
+  The reason is because there is a \term{data dependency} between the two calls to \code{tinord}.
+  The call to \code{tinord(R, acc)} is being given as an argument to the other, meaning that
+  the second call cannot be executed until the first finishes!
+
+  So our span bound ends up still being $O(n)$. This holds in the unbalanced case too.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{tinord}: A Retrospective}
+
+  \code{tinord} is an excellent example of how better parallel or sequential performance is not
+  necessarily correlated!
+
+  Certain functions can admit a fast implementation that is not parallelizable, and certain
+  problems are more parallelizable-friendly. For more on this, the class 15-210 will go into
+  more detail.
+\end{frame}
+
+
+
+\sectionSlide{3}{Sorting}
+
+\begin{frame}[fragile]
+  \frametitle{Sorting}
+  We've now discussed trees and lists in detail. We've seen how we can analyze the performance
+  of functions on these data structures, which cover a wide variety of classic computer science
+  problems.
+
+  We will now turn to one of the most classic problems of all in computer science: sorting a
+  list of integers.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sorting}
+
+  There are a variety of sorting algorithms that have been invented. We're
+  going to try our hand at implementing a classic one -- insertion sort.
+
+  First, let's prepare our comparison function. Recall our \code{order} type from before:
+
+  \begin{codeblock}
+    datatype order = LESS | EQUAL | GREATER
+
+    fun compare (x : int, y : int) =
+      if x < y then
+        LESS
+      else if x = y then
+        EQUAL
+      else
+        GREATER
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Insertion}
+
+  Insertion sort works via repeatedly inserting an element into an already-sorted
+  list. By doing this for every element in the list, we will eventually sort
+  the entire list.
+
+  First, we need an insertion function:
+  \begin{codeblock}
+    (* insert : int * int list -> int list *)
+    (* REQUIRES: L is sorted *) 
+    (* ENSURES: insert (x, L) is a sorted permutation of x::L *)
+    fun insert (x : int, [] : int list) : int list = [x]
+      | insert (x, y::ys) = 
+          case compare (x, y) of 
+            LESS => x::y::ys 
+          | _ => x :: insert (x, ys)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Insertion Sort}
+
+  Now we can proceed to defining our sorting function!
+
+  \begin{codeblock}
+    (* insert : int list -> int list *)
+    (* REQUIRES: true *) 
+    (* ENSURES: insort L is a sorted permutation of L *)
+    fun insort ([] : int list) : int list = []
+      | insort (x::xs) = insert (x, insort xs)
+  \end{codeblock}
+
+  How simple!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Insertion Sort: Work Analysis}
+  \begin{codeblock} 
+    fun insert (x : int, [] : int list) : int list = [x]
+      | insert (x, y::ys) = 
+          case compare (x, y) of 
+            LESS => x::y::ys 
+          | _ => x :: insert (x, ys)
+  \end{codeblock}
+
+  We see that insertion sort admits a very simple implementation in SML.
+
+  Now, let's analyze it!
+
+  Where $n$ is the length of the list \code{L} in the expression \code{insert (x, L)}:
+  $$W_{\code{insert}}(0) = c_0$$
+  $$W_{\code{insert}}(n) = W_{\code{insert}}(n - 1) + c_1 = O(n)$$
+
+  (we saw that the \code{compare} function from earlier is $O(1)$)
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Insertion Sort: Work Analysis}
+  \begin{codeblock}
+    fun insort ([] : int list) : int list = []
+      | insort (x::xs) = insert (x, insort xs)
+  \end{codeblock}
+
+  Now, if we analyze \code{insort}, we get:
+
+  Where $n$ is the length of the list \code{L} in the expression \code{insort L}:
+  $$W_{\code{insort}}(0) = c_0$$
+  $$W_{\code{insort}}(n) = W_{\code{insert}}(n) + W_{\code{insort}}(n - 1) + c_1$$
+
+  where the second equation is because the length of \code{insort xs} is $n - 1$,
+  since it's the same length as \code{xs}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Insertion Sort: Work Analysis}
+
+  Now we solve:
+  \begin{align*}
+    &= W_{\code{insort}}(n) \\ 
+    &= W_{\code{insert}}(n) + W_{\code{insort}}(n - 1) + c_1 \\
+    &= W_{\code{insort}}(n - 1) + c_2 \cdot n + c_1 \\
+    &= W_{\code{insort}}(n - 2) + c_2 \cdot (n - 1) + c_1 + c_2 \cdot n + c_1 \\
+    &= ... \\ 
+    &= c_2 \cdot (1 + 2 + ... + n) + c_1 \cdot n \\
+    &= O(n^2) 
+  \end{align*}
+
+  So insertion sort is quadratic time, which is expected.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Insertion Sort: Span Analysis?}
+
+  Unfortunately, there is no real span analysis to be had here. On a list,
+  the amount of opportunities for parallelism is low.
+
+  This might mean our dreams of analyzing the span of a sorting algorithm
+  are dead!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Parallel Sort}
+
+  Fortunately, someone else invented merge sort\footnotemark.
+
+  \defBox{}{\, \term{Merge sort} is a sorting algorithm involving dividing
+  the list to be sorted in half, and recursively sorting each half.}
+
+  Not only does merge sort achieve a better sequential complexity, but we will
+  see how its span bound improves as well.
+  
+  \footnotetext[1]{Well, quick sort too. But we will discuss merge sort for today.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Mergesort Algorithm}
+
+  Our algorithm will be as follows:
+
+  \begin{itemize}
+    \item Split the list into two halves. It doesn't really matter how.
+    \item Recursively sort either half.
+    \item Merge the two sorted halves to make a sorted list. 
+  \end{itemize}
+
+  The main important thing here is that it is pretty easy to split a list in 
+  half, as well as put two sorted lists together into another sorted list.
+
+  We will implement this, and call those functions \code{split} and \code{merge}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Mergesort Helpers}
+
+  \begin{codeblock}
+    (* split : int list -> int list * int list *)
+    (* REQUIRES: true *)
+    (* ENSURES: split L => (A, B) such that L is a permutation
+     * of A @ B, and A and B are roughly the same length *) 
+    fun split ([] : int list) : int list * int list = []
+      | split [x] = [x]
+      | split (x::y::xs) = 
+          let
+            val (A, B) = split xs
+          in
+            (x::A, y::B)
+          end
+  \end{codeblock}
+
+  Where $n$ is the length of \code{L} in the expression \code{split L}:
+  $$W_{\code{split}}(0) = c_0$$
+  $$W_{\code{split}}(1) = c_1$$
+  $$W_{\code{split}}(n) = W_{\code{split}}(n - 1) + c_1 = O(n)$$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Mergesort Helpers}
+
+  \begin{codeblock}
+    (* merge : int list * int list -> int list *)
+    (* REQUIRES: L and R are sorted *)
+    (* ENSURES: merge (L, R) is a sorted permutation of L @ R *)
+    fun merge ([] : int list, R : int list) : int list = R
+      | merge (L, []) = L
+      | merge (x::xs, y::ys) =
+          case compare (x, y) of
+            LESS => x :: merge (xs, y::ys)
+          | _ => y :: merge (x::xs, ys)
+  \end{codeblock}
+
+  Where $n$ is the sum of the lengths of \code{L} and \code{R} in \code{merge (L, R)}:
+  $$W_{\code{merge}}(0) = c_0$$
+  $$W_{\code{merge}}(n) = W_{\code{merge}}(n - 1) + c_1 = O(n)$$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Implementing Mergesort}
+
+  Now that we've defined \code{split} and \code{merge}, we're ready to write \code{msort}.
+
+  \begin{codeblock}
+    (* msort : int list -> int list *)
+    (* REQUIRES: true *) 
+    (* ENSURES: msort L is a sorted permutation of L *) 
+    fun msort ([] : int list) : int list = []
+      | msort [x] = [x]
+      | msort L = 
+          let
+            val (A, B) = split L 
+          in
+            merge (msort A, msort B) 
+          end
+  \end{codeblock}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{The Final Product}
+  {\tiny
+  \begin{codeblock}
+    fun split ([] : int list) : int list * int list = []
+      | split [x] = [x]
+      | split (x::y::xs) = 
+          let
+            val (A, B) = split xs
+          in
+            (x::A, y::B)
+          end
+
+    fun merge ([] : int list, R : int list) : int list = R
+      | merge (L, []) = L
+      | merge (x::xs, y::ys) =
+          case compare (x, y) of
+            LESS => x :: merge (xs, y::ys)
+          | _ => y :: merge (x::xs, ys)
+
+    fun msort ([] : int list) : int list = []
+      | msort [x] = [x]
+      | msort L = 
+          let
+            val (A, B) = split L 
+          in
+            merge (msort A, msort B) 
+          end
+  \end{codeblock}
+  }
+
+  That's all!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{msort}: Work Recurrence}
+
+  \begin{codeblock}
+    fun msort ([] : int list) : int list = []
+      | msort [x] = [x]
+      | msort L = 
+          let
+            val (A, B) = split L 
+          in
+            merge (msort A, msort B) 
+          end
+  \end{codeblock}
+
+  What's the complexity of \code{msort}?
+
+  Where $n$ is the length of the list \code{L} in the expression \code{msort L}:
+  $$W_{\code{msort}}(0) = c_0$$
+  $$W_{\code{msort}}(1) = c_1$$
+  $$W_{\code{msort}}(n) = W_{\code{split}}(n) + 2 \cdot W_{\code{msort}}(n) + W_{\code{merge}}(n) + c_2$$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{msort}: Work Recurrence}
+
+  $$W_{\code{msort}}(n) = W_{\code{split}}(n) + 2 \cdot W_{\code{msort}}(n) + W_{\code{merge}}(n) + c_2$$
+
+  Now we can solve to:
+
+  \begin{align*} 
+    &= W_{\code{msort}}(n) \\
+    &= W_{\code{split}}(n) + 2 \cdot W_{\code{msort}}(n) + W_{\code{merge}}(n) + c_2\\
+    &= 2 \cdot W_{\code{msort}}(n) + c_3 \cdot n + c_4 \cdot n + c_2 \\
+  \end{align*}
+
+  Let's use the tree method to solve this recurrence!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{msort}: Work Recurrence}
+
+  There are two calls to \code{msort} at each level, so there are $2^i$ nodes at level $i$.
+
+  At each node, we do $O(n)$ work. At level $i$, this is $\frac{n}{2^i}$ work.
+
+  So we are looking at $\sum_{i = 0}^{\log n} 2^i \frac{n}{2^i} = \sum_{i = 0}^{\log n} n = n \log n$
+
+  So this is $O(n \log n)$. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{msort}: Span Recurrence}
+
+  What about span? \code{msort} makes two calls to itself in parallel, so there is an opportunity for
+  a speedup.
+
+  \begin{codeblock}
+    fun msort ([] : int list) : int list = []
+      | msort [x] = [x]
+      | msort L = 
+          let
+            val (A, B) = split L 
+          in
+            merge (msort A, msort B) 
+          end
+  \end{codeblock}
+
+  Where $n$ is the length of the list \code{L} in the expression \code{msort L}:
+  $$S_{\code{msort}}(0) = c_0$$
+  $$S_{\code{msort}}(1) = c_1$$
+  $$S_{\code{msort}}(n) = S_{\code{split}}(n) + \max(S_{\code{msort}}(n), S_{\code{msort}}(n)) + S_{\code{merge}}(n) + c_2$$
+  $$S_{\code{msort}}(n) = S_{\code{split}}(n) + S_{\code{msort}}(n) + S_{\code{merge}}(n) + c_2$$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{msort}: Span Recurrence}
+
+  $$S_{\code{msort}}(n) = S_{\code{split}}(n) + S_{\code{msort}}(n) + S_{\code{merge}}(n) + c_2$$
+
+  Now we solve:
+  \begin{align*}
+    &= S_{\code{msort}}(n) \\ 
+    &= S_{\code{split}}(n) + S_{\code{msort}}(n) + S_{\code{merge}}(n) + c_2 \\
+    &= S_{\code{msort}}(n) + c_3 \cdot n + c_4 \cdot n + c_2 \\
+    &= S_{\code{msort}}(n) + c_3 \cdot n + c_4 \cdot n + c_2 \\
+    &= c_3 \cdot \frac{n}{2} + c_4 \cdot \frac{n}{2} + c_2 + c_3 \cdot n + c_4 \cdot n + c_2 \\
+    &= ... \\
+    &= (c_3 + c_4) \cdot (1 + 2 + 4 + ... + n) + c_2 \\ 
+    &= (c_3 + c_4) \cdot O(n) + c_2 \\ 
+  \end{align*}
+
+  So we get that, in parallel, merge sort is in $O(n)$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Linear Time Sort}
+
+  That's pretty huge! The power of parallelism offers us to not just get a 
+  speedup when doing computations, but mathematically prove that we achieve
+  a better asymptotic bound. That's pretty cool.
+\end{frame}
+
+\begin{frame}[fragile]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
