@@ -1,0 +1,790 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{039c1a}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{E45535} % the primary color of the slide borders
+    \newcommand{\bgColor}{e3f3ff}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Polymorphism} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  Last time, we discussed the \term{tree method} and how it can be used to 
+  solve more difficult recurrences, that make multiple recursive calls.
+
+  We also learned how to analyze complexity of a function on trees via
+  depth as opposed to the number of nodes. We saw that this obtained
+  different bounds, but through reasoning about the relationship between
+  nodes and depth, ultimately came out to be the same .
+
+  We then explored sorting, and wrote a terse implementation of \term{merge sort},
+  and then analyzed its work and span.
+\end{frame}
+
+\sectionSlide{1}{Type Inference}
+
+\begin{frame}[fragile]
+  \frametitle{An Overflow of \code{int}}
+
+  You may have noticed that we've been using \code{int}s all over the place.
+
+  We've so far dealt with lists of ints, trees of ints, and sorting ints. We've
+  been focusing on things of type \code{int} quite a bit, but we haven't had to!
+  We might be interested in data structures which hold things which are not
+  just integers, for instance.
+
+  If we did that, however, we would need to redo every lecture that we've done 
+  up to this point, because everything we've discovered has only been for the type
+  \code{int}! If only there were some way of doing things in a generic way, for
+  any type. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{length} function}
+
+  Recall the \code{length} function we defined long ago:
+
+  \begin{codeblock}
+    fun length ([] : int list) : int = 0 
+      | length (x::xs) = 1 + length xs
+  \end{codeblock}
+
+  This only works on lists of type \code{int}, but there's no reason for it
+  to! We could have easily written it as:
+
+  \begin{codeblock}
+    fun length ([] : int list) : int = 0 
+      | length (_::xs) = 1 + length xs
+  \end{codeblock}
+
+  and never inspected any specific element of the list at all.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Annotations}
+
+  We have been type annotating our code the entire semester. In keeping with
+  our Big Idea that \term{Types Guide Structure}, we want to make sure that 
+  the structure of our code is easily described via types.
+  
+  This is often a lot of work, however! We know that SML is able to automatically 
+  determine whether an expression is ill-typed -- that is, if there types are 
+  used in a contradictory way. Is SML also able to determine the type of programs
+  automatically?
+
+  The answer: \textbf{It is!}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Inference}
+
+  SML performs \term{type inference}, which is the automatic derivation of
+  types for all expressions. When this process fails, the program is rejected
+  as ill-typed.\footnotemark
+
+  The type inference algorithm is basically a straightforward recursive 
+  algorithm on an expression. When we encounter a function that we know to have
+  a certain type, we assume that it type-checks, and then recurse to see
+  if there are any contradictions. 
+
+  \footnotetext[1]{You might say that the SML type system has type \code{expression -> typ option}}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Inference: An Example}
+
+  Suppose we are inferring a type for the expression \code{2 + 3}.
+
+  Since this is just the application of a function \code{+ : int * int -> int},
+  we assume it has type \code{int}.
+  
+  We then check whether \code{2 : int}, which it does, so no contradiction.
+  
+  We then check whether \code{3 : int}, which it does, so no contradiction.
+
+  So \code{2 + 3} type-checks, and additionally, has type \code{int}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Inference: Functions}
+
+  It's more interesting when we get into examples with functions!
+
+  When a function accepts an argument, it has a yet-unknown type. When
+  inferring the type of such a variable, the type inference algorithm must
+  use the context of \textit{how the variable is used} to determine the
+  variable's type.
+
+  For instance, consider the expression \code{fn x => x + 1}.
+
+  Upon entering the body of the expression, we assign \code{x} a yet-undetermined
+  type, and type-check the application of \code{+} to the tuple \code{(x, 1)}.
+
+  In this instance, \code{+ : int * int -> int}, so it must be the case that
+  \code{x : int}! Thus, we have resolved a type for the variable \code{x}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Inference: Contradiction}
+
+  What about a function like \code{fn x => (x + 1, x ^ "1")}?
+
+  Here, we again assign \code{x} an unknown type, and then proceed
+  to type-check the body of the function. We see the expression 
+  \code{x + 1}, and by the same reasoning as earlier, conclude that
+  \code{x : int}.
+
+  However, we then type-check \code{x ^ "1"}, and conclude that,
+  since \code{^ : string * string -> string}, it must be the case
+  that \code{x : string}. This is a contradiction, because we 
+  previously concluded \code{x : int}! So type-checking fails.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Inference: Ambiguity}
+
+  The previous example showed an expression that was ill-typed, 
+  due to too much information being specified. We added enough 
+  constraints onto the type of \code{x} that we couldn't possibly
+  satisfy them all!
+
+  What happens if we specify too \textbf{few} constraints?
+
+  What's the type of the expression \code{fn x => x}?
+\end{frame}
+
+\sectionSlide{2}{Parametric Polymorphism}
+
+\begin{frame}[fragile]
+  \frametitle{Type Variables}
+
+  Before, we talked about the type inference algorithm as assigning an
+  "unspecified type" to each variable, that could be later solved for.
+
+  We are now ready to give a name to that type!
+
+  \defBox{\, A \term{type variable} is the type given to an expression
+  whose type is not known. The role of the type inference algorithm is
+  to solve for what that type variable's type should be.}
+
+  A type variable is named such because it is a variable, \textbf{ranging
+  over types}. In the same way that variables as introduced by lambda expressions
+  are meant to be substituted with values, type variables as introduced by
+  the type inference algorithm are meant to be substituted with types.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Variables}
+
+  These type variables are denoted via a backtick before a letter, like
+  \code{'a}, and called their Greek letter equivalent (in this case, \textbf{alpha}).
+
+  Before, we asked about what the type of \code{fn x => x} is. Here, we enforce 
+  \textbf{zero constraints} on the type of \code{x}, so its type remains the same
+  as it was originally initialized to, which is a type variable, in this case \code{'a}.
+  
+  So we say that this function has type \code{'a -> 'a} (or "alpha to alpha").
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Polymorphism}
+
+  What's the point of having such a function? Usually, we want to make sure that
+  our code has a single, specified type, so that we don't make mistakes! What gives?
+
+  The reason why this is useful is for \textbf{code reuse}.
+  
+  \defBox{\, We say that an expression has a \term{polymorphic type} if it has a
+  type that contains type variables.}
+
+  Another name for the function we just defined, \code{fn x => x}, is the 
+  \term{identity function}. It is a polymorphic function.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Code Reuse}
+
+  Suppose we are interested in using the identity function. If we previously
+  defined it with type annotations, we would have something like:
+
+  \begin{codeblock}
+    fun identityInt (x : int) : int = x
+  \end{codeblock}
+
+  and we would only be able to use it like \code{identityInt 150}, but 
+  \code{identityInt "hi"} would be ill-typed.
+
+  This is really really annoying, because now we have to go and define one for
+  every single type that we're interested in.
+
+  \begin{codeblock}
+    fun identityString (x : string) : string = x
+    fun identityBool   (x : bool)   : bool   = x
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Code Reuse}
+
+  The key observation is that the actual \textbf{contents} of the function 
+  are the same. They all look like some form of \code{fn x => x}.
+
+  So why should we need to restate this definition for every single type? We
+  should be able to use the actual code that we wrote, irrespective of 
+  type annotation, if the \textbf{meaning} of the code is agnostic to type.  
+
+  The key insight to maintaining type safety is a variant of polymorphism called
+  \term{parametric polymorphism}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parametric Polymorphism}
+
+  \defBox{\, We say a type is \term{parametrically polymorphic} if it is 
+  parameterized by one or more type variables, which are instantiated at
+  a later time by substitution.}
+
+  So for instance, the type \code{'a -> 'a} is parametrically polymorphic,
+  because it is parameterized by the type variable \code{'a}. This means
+  that we can write:
+
+  \begin{codeblock}
+    fun identity x = x (* has type 'a -> 'a *)
+    val x : int = identity 150
+    val y : string = identity "hi"
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Generic Code}
+
+  This allows a notion of \term{generic} code, which is code that can be 
+  used generically in its type!\footnotemark Essentially, the type 
+  \code{'a -> 'a} means "for all types \code{a}, \code{a -> a}".
+
+  In the previous example, \code{identity} is bound to a generic type, meaning
+  that it can be instantiated concretely as \code{int -> int} in the RHS of 
+  the binding to \code{x}, and as \code{string -> string} in the other case. 
+
+  In this case, we would call the two calls to \code{identity} as different
+  instances of the same function. They are concrete cases of a general 
+  function template, known as \code{identity}.
+  
+  \footnotetext[1]{Some languages actually do call this "generics".}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Let-polymorphism}
+
+  The specific kind of polymorphism employed by SML is known as \term{let-polymorphism}.\footnotemark
+
+  \defBox{\, \term{Let-polymorphism} means that values can only be \textbf{generalized} as 
+  polymorphic after their declaration site.}
+
+  For instance, this function fails to be polymorphic: 
+  \begin{codeblock}
+    fun identity x =
+      let 
+        val _ = identity 5
+      in
+        x
+      end
+  \end{codeblock}
+
+  Even though it seems like it "should" still be polymorphic, the use of \code{identity}
+  concretely within its own definition causes it to be typed at \code{int -> int}. It
+  is only after a function is defined, that it is able to be used generically. 
+
+  \footnotetext[2]{It's not really important to know why it's called this.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More Generic Functions}
+
+  The identity function is kind of a contrived example, however. We don't use it that
+  often.\footnotemark
+
+  As we alluded to earlier, the \code{length} function we wrote needed not be specified
+  at any particular type, because we never actually look at any of the elements of
+  the list! We could indeed write: 
+
+  \begin{codeblock}
+    fun length [] = 0
+      | length (x::xs) = 1 + xs
+  \end{codeblock}
+
+  and obtain \code{length : 'a list -> int}.
+
+  \footnotetext[3]{Yet.}
+\end{frame}
+
+\sectionSlide{3}{Parameterized Datatypes}
+
+\begin{frame}[fragile]
+  \frametitle{More Parametricity}
+
+  We have seen that we can have types such as \code{'a -> 'a} and 
+  \code{'a list -> int}, which rely on type variables. These are types that
+  are "pre-existing", in the sense that we did not need to define the types
+  of \code{int}, or the \code{->} type constructor.
+  
+  We can also define our own types that are parameterized by other types!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parameterized Datatypes}
+
+  \defBox{\, A \term{parameterized datatype} is a datatype declared with
+  a \term{type parameter}. This defines many types, which accept a type
+  as an input.}
+
+  \noteBox{\, The \code{list} and \code{option} datatypes as discussed
+  earlier in the course are examples of parameterized datatypes!}
+
+  This is the reason why lists and options can contain values of any 
+  type. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lists and Options}
+
+  We can define lists and options like so:
+
+  \begin{codeblock}
+    datatype 'a list = [] | :: of 'a * 'a list
+
+    datatype 'a option = NONE | SOME of 'a
+  \end{codeblock}
+
+  These datatype declarations are similar, in the sense that they define the
+  \code{'a list} and \code{'a option} types, which are in a sense templates for
+  a family of types. These can be instantiated concretely as \code{int list},
+  \code{string option}, and so on and so forth.
+
+  \noteBox{\, The two uses of \code{'a} in the type of \code{::} are the same!
+  This means it is still invalid to write \code{2::[true]}, because \code{2 : int}
+  and \code{[true] : bool list}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Trees}
+
+  We can also define polymorphic trees! Before, our trees only contained \code{int}s.
+  But there is no reason for that.
+
+  \begin{codeblock}
+    datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree 
+  \end{codeblock}
+
+  Now, we can have:
+  \begin{itemize}
+    \item \code{Empty : 'a tree}  
+    \item \code{Node (Empty, 5, Empty) : int tree}  
+    \item \code{Node (Empty, "hi", Empty) : string tree}  
+    \item \code{Node (Empty, Empty, Empty) : 'a tree tree}  
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Generic Values}
+
+  Through these declarations, it is possible to achieve polymorphic values that
+  are not functions. While it may seem like type variables are only introduced
+  by function arguments we do not know the type of, they are really introduced by
+  any ambiguity in a type.
+
+  For instance, what is the type of \code{[]}? We don't have enough information 
+  to constrain it either way, so the type is just \code{'a list}. This means that
+  we could write the following code: 
+
+  \begin{codeblock}
+    val l = [] (* generalizes to 'a list *)
+    val x = 1 :: l
+    val y = "hi" :: l
+  \end{codeblock}
+
+  The two instances of \code{l} are instantiated at \code{int list} and 
+  \code{string list}, respectively!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Generic Types}
+
+  It is now no longer true that each expression has only one type. 
+
+  For certain expressions like \code{fn x => x}, it could be 
+  interpreted to have multiple types, such as \code{int -> int}, or \code{'a -> 'a}.
+
+  To explain away this ambiguity, we will revise our interest in types to be 
+  for the \term{most general type} for an expression.
+
+  \defBox{\, The \term{most general type} for an expression is the type that every
+  other type for that expression is an instance of.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Instances}
+
+  We spoke briefly on how different calls to \code{identity} were instances of
+  the main declaration. We also define a concept of \code{instances} on types. 
+
+  \defBox{\, A type \code{t1} is an \term{instance} of type \code{t2} if 
+  \code{t2} can be obtained from \code{t1} by substituting for a type variable.}
+
+  So here are some examples:
+  \begin{itemize}
+    \item \code{int} is an instance of \code{'a} 
+    \item \code{int list} is an instance of \code{'a list} 
+    \item \code{int * int} is an instance of \code{'a * 'b} 
+    \item \code{int * bool} is an instance of \code{'a * 'b} 
+    \item \code{'b * 'c} is an instance of \code{'a}
+    \item \code{'a list list} is an instance of \code{'a list}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Most General Types}
+
+  So we see that the MGT of \code{length} is \code{'a list -> int},
+  because while it can be typed as \code{int list -> int}, and 
+  \code{string list -> int}, among others, they are all just instances 
+  of the type \code{'a list -> int}. 
+
+  All parametric polymorphism is, is choosing instances of a most general
+  type!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Warning on Proofs}
+
+  Beware the following common mistake on proofs!
+
+  \thmBox{}{ \code{length (L @ R)} $\eeq$ \code{length L + length R} } 
+
+  When proving this claim on \code{length : 'a list -> int}, you might be tempted to
+  write the following:
+
+  We proceed by structural induction on \code{L : 'a list}.
+
+  \bcBox{\code{L = []}}
+
+  ...
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type Quantification}
+
+  This will get a point deduction! The quantification is incorrect.
+
+  There is only one value of type \code{'a list}, so how can we possibly induct 
+  on it? To add another element would be to escape the type entirely, because
+  that would specify the type of the list!
+
+  The proper way to phrase the proof is:
+
+  Let \code{t} be a type. We proceed by structural induction on \code{L : t list}.
+
+  ...
+
+  \ihBox{}{Case: \code{L = xs}, for some \code{xs : t list}. Assume ...}
+  \isBox{}{Case: \code{L = x::xs}, for some \code{x : t}. Let's show ...}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parametric Types, Parametric Proofs}
+
+  When proving a claim on values of a parametric type, you are essentially writing
+  a proof for many types. To do this properly, you need to parameterize your proof
+  by an arbitary type, and then proceed with the proof. This which will end up 
+  proving the claim for the parametric type. 
+
+  Another reason why the former proof doesn't work is that there are 
+  \textbf{no values of type \code{'a}}. This would entail a value which could
+  be instantiated at any type, which obviously shouldn't exist!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Comment on Polymorphism}
+
+  The conceptual takeaway is that a polymorphic type is a \textbf{family of types},
+  parameterized by the input type. It is a \textbf{schema} that defines many other
+  types.
+
+  A function with a polymorphic type is a \textbf{family of functions}, all with
+  the same implementation, but each with a different type depending on its usage.
+
+  A proof on a function with a polymorphic type is a \textbf{family of proofs},
+  one for each input type that the function could be instantiated at. We essentially
+  are proving something for each function in the family of functions.
+\end{frame}
+
+
+\sectionSlide{4}{Polymorphic Sorting}
+
+\begin{frame}[fragile]
+  \frametitle{Generic Sorting}
+
+  We've now addressed our over-reliance on \code{int}s in the context of functions like
+  \code{length} and \code{identity}. Let's turn our attention towards a more classic problem,
+  though.
+  
+  We previously discussed sorting, but only on integers! Let's abstract and try to create a
+  \term{generic} sorting function. We'd like a function: 
+
+  \begin{codeblock}
+    (* sort : 'a list -> 'a list *)
+    (* REQUIRES: true *)
+    (* ENSURES: sort L is a sorted permutation of L *)
+    fun sort (L : 'a list) : 'a list = (* ??? *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Sorting}
+
+  ...But is that even a well-specified problem? What would it mean to have a function of
+  type \code{'a list -> 'a list}?
+
+  Recall that if we impose any constraints on what the type of the elements of the list are,
+  then it will no longer generalize polymorphically. We have to somehow sort elements of a
+  list without ever looking at what any given element is. 
+
+  It turns out, this function is impossible to write. Not in the least for the reason that
+  "sorted" is a relative concept. We have an idea of a canonical sorting for integers --
+  by magnitude. But what if we wanted to sort integers in reverse? Or modulo 12?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sorting, Relatively}
+
+  It turns out that in order to sort generically, we have to have some prior notion of
+  what a comparison means. We will achieve this by adjusting the type of our \code{sort}
+  function, slightly.
+
+  We will solve this by taking in a \term{comparison function} of type \code{'a * 'a -> order}.
+  The \code{sort} function will sort by using the comparison function as the basis for what
+  it means to be "less" or "greater". This way, we have no ambiguity, and we can remain 
+  polymorphic, because we make use of a generic comparison function.
+
+  But wait, why can we take in a comparison function? Can functions be passed in as arguments?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functions are Values}
+
+  This might come as a surprise, but functions are values.
+
+  We've seen it, by binding lambda expressions in \code{val} declarations, which 
+  is an equivalent form to the \code{fun} declarations we've been using so far.
+
+  Another consequence of this is the fact that functions are \term{first-class citizens}.
+  This means that they can be bound to values, passed into functions, and returned
+  from functions, just like any other value. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functions are Values}
+
+  We will discuss this more in-depth next lecture, but for this lecture, we will
+  exploit the fact that functions can be passed in as arguments, to write our
+  \code{sort} function in a way that it is \code{parameterized} by a comparison
+  function.
+
+  Essentially, what the \code{sort} function does, depends on what the comparison
+  function is!
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Sorting, By Comparison}
+
+  \begin{codeblock}
+    (* sort : ('a * 'a -> order) * 'a list -> 'a list *)
+    (* REQUIRES: true *)
+    (* ENSURES: sort (cmp, L) is a sorted permutation of L w.r.t. cmp *)
+    fun sort (cmp : 'a * 'a -> order, L : 'a list) : 'a list = (* ??? *)
+  \end{codeblock}
+
+  Let's implement this via our old definition of \code{msort}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{msort}, before}
+  {\tiny
+  \begin{codeblock}
+    fun split [] = []
+      | split [x] = [x]
+      | split (x::y::xs) = 
+          let
+            val (A, B) = split xs
+          in
+            (x::A, y::B)
+          end
+
+    fun merge ([], R) = R
+      | merge (L, []) = L
+      | merge (x::xs, y::ys) =
+          case cmp (x, y) of
+            LESS => x :: merge (xs, y::ys)
+          | _ => y :: merge (x::xs, ys)
+
+    fun msort [] = []
+      | msort [x] = [x]
+      | msort L = 
+          let
+            val (A, B) = split L 
+          in
+            merge (msort A, msort B) 
+          end
+  \end{codeblock}
+  }
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{A Generic \code{msort}}
+  {\tiny
+  \begin{codeblock}
+    fun split [] = []
+      | split [x] = [x]
+      | split (x::y::xs) = 
+          let
+            val (A, B) = split xs
+          in
+            (x::A, y::B)
+          end
+
+    fun merge (cmp, ([], R)) = R
+      | merge (cmp, (L, [])) = L
+      | merge (cmp, (x::xs, y::ys)) =
+          case cmp (x, y) of
+            LESS => x :: merge (cmp, (xs, y::ys))
+          | _ => y :: merge (cmp, (x::xs, ys))
+
+    fun msort (cmp, []) = []
+      | msort (cmp, [x]) = [x]
+      | msort (cmp, L) = 
+          let
+            val (A, B) = split L 
+          in
+            merge (cmp, (msort (cmp, A), msort (cmp, B))) 
+          end
+  \end{codeblock}
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Finishing Off \code{sort}}
+
+  Now, we can define our \code{sort} function simply as:
+
+  \begin{codeblock}
+    (* sort : ('a * 'a -> order) * 'a list -> 'a list *)
+    (* REQUIRES: true *)
+    (* ENSURES: sort (cmp, L) is a sorted permutation of L w.r.t. cmp *)
+    fun sort (cmp : 'a * 'a -> order, L : 'a list) : 'a list = msort (cmp, L) 
+  \end{codeblock}
+
+  Now we can sort generically! For instance, we have:
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{sort} Examples}
+
+  { \small
+  \begin{itemize}
+    \item \code{sort (Int.compare, [2, 3, 1])} $\stepsTo^*$ \code{[1, 2, 3]}
+    \item \code{sort (String.compare, ["a", "ab", "b"])} $\stepsTo^*$ \code{["a", "b", "ab"]}
+    \item \code{sort (fn (x, y) => if x < y then GREATER else LESS, [1, 2, 3])} $\stepsTo^*$ \code{[3, 2, 1]}
+  \end{itemize}
+  }
+\end{frame}
+
+% can do a comment here on families of sorting functions... but maybe too much. save for
+% next lecture.
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
