@@ -1,0 +1,705 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{ECD37A}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{32A2A5} % the primary color of the slide borders
+    \newcommand{\bgColor}{d1eff0}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+    \usepackage{url}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Title} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  Last time, we learned about the concept of \term{parametric polymorphism}.
+
+  We saw how polymorphic types could be parameterized by \term{type variables}, which
+  allowed values of polymorphic type to be used in generic ways, by instantiating them
+  at different types at each use site.
+
+  We also saw how we could define our own polymorphic datatypes, and rederived the true
+  definition of \code{option} and \code{list} from it.
+
+  We then experimented with polymorphic sorting, where we could create a sorting function
+  on lists which operated generically in the type of the list's elements, by providing
+  a comparison function as another input to the sorting function. 
+\end{frame}
+
+\sectionSlide{1}{Higher-Order Functions}
+
+\begin{frame}[fragile]
+  \frametitle{Family First}
+
+  We saw how, with polymorphic types and polymorphic functions, we have a certain concept
+  of parameterization. A polymorphic type denoted not just a single type, but 
+  \textit{many} different types. Similarly, a polymorphic function denoted not a single
+  function, but a template for many functions of different types. 
+
+  Each of these functions essentially did the same thing, however\footnotemark. In this
+  lecture, we'll explore \term{higher-order functions}, which allows us to capture 
+  common design patterns in code to create families of functions which all do different,
+  but related, things. 
+
+  \footnotetext[1]{They had to, in order to be polymorphically generalizable!}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Polymorphic Sorting}
+
+  In the last lecture, we proposed a polymorphic sorting function that took in a 
+  comparison function. It looked like:
+
+  \begin{codeblock}
+    fun sort (cmp : 'a * 'a -> order, L : 'a list) = (* ... *)
+  \end{codeblock}
+
+  This \code{sort} function is itself a higher-order function!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{First-Order Functions}
+
+  When writing functions so far this semester, we've mostly looked at functions which take
+  in tuple values, and return values of base type, or other slightly more interesting types
+  like \code{option}s, \code{list}s, or \code{tree}s.
+
+  These functions are \term{first-order}. They are functions in the classic, intuitive sense.
+
+  But it is possible for a function to return a function -- or for that matter, take in a
+  function, as well.
+
+  \defBox{\, A \term{higher-order function} is a function which takes in functions or
+  returns functions.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{sort} is Higher-Order}
+
+  \code{sort} is thus a higher-order function, due to taking in the comparison function
+  \code{cmp}.
+
+  We could write code like so:
+
+  \begin{codeblock}
+    fun intCompare (x, y) = 
+      if x < y then LESS 
+      else if x = y then EQUAL 
+      else GREATER
+
+    val sorted = sort (intCompare, [4, 3, 1, 2])
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{sort} is Higher-Order}
+
+  This is kind of verbose, though. Do we need to do a \code{fun} declaration every
+  time that we want to specify our comparison function?
+
+  Luckily, the answer is no. Recall lambda expressions, which are anonymous function
+  values. We haven't used them extensively, but it turns out something they are very
+  useful for is making quick functions as arguments to other functions.
+
+  Suppose we wanted to sort a list in descending order. Then we might write:
+
+  \begin{codeblock}
+    val sorted = sort (fn (x, y) => if x < y then GREATER else LESS, [4, 3, 1, 2])
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Returning Functions}
+
+  We can also return functions, not just take them in. 
+
+  \defBox{\, We call a function which returns another function \term{curried}.}
+
+  Suppose we have our \code{add} function.
+
+  \begin{codeblock}
+    (* add : int * int -> int *)
+    fun add (x, y) = x + y
+  \end{codeblock}
+
+  What if instead of taking in a tuple of both \code{int}s to be added,
+  we returned a lambda expression which took in the second?
+
+  \begin{codeblock}
+    (* cadd : int -> int -> int *)
+    fun cadd x = fn y => x + y
+  \end{codeblock}
+
+  \noteBox{\, Type arrows are \textit{right-associative}. This means the type
+  \code{int -> int -> int} means the same as \code{int -> (int -> int)}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Syntactic Sugar}
+
+  It's a little bit of a pain to have to explicitly write out the \code{fn y => x + y} 
+  that we return, however.
+
+  SML helps, by having some syntactic sugar for writing curried functions. 
+
+  The following two definitions are equivalent:
+  \begin{codeblock}
+    (* cadd : int -> int -> int *)
+    fun cadd x = fn y => x + y
+    fun cadd x y = x + y
+  \end{codeblock}
+
+  In general, you can always add more arguments (separated by spaces), which SML will
+  understand to mean "return a function which takes in that argument as a parameter".
+  This generalizes to many arguments, too.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Using Curried Functions}
+
+  Here, we say that \code{cadd} is a \textit{curried} form of \code{add}!
+  It differs from \code{add} in usage in that arguments are passed in one by one.
+
+  \begin{codeblock}
+    val 2 = add (1, 1)
+    val 2 = add 2 2 
+  \end{codeblock}
+
+  Note that function application is \textit{left-associative}, meaning that 
+  \code{add 2 2} is the same as \code{(add 2) 2}.
+
+  Seems these functions do the same thing. Are they extensionally equivalent?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Correspondence of \code{add} and \code{cadd}}
+
+  The answer is no! \code{add} and \code{cadd} don't even have the same type. 
+  Two expressions can only be extensionally equivalent if they have the same type.
+
+  So \code{add} and \code{cadd} aren't extensionally equivalent, but they do
+  "essentially the same thing".
+
+  The main advantage of \code{cadd} in this scenario is that it can take in its
+  arguments separately. We will see later why this is a virtue, but first we have
+  some more HOFs to learn about.
+\end{frame}
+
+\sectionSlide{2}{Higher-Order Function Examples}
+
+\begin{frame}[fragile]
+  \frametitle{Abstraction}
+
+  Abstraction is the name of the game in computer science.
+
+  We abstracted away bits and bytes so that we could think about data and programs.
+  We abstracted away unrestricted control flow for structured constructs so that
+  we could better reason about thoser programs, and we added specifications and types
+  so that we could better communicate what our programs do.
+
+  With higher-order functions, we can abstract code over code itself. We've seen this
+  once, by writing a \code{sort} function which varies depending on the code of the 
+  corresponding \code{cmp} function.
+
+  This prevents us from having to rewrite multiple \code{sort} functions with the 
+  same "core logic". Let's see some examples of other HOFs which reduce common logic.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Transforming Lists}
+
+  Sometimes we're interested in applying some transformation to every element of a list.
+
+  \begin{codeblock}
+    fun incrementAll [] = []
+      | incrementAll (x::xs) = (x + 1) :: xs
+
+    fun toStringAll [] = [] 
+      | toStringAll (x::xs) = Int.toString x :: xs 
+  \end{codeblock}
+
+  If we take away the operation that we perform to each element \code{x}, the underlying
+  function looks exactly the same! 
+
+  We will capture this phenomenon with a HOF called \code{map}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Map}
+
+  \begin{codeblock}
+    (* map : ('a -> 'b) -> 'a list -> 'b list *)
+    (* REQUIRES: true *)
+    (* ENSURES: map f [x1, ..., xn] evaluates to [f x1, ..., f xn] *)
+    fun map (f : 'a -> 'b) ([] : 'a list) : 'b list = []
+      | map f (x::xs) = f x :: map f xs
+  \end{codeblock}
+
+  Then we obtain that \code{incrementAll} $\eeq$ \code{map (fn x => x + 1)}, 
+  and \code{toStringAll} $\eeq$ \code{map Int.toString}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Partial Application}
+
+  The main strength of currying is in \term{partial application}.
+
+  \defBox{\, \term{Partial application} is the act of applying \textit{some} of the
+  curried arguments to a curried function, but not all.}
+
+  Partial application lets us obtain increasingly-specific instances of a higher-order
+  function, which acts as a \textit{template} for a family of functions that all behave
+  the same.
+
+  In this case, \code{map} is the general design for a family of functions that entail
+  transforming elements of a list, and \code{incrementAll} and \code{toStringAll} are
+  concrete instances of this design! So instead, we could write: 
+
+  \begin{codeblock}
+    val incrementAll = map (fn x => x + 1)
+    val toStringAll = map Int.toString 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Filter}
+
+  Another common pattern is keeping only the elements of a list that satisfy
+  some predicate. This predicate might vary depending on the use case, but 
+  the overall pattern remains the same.
+
+  This leads us to a HOF named \code{filter}.
+
+  \begin{codeblock}
+    (* filter : ('a -> bool) -> 'a list -> 'a list *)
+    (* REQUIRES: true *)
+    (* ENSURES: filter p xs evaluates to all elements x in xs s.t.
+     * p x evaluates to true *)
+    fun filter (p : 'a -> bool) ([] : 'a list) : 'a list = []
+      | filter p (x::xs) =
+          if p x then
+            x :: filter p xs
+          else
+            filter p xs
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Filter}
+
+  So, for instance, we have that:
+
+  \begin{codeblock}
+    val isEven = fn x => x mod 2 = 0
+    val keepEvens = filter isEven 
+    val [1, 3] = keepEvens [1, 2, 3, 4] 
+    val keepOdds = filter (fn x => not (isEven x))
+    val [2, 4] = keepOdds [1, 2, 3, 4]
+  \end{codeblock}
+
+  It's a little ugly to have to write \code{fn x => not (isEven x)}, though.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Function Composition}
+
+  Something you learn about early on in mathematics is \textit{function composition}.
+
+  In SML, functions are meant to be closer to their mathematical counterparts. We
+  can define a notion of function composition for SML functions too!
+
+  We want a function which takes in two functions and essentially strings them
+  together. We don't know what their types are, so we will simply call the first
+  one \code{'a -> 'b}, and the second \code{'b -> 'c}. Whatever the first one 
+  returns, the second one needs to take as input.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compose}
+
+  Our output will be a function which takes in an input, passes it into the
+  first function, and then passes the result of that into the second function.
+
+  Given \code{'a -> 'b} and \code{'b -> 'c}, that function's type must be
+  \code{'a -> 'c}. Let's write it.
+
+  \begin{codeblock}
+    fun compose (g : 'b -> 'c, f : 'a -> 'b) : 'a -> 'c =
+      fn x => g (f x)
+  \end{codeblock}
+
+  We take the function arguments in reverse, to be more in line with the
+  mathematical notation, writing $f \o g$ to be the composition of $f$
+  with $g$, such that $g$ is applied first.
+
+  In SML, we also have \code{o} defined as the infix composition operator.  
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compose}
+
+  So now, instead of writing \code{fn x => not (isEven x)}, we can write:
+
+  \begin{codeblock}
+    val isOdd = not o isEven
+  \end{codeblock}
+
+  Much more terse!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What's in a List?}
+
+  There is one final pattern that is common to working with lists.
+
+  Oftentimes, we are interested in "summarizing" the data in a list. We are 
+  interested in iterating over the elements of a list, producing some value which
+  changes for every element that we see.
+
+  This takes the form of, for instance, summing all the elements of an \code{int list},
+  or concatenating all the strings in a \code{string list}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{List Traversing Examples}
+
+  For instance:
+
+  \begin{codeblock}
+    fun sum [] = 0
+      | sum (x::xs) = x + sum xs
+
+    fun concat [] = ""
+      | concat (x::xs) = x ^ concat xs
+
+    fun flatten [] = []
+      | flatten (x::xs) = x @ flatten xs
+  \end{codeblock}
+
+  These all look kind of similar!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Transforming Lists}
+
+  All of these functions have a common root, in that they have some "initial value"
+  that is returned upon the empty list, and which is otherwise transformed by some
+  common operation, in conjunction with each element of the list.
+
+  In a sense, it looks very similar to this common pattern in other programming
+  languages:
+  
+  \begin{lstlisting}[language=Python]
+    acc = default 
+
+    for x in xs:
+      acc = f(x)
+  \end{lstlisting}
+
+  Let's write it in SML!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Folding}
+
+  We call this process \term{folding}. We will implement a function, \code{foldl}, which
+  involves traversing the list from left to right, and transforming an accumulator
+  value.
+
+  The type of this function will be \code{('a * 'b -> 'b) -> 'b -> 'a list -> 'b}.
+
+  These can be broken down into four parts:
+  \begin{itemize}
+    \item \code{'a * 'b -> 'b} - the "transforming function", which acts upon the 
+    accumulator and each fresh value of the list
+    \item \code{'b} - the "default value" which serves as the initial accumulator
+    \item \code{'a list} - the list to be "folded"
+    \item \code{'b} - the final value to be returned, of the same type as the accumulator
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Folding, Left}
+
+  \begin{codeblock}
+    (* foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b *)
+    (* REQUIRES: true *)
+    (* ENSURES: foldl f z [x1, ..., xn] evaluates to 
+     * f (xn, ... f (x2, f (x1, z)) ... ) *)
+    fun foldl f z [] = z
+      | foldl f z (x::xs) = foldl f (f (x, z)) xs  
+  \end{codeblock}
+
+  Essentially, when we run out of elements in the list, we simply return
+  what we have accumulated so far.
+
+  Otherwise, we update our accumulator and keep recursing through the list. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Folding, Right}
+
+  That's not the only way to fold a list, however. What if we want to fold
+  a list from right to left? Let's implement \code{foldr}, of the same type.
+
+  \begin{codeblock}
+    (* foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b *)
+    (* REQUIRES: true *)
+    (* ENSURES: foldl f z [x1, ..., xn] evaluates to 
+     * f (x1, f (x2, ... f (xn, z) ... )) *)
+    fun foldr f z [] = z
+      | foldr f z (x::xs) = f (x, foldr f z xs)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Difference in Folds}
+
+  The main way to remember how to implement the two folds is in when we 
+  combine with the first element, \code{x}.
+
+  \begin{codeblock}
+    fun foldl f z [] = z
+      | foldl f z (x::xs) = foldl f (f (x, z)) xs  
+
+    fun foldr f z [] = z
+      | foldr f z (x::xs) = f (x, foldr f z xs)
+  \end{codeblock}
+
+  In \code{foldl}, due to eager evaluation, the first thing that happens is we
+  apply \code{f} to \code{x}! This corresponds to going \textit{left-to-right},
+  as we want to transform the first element first.
+
+  In \code{foldr}, due to eager evaluation, we do the application of \code{f}
+  to \code{x} \textit{last}. For similar reasons, this corresponds to going
+  right-to-left.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Fold Examples}
+
+  So now, how do we use \code{foldl} and \code{foldr} to implement
+  \code{sum}, \code{concat}, and \code{flatten}?
+
+  The simple way is simple to visualize the accumulator changing, by 
+  applying the function to the elements and accumulator, going left to
+  right or right to left. Recall that the transform function \code{f}
+  always takes the accumulator as its second argument.
+
+  \begin{codeblock}
+    val sum = foldl (op+) 0 
+    val concat = foldr (op^) ""
+    val flatten = foldr (op@) [] 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Stepping Examples}
+
+  Let's try \code{foldr (op^) "" ["I", "LOVE", "150"]}.
+
+  \begin{align*}
+    &= \code{foldr (op^) "" ["I", "LOVE", "150"]} \\
+    &= \code{"I" ^ foldr (op^) "" ["LOVE", "150"]} \\ 
+    &= \code{"I" ^ ("LOVE" ^ foldr (op^) "" ["150"])} \\ 
+    &= \code{"I" ^ ("LOVE" ^ ("150" ^ foldr (op^) "" []))} \\ 
+    &= \code{"I" ^ ("LOVE" ^ ("150" ^ ""))} \\ 
+    &= \code{"ILOVE150"}
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Natural Fold}
+
+  It is said that \code{foldr} is the "natural" fold\footnotemark. We end up with
+  all the elements in order, merely joined by the transformation function.
+
+  Let's try \code{foldr (op^) "" ["I", "LOVE", "150"]}.
+
+  \begin{align*}
+    &= \code{foldr (op^) "" ["I", "LOVE", "150"]} \\
+    &= \code{"I" ^ foldr (op^) "" ["LOVE", "150"]} \\ 
+    &= \code{"I" ^ ("LOVE" ^ foldr (op^) "" ["150"])} \\ 
+    &= \code{"I" ^ ("LOVE" ^ ("150" ^ foldr (op^) "" []))} \\ 
+    &= \code{"I" ^ ("LOVE" ^ ("150" ^ ""))} \\ 
+    &= \code{"ILOVE150"}
+  \end{align*}
+
+  \footnotetext[2]{For more, consult Frank Pfenning's excellent document \url{http://www.cs.cmu.edu/~me/courses/15-150-Spring2020/lectures/10/origami.pdf}}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Reversing Things}
+
+  For instance, let's try \code{foldl (op::) [] [1, 2, 3]}. What do you expect to happen?
+
+  \begin{align*}
+    &= \code{foldl (op::) [] [1, 2, 3]} \\ 
+    &= \code{foldl (op::) [1] [2, 3]} \\ 
+    &= \code{foldl (op::) [2, 1] [3]} \\ 
+    &= \code{foldl (op::) [3, 2, 1] []} \\ 
+    &= \code{[3, 2, 1]}
+  \end{align*}
+
+  We see that we end up with, essentially, \code{3 :: 2 :: 1 :: []}. This 
+  applied the transformation function to each element, but in reverse!
+
+  If we look at the specification of \code{foldl}, though, this is exactly what it purported
+  to do. We expected to see \code{f (xn, ... f (x2, f (x1, z)) ... )}. 
+
+  So \code{rev} can be reimplemented as \code{foldl (op::) []}!
+\end{frame}
+
+\sectionSlide{3}{Mathematics of Higher-Order Functions}
+
+\begin{frame}[fragile]
+  \frametitle{Equivalence}
+
+  At this point, we might be wondering about the implications for mathematical
+  analysis of functions when higher-order functions get involved. In particular,
+  how does equivalence get affected?
+
+  Recall our definition for extensional equivalence on functions, for \code{f : t1 -> t2}
+  and \code{g : t1 -> t2}. We require that, for all values \code{x : t1}, that
+  \code{f x} $\eeq$ \code{g x}. 
+
+  It turns out, no extra machinery is necessary! We already have a definition for 
+  when functions should be $\eeq$ (which is exactly the above), meaning that it's
+  no problem if \code{t2} is a function type. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Equivalence}
+
+  It might seem a little different, however, when dealing with when \code{t1} is 
+  a function type. How do we reason about if two function values are the "same"?
+  
+  Is \code{fn (x, y) => x + y} the same as \code{fn (y, x) => y + x}? 
+
+  What about \code{fn x => x + x} versus \code{fn x => 2 * x}?
+
+  Fortunately, it doesn't matter. While we specified that, for all values, \code{f}
+  and \code{g} behave the same, because of referential transparency, we identify values
+  by whether or not they are extensionally equivalent. So this is equivalent to saying:
+
+  If, for \code{x} $\eeq$ \code{y}, then \code{f x} $\eeq$ \code{g y}. This goes
+  both ways, so we get that two extensionally equivalent HOFs behave the same on
+  extensionally equivalent arguments.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Equivalence Examples}
+
+  So we know that, for instance, as a consequence of the fact that \code{fn x => 2 * x}
+  and \code{fn x => x + x} are equivalent, then \code{map (fn x => 2 * x)} and 
+  \code{map (fn x => x + x)} must be equivalent as well.
+
+  Even though HOFs generalize over other arbitrary code, we have a mathematical guarantee
+  that "equals-for-equals" still holds! HOFs then, in a sense, still act generically over
+  their inputs, in a way that respects extensioanl equivalence.
+
+  A free consequence that comes out of this: easy refactoring. Code can be easily
+  updated without fear of breaking a higher-order codebase, so long as simple
+  mathematical equivalences are respected.\footnotemark
+
+  \footnotetext[3]{This is \textit{really useful}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Hierarchies}
+
+  In this lecture, we saw how we could write \term{higher-order functions}, which were
+  functions which generalized over other functions, possibly being able to be specialized
+  to arbitrary precision by splitting up arguments into curried form.
+
+  With functions like \code{map} and \code{foldl}, we can think of them as defining
+  a hierarchy of functions, all of which are defined from a common ancestors. Thus, the
+  descendants of \code{map} might be \code{incrementAll} and \code{toStringAll}, 
+  and the descendants of \code{foldl} might be \code{sum}, \code{concat}, and \code{flatten}.
+
+  With this hereditary understanding of functions, we can abstract away even design patterns
+  in code, reducing boilerplate and overall achieving a more holistic understanding.
+\end{frame}
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
