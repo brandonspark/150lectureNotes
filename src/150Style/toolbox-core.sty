@@ -205,6 +205,29 @@
         {\color{#1} Def.}%
     }%
 }
+\newrobustcmd{\customBox}[2][white]{\par%
+    \colorbox{auxColor}{%
+        {\color{#1} #2}%
+    }%
+}
+\newrobustcmd{\tgs}{
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[xshift=-2.8cm,yshift=-0.34cm] at (current page.north east){%
+    {\footnotesize \colorbox{auxColor}{{\color{white} Types Guide Structure}}}};
+  \end{tikzpicture}
+}
+\newrobustcmd{\rprs}{
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[xshift=-4.2cm,yshift=-0.34cm] at (current page.north east){%
+    {\footnotesize \colorbox{auxColor}{{\color{white} Recursive Problems, Recursive Solutions}}}};
+  \end{tikzpicture}
+}
+\newrobustcmd{\ptmt}{
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[xshift=-4.8cm,yshift=-0.34cm] at (current page.north east){%
+    {\footnotesize \colorbox{auxColor}{{\color{white} Programmatic Thinking is Mathematical Thinking}}}};
+  \end{tikzpicture}
+}
 \newrobustcmd{\exBox}[1][white]{\par%
     \colorbox{auxColor}{%
         {\color{#1} Ex.}%
@@ -218,6 +241,12 @@
 \newrobustcmd{\noteBox}[1][white]{\par%
     \colorbox{auxColor}{%
         {\color{#1} Note}%
+    }%
+}
+
+\newrobustcmd{\badBox}[1][white]{\par%
+    \colorbox{red}{%
+        {\color{#1} Warning}%
     }%
 }
 
@@ -237,6 +266,20 @@
   \end{center}
 \end{frame}
 }
+
+\newrobustcmd{\quizBreak}[1]{
+\begin{frame}[plain]
+  \begin{center}
+    {\huge \color{presentColor} \intermedium{Quiz time!}}
+
+    \vspace{10pt}
+
+    \color{presentColor} \intermedium{Passcode: #1}
+  \end{center}
+\end{frame}
+}
+
+
 
 \newrobustcmd{\eeq}{\cong}
 

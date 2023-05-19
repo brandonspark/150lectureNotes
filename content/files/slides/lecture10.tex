@@ -1,0 +1,677 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{25a2db}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{FF68DE} % the primary color of the slide borders
+    \newcommand{\bgColor}{e6fcff}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+    \usepackage{transparent}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Title} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  Last time, we went over \term{higher-order functions}, which are functions which
+  can take in functions as input and return other functions.
+
+  We learned that \term{curried} functions take in multiple arguments at separate
+  times, by taking them in one-by-one, and returning functions which take in the
+  rest.
+
+  We also learned about the menagerie of HOFs that we will use in this class, 
+  being \code{map}, \code{filter}, \code{o}, \code{foldl}, \code{foldr}. 
+\end{frame}
+
+\sectionSlide{1}{Staging}
+
+\begin{frame}[fragile]
+  \frametitle{Currying}
+
+  What is the advantage of currying?
+
+  Before, we talked about how we can use currying to define hierarchies of functions.
+  
+  We can instantiate functions we'd ordinarily have to write recursive function definitions
+  for, by using HOFs like \code{map} as templates, and producing expressions such as
+  \code{map Int.toString}.
+
+  Currying is then important because each curried argument represents a \code{specialization}
+  of a function!
+
+  \begin{itemize}
+    \item \code{foldr} - general template for accumulating in a list
+    \item \code{foldr (op+)} - general template for summing elements in list to a value
+    \item \code{foldr (op+) 0} - function for finding sum of a list
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Trivial Totality}
+
+  A fun fact is that syntactically sugared curried functions are trivially total\footnotemark.  
+
+  \vspace{\fill}
+
+  Consider the definition of a function like \code{map}:
+
+  \vspace{5pt}
+
+  \begin{codeblock}
+    fun map f [] = []
+      | map f (x::xs) = f x :: map f xs
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Is \code{map} total? Yes!
+
+  It is easy to see that for any function value \code{f : t1 -> t2}, \code{map f} immediately
+  evaluates to a lambda expression, which takes in a list and evaluates to either
+  case of \code{map}. 
+
+  \footnotetext[1]{An even more fun fact is that there were three alliterations in that sentence.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Trivial Totality?}
+
+  A question remains then - is every value \code{t1 -> t2 -> t3} total?
+
+  The answer: \textit{no!} Just because \code{map} and friends are, doesn't mean
+  all such values of curried type are. For instance, take the following example:
+
+  \begin{codeblock}
+    fun loop () = loop () 
+
+    fun f x = 
+      let
+        val x = loop ()
+      in
+        fn y => 0 
+      end
+  \end{codeblock}
+
+  This function does not immediately return a lambda expression upon being given a
+  value. It actually immediately evaluates \code{loop ()}, an infinite loop.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Carnegie Mellon Example}
+
+  Suppose that you are building a booth.
+
+  It's the day of move-on, and you still haven't finished painting the wall boards. Your
+  good friend stays behind to get them painted, and you refuse to move the rest of 
+  the booth to Midway until they're done.
+
+  That is silly.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Logistics of Booth Building}
+
+  When building a booth, painting the walls is necessary, but comes much after 
+  other steps, like setting up the floorboards, constructing the walls, and 
+  moving the wood to Midway in the first place! 
+
+  The point: It's absurd to wait on something completely unrelated, when you
+  could do the work now with what you have!
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Staging}
+
+  We refer to this as \term{staging}.
+
+  \defBox{\, We use the term \term{staging} to describe the act of deliberately placing
+  computations at certain points with respect to receiving curried arguments}.
+
+  So instead of saving all computations for when all the curried arguments are received,
+  we can instead move some computations to when only the \textit{necessary} arguments
+  have been received.
+
+  Suppose we have the following function:
+  \begin{codeblock}
+    val f = fn x => fn y => x + y
+  \end{codeblock}
+
+  Can we move the expression \code{x + y} any earlier in the curried function? The 
+  answer is \textit{no}, because \code{x + y} depends on both arguments!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Code Example}
+
+  This comes up all the time!
+
+  Consider the following artificial code example:
+
+  \begin{codeblock}
+    fun mystery x y =
+      let
+        val res = horrible_computation x
+      in
+        res + y
+      end 
+  \end{codeblock}
+
+  \code{horrible_computation} takes 3 years to evaluate.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Code Example}
+
+  \begin{codeblock}
+    fun mystery x y =
+      let
+        val res = horrible_computation x
+      in
+        res + y
+      end 
+  \end{codeblock}
+
+  3 years is kind of a long time. Suppose we're interested in evaluating the following:
+
+  \begin{codeblock}
+    val res1 = mystery 2 4
+    val res2 = mystery 1 2
+    val res3 = mystery 2 5
+  \end{codeblock}
+
+  This code takes 9 years in total, to run. But it doesn't need to!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Speed Gains}
+
+  It doesn't need to, however. Something we notice about \code{mystery} is that
+  \code{horrible_computation} doesn't actually depend on \code{y}!
+
+  So we can rewrite it as:
+  \begin{codeblock}
+    fun mystery2 x = 
+      let
+        val res = horrible_computation x
+      in
+        fn y => res + y
+      end 
+  \end{codeblock}
+
+  Now instead of returning a lambda which accepts \code{y}, computes the horrible 
+  computation, and then returns, we first compute the horrible computation!
+
+  This lets us write:
+
+  \begin{codeblock}
+    val f = mystery2 2
+    val g = mystery2 1
+    val res1 = f 4
+    val res2 = g 2
+    val res3 = f 5
+  \end{codeblock}
+
+  We can't avoid the cost of computing \code{mystery2} twice, but 6 years isn't so long.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Benefits of Staging}
+
+  Usually, the order in which computations happen doesn't matter, due to extensional
+  equivalence. We might care about things which go beyond simple extensional equivalence
+  however, such as expensive computations, or things that break extensional equivalence,
+  such as side effects or mutability.
+  
+  Later this semester, we will see how side effects can make correct knowledge of staging
+  even more essential.
+\end{frame}
+
+\sectionSlide{2}{Cost Analysis of HOFs}
+
+\begin{frame}[fragile]
+  \frametitle{Cost Analysis of HOFs}
+
+  We've written some higher-order functions at this point, and we're fairly convinced
+  of their correctness, but what can we say about their efficiency?
+
+  Take \code{map} for example.
+
+  \begin{codeblock}
+    fun map (f : 'a -> 'b) ([] : 'a list) : 'b list = []
+      | map f (x::xs) = f x :: map f xs
+  \end{codeblock}
+
+  From first glance, it looks like the recurrence is a standard recursion on a list,
+  and thus comes out to a bound of $O(n)$. When analyzing the recursive case, a question
+  comes to mind, however -- what is the work of \code{f}?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Cost of Code}
+
+  Because HOFs like \code{map} are code which is parameterized on other code, 
+  the run-time cost of functions like \code{map} is also parameterized by 
+  the cost of the input function!
+
+  This is different than before HOFs, when we only had to deal with being passed
+  values that didn't have any notion of cost associated with them -- they just were.
+
+  In this case, we would say that the cost of \code{map} is $O(n)$ in the number of
+  calls to \code{f}, but we can't really say anything better than that.
+\end{frame}
+
+\sectionSlide{3}{HOFs and Trees}
+
+\begin{frame}[fragile]
+  \frametitle{Mapping and Folding}
+
+  We've so far seen mapping and folding on lists. These aren't notions that are 
+  specific to lists, however\footnotemark.
+
+  Suppose we have a polymorphic tree type, as we've defined before, such as:
+  \begin{codeblock}
+    datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree
+  \end{codeblock}
+
+  We are interested in a \code{map} function which transforms every element of the
+  tree, and a \code{fold} function which combines the elements of the tree in a 
+  particular order. How can we define these functions?
+
+  \footnotetext[1]{Indeed, "almost every" datatype admits a concept of mapping and
+  folding. Proper treatment of this is outside the scope of this course, however.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Mapping}
+
+  The type signature for \code{treemap} will look similar to \code{map}:
+
+  \begin{codeblock}
+    (* treemap : ('a -> 'b) -> 'a tree -> 'b tree *)
+    (* REQUIRES: f is total *)
+    (* ENSURES: treemap f T evaluates to T with f called on each element *)
+    fun treemap f Empty = Empty
+      | treemap f (Node (L, x, R)) = Node (treemap f L, x, treemap f R)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Folding}
+
+  What about folding? We need to first pick a particular traversal order. Let's
+  go with \term{inorder} traversal, which is the more intuitive "left-to-right"
+  traversal.
+
+  \begin{codeblock}
+    (* treefold : ('a * 'b -> 'b) -> 'b -> 'a tree -> 'b *)
+    (* REQUIRES: true *)
+    (* ENSURES: treefold f z T =~= foldl f z (inord T) *)
+    fun treefold f z Empty = z
+      | treefold f z (Node (L, x, R)) =
+          let
+            val left_folded = treefold f z L
+          in
+            treefold f (f (x, left_folded)) R
+          end
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Folding: Example}
+
+  Let's see tree folding in action!
+
+  (I need to make mulligan work well here with curried functions.)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Search}
+
+  Using HOFs, we can also encapsulate the design pattern for a generic function which
+  performs a search on trees.
+
+  To facilitate this, similarly to how \code{sort} took in a generic comparison function,
+  our \code{search} function will take in an arbitrary \term{predicate} on elements, which
+  returns a boolean on whether the element is what we are meant to search for. 
+
+  \begin{codeblock}
+    (* search : ('a -> bool) -> 'a tree -> 'a option *)
+    (* REQUIRES: p is total *)
+    (* ENSURES: search p T evaluates to the first element in T that satisfies p *)
+    fun search p Empty = NONE
+      | search p (Node (L, x, R)) = 
+        case search p L of
+          NONE => 
+            if p x then SOME x 
+            else search p R 
+        | SOME res => SOME res
+  \end{codeblock}
+\end{frame}
+
+\sectionSlide{4}{Simplifying Programming}
+
+\begin{frame}[fragile]
+  \frametitle{Towards Simpler Code}
+
+  We've talked a lot about using HOFs to simplify our language. We obtain expressive 
+  functions from generalized templates of program logic, which is an improvement that
+  is almost linguistic in nature.
+
+  It's not quite, since we're really writing code to write other code. But there are
+  other useful applications of HOFs, which allows us to write literally simpler code.
+
+  For instance, suppose we had a very nested function application. It would look
+  something like:
+
+  \begin{codeblock}
+    foo (bar (qux (baz x)))
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Pipe Operator}
+
+  Such a nested expression is rather displeasing to the eye, as well as being 
+  generally annoying to deal with, due to the parentheses. It also requires being
+  read "inside out", since \code{baz} comes after \code{foo}, but is evaluated first!
+
+  To that end, we can define the \code{|>}\footnotemark operator, which allows us to
+  \textit{reverse} the order of function application. It is defined as: 
+
+  \begin{codeblock}
+    infix |> 
+
+    fun x |> f = f x 
+  \end{codeblock}
+
+  Thus, we could rewrite the first example as:
+
+  \begin{codeblock}
+    x |> baz |> qux |> bar |> foo
+  \end{codeblock}
+
+  \footnotetext[1]{Pronounced "pipe"}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Pipe Operator}
+
+  This might seem weird to look at at first, but this is extremely useful for
+  producing legible code, that reads like simple instructions.
+
+  For instance, take the following recipe:
+  \begin{itemize}
+    \item Heat oven to 400
+    \item Insert tray of mozzarella sticks 
+    \item Wait two hours
+    \item Remove charred remains 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Pipe Operator}
+
+  This might seem weird to look at at first, but this is extremely useful for
+  producing legible code, that reads like simple instructions.
+
+  For instance, take the following recipe:
+  \begin{codeblock}
+    heat oven 400
+    |> insert trayOfMozzarellaSticks
+    |> wait 2 
+    |> remove
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pipes with Fallible Operations}
+
+  We can think of the pipe operator as stringing together operations, in the same way
+  that we might construct a pipe out of components with compatible ends.
+
+  The pipe operator works because each of those operations can be applied as a function.
+  But what if some of the functions we want to pipe are fallible? In other words, they 
+  return \code{t option}, for some type \code{t}.
+
+  For instance, suppose we have:
+  \begin{itemize} 
+    \item \code{readFile : string -> string}, which reads in the contents of a file
+    \item \code{parseGrades : string -> grades}, which tries to read a string as a grade sheet 
+    \item \code{lookup : (string * string) -> grades -> int}, which tries to look up a student's
+    grade on a given assignment 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Whatever Can Go Wrong...}
+
+  Except, that might not actually be true. If the functions we just described truly had
+  those types, we could just solve it via regular pipe operators:
+
+  \begin{codeblock}
+    fun findStudentGrade (student, assignment) grades_file =
+      grades_file
+      |> readFile
+      |> parseGrades 
+      |> lookup (student, assignment)
+  \end{codeblock}
+
+  Except, a great deal of things might go wrong during this whole process! We can't
+  trust that each of these functions actually returns a sensible value.
+
+  So we have:
+  \begin{itemize} 
+    \item \code{readFile : string -> string option}, because the file might not exist 
+    \item \code{parseGrades : string -> grades option}, because the grades might not be in the
+    correct format to be parsed 
+    \item \code{lookup : (string * string) -> grades -> int}, because the student might not exist 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Reframed with Options}
+
+  So let's try doing this example again, except now all our functions return options.
+
+  \begin{codeblock}
+    fun findStudentGrade (student, assignment) grades_file =
+      case readFile grades_file of
+        NONE => NONE
+      | SOME file_content => 
+        (case parseGrades file_content of 
+          NONE => NONE
+        | SOME grades =>
+          (case lookup (student, assignment) grades of 
+            NONE => NONE 
+          | SOME grade => SOME grade))
+  \end{codeblock}
+
+  This is disgusting.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Excess of Casing}
+
+  In the previous example, we had to insert a \code{case} expression every single 
+  time that we wanted to unpack the result of a step. On some level, this is expected,
+  since we otherwise have no way of dispatching on what exactly was returned, but the
+  redundancy is in the \code{NONE} case.
+
+  When \code{SOME} is returned, we proceed as normal, but in every single case where we
+  receive \code{NONE}, we just return \code{NONE}. This is \textit{boilerplate logic},
+  because it just bloats the code, and doesn't add anything substantive to the interesting
+  behavior of the function.
+
+  Fortunately, \code{option} is something called a \term{monad}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Enter the Monad}
+
+  \defBox{\, A \term{monad} is a particular kind of type constructor that supports some
+  operations that obey certain mathematical laws.}
+
+  \vspace{\fill}
+
+  It's not actually super important what a monad is, but the main idea is that we can
+  write a single function, \code{bind}:
+
+  \begin{codeblock}
+    fun bind (x : 'a option) (f : 'a -> 'b option) = 
+      case x of
+        NONE => NONE
+      | SOME res => f res
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This kind of looks like the boilerplate logic around each one of our earlier steps!
+
+  \vspace{\fill}
+
+  What this function does is take a function which is supposed to operate on a non-optional
+  value, which might fail. It then passes an optional value into it by handling the 
+  \code{NONE} case explicitly, as we did earlier. This takes care of the casing for us,
+  so that we don't have to!
+
+  \tgs
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Piping with \code{bind} {\transparent{0.45}(Programmatic Thinking is Mathematical Thinking)}}
+
+  Now, we can write:
+
+  \begin{codeblock}
+    fun findStudentGrade (student, assignment) grades_file =
+      bind (readFile grades_file) (fn contents =>
+      bind (parseGrades contents) (fn grades =>
+      lookup (student, assignment)))
+  \end{codeblock}
+
+  Now, much more readable!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Infix \code{bind}}
+
+  Some enthusiasts also enjoy defining \code{bind} as an infix operator.
+
+  Traditionally, this is named \code{>>=}.\footnotemark
+
+  They define: 
+  \begin{codeblock}
+    infix >>=
+
+    fun x >>= f = bind (x, f)
+  \end{codeblock}
+
+  to get:
+  \begin{codeblock}
+    fun findStudentGrade (student, assignment) grades_file =
+      readFile grades_file >>= (fn contents =>
+      parseGrades contents >>= (fn grades =>
+      lookup (student, assignment)))
+  \end{codeblock}
+
+  \footnotetext[3]{This is big in the Haskell community.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Linguistics of Functional Programming}
+
+  Using operators like \code{>>=} and \code{|>}, which are really just
+  higher-order functions, we can achieve vastly more readable code, which
+  leverages simple principles to simplify program logic that would 
+  otherwise bloat a program.
+
+  It seems like a little, but code readability is really important when 
+  maintaining a codebase! We posited on the first day that functional 
+  programming is a refinement on our ability to communicate, and this is 
+  a concrete example of how small language features can provide almost 
+  linguistic benefits.
+\end{frame}
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+

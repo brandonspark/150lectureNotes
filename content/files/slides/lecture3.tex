@@ -351,35 +351,6 @@
 \sectionSlide{2}{Patterns and Constructors}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Matching}
-
-  Function clauses demonstrate a more general concept called 
-  \term{pattern matching}.
-
-  \vspace{\fill}
-
-  \defBox{\, A \term{pattern} is a way to describe the \textbf{form} of a value. A
-  value can either match to a pattern, or not. }
-
-  \vspace{5pt}
-
-  The goal is that patterns should be used to describe the values that you are interested
-  in.
-
-  \vspace{\fill}
-
-  Here are some examples of patterns:
-  \begin{itemize}
-    \item variables, such as \code{x}, \code{y}, \code{z}. These produce a binding on a successful match.
-    \item the \term{wildcard} pattern, \code{_}. This matches \textbf{all} values, and 
-    produces no binding.
-    \item constants, such as \code{1}, \code{"hi"}, and \code{true}
-    \item tuples, where each entry is itself a pattern. For instance, \code{(_, x, 2)} is 
-    a valid pattern.
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
   \frametitle{Pattern Matching and Function Clauses}
 
   We write function clauses in the general form as:

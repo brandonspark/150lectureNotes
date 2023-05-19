@@ -2,5 +2,9 @@
 
 dateString=$(date '+%Y%m%d')
 
+cp img/$1.png img/title.png
+
 ./slice $1
-make www "SRC=slides/$1.tex" "PREFIX=lecture$1" "NUM=$1"
+make www "SRC=slides/$1.tex" "PREFIX=$1" "NUM=$1"
+
+rm -f img/title.png 

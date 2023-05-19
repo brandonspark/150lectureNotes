@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{1 - Prologue} % TODO
     \subtitle{Awesome slides with an awesome subtitle} % TODO
-    \date{19 April 2023} % TODO
+    \date{16 May 2023} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -100,7 +100,259 @@
   \tableofcontents
 \end{frame}
 
-\sectionSlide{1}{The Philosophy of Functional Programming}
+\sectionSlide{1}{Administrivia}
+
+\begin{frame}[fragile]
+  \frametitle{Myself}
+
+  I'm an alum who graduated last year with a degree in computer science from CMU.
+
+  \vspace{\fill}
+
+  I TA'd 150 for three years while I was at CMU, and I currently work a 
+  full-time job as a software engineer at a security company called 
+  {\color{blue}\href{https://semgrep.dev/}{Semgrep}}, doing functional 
+  programming\footnotemark for program analysis.
+
+  \vspace{\fill}
+
+  This means I am uniquely equipped as someone who works in the industry, to say that
+  \textbf{functional programming is really useful}.
+
+  \vspace{\fill}
+
+  \noteBox{\, \textbf{I am not a professor}.}
+
+  \footnotetext[1]{Using a language very similar to the one you will learn in this class.}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{The Course Staff}
+
+    \begin{center} 
+      \includegraphics[width=0.12\columnwidth]{nancy} \qquad \qquad \qquad
+      \includegraphics[scale=0.3]{me_smaller.jpg} \qquad \qquad \qquad
+      \includegraphics[width=0.12\columnwidth]{sonya} 
+    \end{center}
+    \begin{center} 
+      \large Nancy \qquad \qquad \quad
+      \Large Brandon Wu \qquad \qquad \quad 
+      \large Sonya
+    \end{center}
+    
+    \vspace{\fill}
+
+    \begin{center}\begin{tabular}{c c c c c c c c }
+      Kaz & Deya & Caroline & Stephen & Brandon & Michael \\  
+      \includegraphics[width=0.1\columnwidth]{kaz} &
+      \includegraphics[width=0.1\columnwidth]{deya} &
+      \includegraphics[width=0.1\columnwidth]{caroline} &
+      \includegraphics[width=0.1\columnwidth]{stephen} &
+      \includegraphics[width=0.1\columnwidth]{brandon_little} &
+      \includegraphics[width=0.1\columnwidth]{michael} \\
+    \end{tabular}\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Course Logistics}
+
+  \begin{itemize}
+    \item Homework every week -- due on Tuesdays or Thursdays (see the lecture schedule!) 
+    \item Turn in assignments via Gradescope
+    \item Receive assignments via Canvas
+    \item Piazza for any questions
+    \item If you are not in all of \{ Gradescope, Piazza, Canvas \} please let me know
+    \item Slides, course policy, and other information at the {\color{blue}\href{http://www.cs.cmu.edu/~15150/}{course website here}}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Schedule}
+  \begin{center}
+    \large
+    \color{blue}
+    \href{https://docs.google.com/spreadsheets/d/1Q6utpsc1vm2WbW2aDyR4mGiFoDJSiBsVSiQmkBarqT0/edit?usp=sharing}{The full summer schedule can be found here (click me!)}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Grading}
+
+  The grading policy for this semester will follow a \textit{choose-your-own-adventure} format.
+  
+  \pause
+  \vspace{\fill}
+
+  There are two tracks of grades that we will support, the "Lecture Track" and the "Homework Track".
+
+  \pause
+  \vspace{\fill}
+
+  The Lecture Track is for students who would like to earn points via lecture attendance. Homework
+  will count for 42\% of the final grade, and lecture attendance will be 3\%.
+
+  \vspace{5pt}
+
+  The Homework Track is for students who would rather not be graded for lecture attendance. Homework
+  will instead count for 45\%, and there will be no grading on lecture attendance.
+
+  \vspace{\fill}
+
+  Grading scheme selection will occur via Piazza after the first week.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Grading: Lecture Track}
+
+  \begin{minipage}{0.59\textwidth}
+    (visualized via \% of Farnam) \\
+
+    \vspace{\fill}
+
+    \begin{itemize}
+      \item Homework: 42\%
+      \item Lecture Attendance: 3\%
+      \item Lab Attendance: 10\%
+      \item Midterm 1: 10\%
+      \item Midterm 2: 15\%
+      \item Final: 20\%
+    \end{itemize}
+  \end{minipage}
+  \begin{minipage}{0.4\textwidth}
+    \includegraphics[scale=0.45]{farnam_lecture}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Grading: Homework Track}
+
+  \begin{minipage}{0.59\textwidth}
+
+    (visualized via \% of Farnam) \\
+
+    \vspace{\fill}
+
+    \begin{itemize}
+      \item Homework: 45\%
+      \item Lab Attendance: 10\%
+      \item Midterm 1: 10\%
+      \item Midterm 2: 15\%
+      \item Final: 20\%
+    \end{itemize}
+  \end{minipage}
+  \begin{minipage}{0.4\textwidth}
+    \includegraphics[scale=0.45]{farnam_homework}
+  \end{minipage}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{House System}
+  
+  This semester, we are implementing a house system\footnotemark.  
+
+  \pause
+  \vspace{\fill}
+
+  The class has been divided into three labs of roughly 20 students, which each forms a
+  "house". Each house will be eligible to earn points on the merits of:
+  \pause
+  \begin{itemize}
+    \item Asking good questions on Piazza \pause 
+    \item Giving good answers on Piazza \pause
+    \item Answering questions during lecture
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  \textbf{Twice a semester, the house with the most points will earn boba for their entire lab}.
+
+  \footnotetext[2]{Yes, like Harry Potter.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Active Learning}
+
+  It is better to learn by exercising your mind actively, rather than passively absorbing
+  information in a lecture setting.
+
+  \pause
+  \vspace{\fill}
+
+  To facilitate this, we will have active learning exercises during lecture. There will be
+  a short (roughly 5 minute) quiz in the middle of every single lecture, that \textbf{will not 
+  count towards your grade}. Instead, it will simply be used by TAs to judge where your
+  understanding may be lacking.
+
+  \pause
+  \vspace{\fill}
+
+  In particular, these quizzes are a whole-house effort! Every house will take the quiz 
+  together, and whichever house scores the highest cumulatively earn points for their house,
+  and be crowned that lecture's victor, along with earning other prizes.
+
+  \pause
+  \vspace{\fill}
+
+  This means that winning the house competition is a whole-house effort! It's in your interest
+  to discuss with others during these quizzes, and fill in gaps in yours and others' 
+  understanding.
+\end{frame}
+  
+\begin{frame}[fragile]
+  \frametitle{Wellness}
+
+  \textbf{Your health is important.}
+
+  \pause
+  \vspace{\fill}
+
+  The things you will learn in this class are important, but remember that
+  \textbf{it's just a class}. If you're sleeping 4 hours a night, skipping meals, 
+  or otherwise compromising your health for the sake of this class, \textbf{something
+  is wrong}.
+
+  \pause
+  \vspace{\fill}
+
+  Things that are required:
+  \begin{itemize}
+    \item Sleeping \pause
+    \item Eating \pause 
+    \item Socializing (for most people) \pause 
+    \item Paying taxes 
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+  
+  Things that are not required:
+  \begin{itemize}
+    \item Finishing 150 homework at the expense of these four things\footnotemark 
+  \end{itemize}
+
+  \footnotetext[3]{Especially the last one.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Wellness}
+  Take care of yourself, and if you're experiencing difficulties, don't hesitate to
+  reach out to myself or a TA you trust. For more severe cases, please go to
+  {\color{blue}\url{http://www.cmu.edu/counseling/}}
+
+  \pause
+  \vspace{\fill}
+
+  My job is to teach you, not to ruin your life. If you're struggling, \textbf{talk to me}.
+  Let's make a plan to help you succeed.
+\end{frame}
+
+
+
+
+\sectionSlide{2}{The Philosophy of Functional Programming}
 
 \begin{frame}[fragile]
   \frametitle{What is Functional Programming?}
@@ -193,9 +445,17 @@
     Good programming should be \textbf{descriptive}. \\
 
     \vspace{\fill}
-
-    \includegraphics[scale=0.35]{goto.jpeg}
   \end{center}
+
+  \centerline{
+    \begin{minipage}{0.4\textwidth}
+      \pause
+      \includegraphics[scale=0.35]{goto.jpeg}
+    \end{minipage}
+    \begin{minipage}{0.4\textwidth}
+      \includegraphics[scale=0.5]{spaghetti.png}
+    \end{minipage}
+  }
 
   \note{
     So how can we characterize good programming? \\ 
@@ -446,7 +706,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, Code is \textit{pure} if it does not have any observable side effects, and always
+  \defBox{\, A function is \textit{pure} if it does not have any observable side effects, and always
   returns the same outputs, given the same inputs.}
 
   \pause
@@ -495,19 +755,18 @@
 
   In this class, \textbf{almost every single function you write will be recursive}.
 
+  \pause
   \vspace{\fill}
 
   Many problems in computer science lend themselves to a recursive formulation. These
   are naturally solved by recursive solutions.
 
+  \pause
   \vspace{\fill}
 
   We will see that lists, trees, and other important structures employ a simple 
   recursive description.
 
-  \vspace{\fill}
-
-  \code{semgrep-ext}: So do programs!
 \end{frame}
 
 \begin{frame}[fragile]
@@ -515,17 +774,20 @@
 
   Programs are simpler and more understandable when viewed in a mathematical lens.
   
+  \pause
   \vspace{\fill}
 
   Functional programming allows reasoning about programs and their subcomponents
   in the same way that you would reason about a mathematical expression. 
 
+  \pause
   \vspace{\fill}
 
   Furthermore, mathematical analysis of code grants techniques to reason about 
   things like time complexity, parallel time complexity, and program correctness.
   Functional programs are very amenable to proofs of correctness! 
 
+  \pause
   \vspace{\fill}
 
   We're not just in the business of writing code, but \textit{correct} code!
@@ -537,17 +799,20 @@
 
   Before, we described programming as an explanatory, communicative process.
 
+  \pause
   \vspace{\fill}
 
   We also stated how \textit{descriptivity} and \textit{maintainability} are 
   key goals for good programming.
 
+  \pause
   \vspace{\fill}
 
   Functional programming places a great emphasis on \textit{types}, which serve 
   the purpose of documenting the purpose of code, and restricting the range of 
   behaviors that a program is allowed to exhibit.
   
+  \pause
   \vspace{\fill}
 
   In this way, types guide the structure of a program, by providing clean interfaces
@@ -566,16 +831,50 @@
 
 \end{frame}
 
-\sectionSlide{2}{Types, Expressions, Values}
+\sectionSlide{3}{Types, Expressions, Values}
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{The Standard ML Language}
 
   In this class, we will be using a functional programming language called Standard ML (SML).
 
+  \pause
   \vspace{10pt}
 
-  Mantra: In Standard ML, \textbf{computation is evaluation}.
+  \customBox{Mantra}{\, In Standard ML, \textbf{computation is evaluation}.}
+
+  \pause
+  \vspace{\fill}
+
+  Evaluation of what, though? The most fundamental unit of an SML program is called an \term{expression}.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, An \term{expression} is the building block of an SML program. These 
+  may or may not evaluate to a value.}
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, A \term{value} is a \textbf{final answer}, that cannot be simplified further.}
+
+  \pause
+  \vspace{\fill}
+
+  Examples of values include \code{2}, \code{\"hi\"}, and \code{true}.
+
+  \vspace{5pt}
+
+  Examples of expressions include \code{2}, \code{2 + 2}, and \code{4 * 5}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Evaluation}
+
+  To evaluate an expression like \code{(2 + 3) * 4}, we apply simplifying rules. So we get:
+
+  \pause
 
   { \Large
   \begin{align*}
@@ -584,17 +883,26 @@
   \end{align*}
   }
 
+  \pause
   \vspace{\fill}
 
   \defBox{\, We use the $\stepsTo$ symbol to denote \term{stepping} (or \term{reducing}) of expressions,
   which means to simplify an expression by one step.}
 
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, We use the $\stepsTo^*$ symbol to denote the application of the $\stepsTo$ relation
+  an arbitrary number of times, usually until completion.} 
+
+  \pause
   \vspace{5pt}
   
-  So the expression \code{5 * 4} \textit{steps to} the expression \code{20}.
+  So the expression \code{5 * 4} \textit{steps to} the expression \code{20}, and the expression
+  \code{(2 + 3) * 4} $\stepsTo^*$ \code{20}.
 \end{frame}
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{Computation as Evaluation}
 
   We call the previous slide the \term{computation trace} of the expression \code{(2 + 3) * 4}. \\ 
@@ -602,22 +910,6 @@
   \vspace{5pt}
 
   The goal of a computation trace is to produce a value.
-
-  \pause
-
-  \vspace{10pt}
-
-  \defBox{\, An \term{expression} is the building block of an SML program. These 
-  may or may not step to another expression.}
-
-  \pause
-  \vspace{\fill}
-
-  \defBox{\, A \term{value} is a \textbf{final answer}, that cannot be simplified further.}
-
-  \vspace{5pt}
-
-  Examples include \code{2}, \code{\"hi\"}, and \code{true}.
 
   \pause
   \vspace{\fill}
@@ -632,7 +924,7 @@
 
 \end{frame}
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{Computation without Valuation}
 
   We said before that the goal of a computation trace is to produce a value, but not 
@@ -658,10 +950,9 @@
     \item Raising an exception
     \item Looping forever
   \end{itemize}
-
 \end{frame}
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{Computation without Meaning}
 
   In Standard ML, the string concatenation operator is \code{^}.
@@ -685,7 +976,7 @@
   \textbf{Standard ML will not.}
 \end{frame}
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{Types}
 
   \defBox{\, A \term{type} is a specification of the behavior of a piece of code. It 
@@ -713,7 +1004,7 @@
   the expression \code{"1" ^ 50} \textbf{does not have a type}.
 \end{frame}
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{Typing Trace}
 
   How does Standard ML know the type of an expression?
@@ -760,7 +1051,7 @@
   So \code{1 + (2 + 3) : int}.
 \end{frame}
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{Ill-Typing Trace}
 
   What about for \code{"1" ^ 50}?
@@ -799,7 +1090,7 @@
 \end{frame}
 
 
-\begin{frame}[plain]
+\begin{frame}[fragile]
   \frametitle{Static Typing}
 
   SML is a \term{statically typed} language, meaning that all typing rules are applied
@@ -818,81 +1109,176 @@
   \keyBox{\, \textbf{Ill-typed programs are not evaluated.} } 
 \end{frame}
 
-\begin{comment}
-  So here's my prolegomena for you. Before we can do any functional programming, I need to
-  set the stage a little bit.
-
-  How many of you have heard of functional programming? Raise your hands, now.
-
-  OK, now how many of you have ever done functional programming?
-
-  Raise your hands if you love functional programming (I raise my hand)
-
-  Before I can teach you functional programming, I think it's necessary to be transparent
-  with you. Functional programming is a style of programming, closely associated with some
-  particular programming languages, like Haskell, or the one we will use in this class,
-  Standard ML. 
-  
-  Here's the fact. Functional programming languages are not very popular. Almost all of 
-  you will never touch the language we will use in this class again, after college. There's
-  many people in the world who have never used a functional programming language in their
-  life, and there's many computer science programs in the country that don't even teach
-  the subject. In this class, you are going to face problems and scenarios that are different 
-  than anything that you've ever seen before, and you're going to wonder "why can't I just 
-  do it a different way?" 
-
-  You might be thinking, "this is a weird way to sell me on your class", but humor me for a second.
-  I'm going somewhere with this.
-
-  All programming is functional programming.
-
-  I'm not here to try and teach you a singular, monolithic tool. The ideas that we are going 
-  to go over the course of this summer are ones that permeate far beyond a single language, 
-  or a single tool, or a single class. What you are going to learn in this class are general 
-  principles that are going to make you better programmers, better computer scientists, and 
-  better engineers. I'm not asking for you to love functional programming. I'm asking to change
-  your life. And that, I believe, is the true merit of functional programming.
-
-  So yes, functional programming is a niche topic. It's not something that's taught in every
-  university in the world. But look where you're sitting now. This is Carnegie Mellon, home
-  to the best computer science program in the entire world, and you have the privilege of
-  learning something that very few other programs even teach at all. You're learning something
-  far from obscure -- everyone else is just playing catch-up.
-
-  Welcome to 15-150! That's the end of my prolegomena to you. 
-\end{comment}
+\sectionSlide{4}{Declarations}
 
 \begin{frame}[fragile]
-    \frametitle{The Course Staff}
+  \frametitle{Function Declarations}
 
-    \begin{center} \includegraphics[scale=0.25]{me_smaller.jpg} \end{center}
-    \begin{center} \Large Brandon Wu \end{center}
-    
-    \vspace{\fill}
+  We've so far discussed types and values, but we haven't introduced the machinery
+  we need to actually work in a programming language! We need some way to declare
+  variables and functions.
 
-    \begin{center}\begin{tabular}{c c c c c c}
-      TA 1 & TA 2 & TA 3 & TA 4 & TA 5 & TA 6 \\  
-      \includegraphics[scale=0.15]{default} &
-      \includegraphics[scale=0.15]{default} &
-      \includegraphics[scale=0.15]{default} &
-      \includegraphics[scale=0.15]{default} &
-      \includegraphics[scale=0.15]{default} &
-      \includegraphics[scale=0.15]{default} \\
-    \end{tabular}\end{center}
+  \pause
+  \vspace{\fill}
 
+  In SML, we can declare functions using the \code{fun} syntax:
+
+  \vspace{5pt}
+
+  \begin{codeblock}
+    fun double (n : int) : int = n + n
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This comprises of a few parts:
+  \begin{itemize}
+    \item the \code{fun} keyword that signals the start of the declaration
+    \item the name of the function (\code{double})
+    \item the arguments to the function, annotated with type (\code{n} and \code{int})
+    \item the return type of the function (\code{int})
+    \item the body of the function \code{n + n}
+  \end{itemize}
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Function Application}
+
+  To use the function we just defined, we have to \term{apply} it. This is done via
+  placing the function expression directly adjacent to the argument that it is meant 
+  to take in. 
+
+  \pause
+  \vspace{\fill}
+  
+  So for instance, instead of writing \code{double(2)} like we would in some programming
+  languages, we would write \code{double 2}. This is known as \term{function application}.
+
+  \pause
+  \vspace{\fill}
+
+  So we would have that \code{double 2} $\stepsTo$ \code{4}.
+\end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Course Logistics}
+  \frametitle{Typing for Functions}
 
-    \begin{itemize}
-      \item Homework every week -- due on <date>
-      \item Turn in assignments via Gradescope
-      \item Receive assignments via Canvas
-      \item Piazza for questions, TA help
-    \end{itemize}
+  Since \code{double} is a function which takes in an \code{int} and returns an \code{int},
+  we would refer to it as having the \term{function type} \code{int -> int}. 
 
+  \pause
+  \vspace{\fill}
+  
+  How do we know that \code{double : int -> int}, however? Is it just because we annotated
+  it as taking in \code{int} and returning \code{int}?
+
+  \pause
+  \vspace{\fill}
+
+  That isn't true, however, because the following declaration fails to type-check, and thus
+  will not be executed by Standard ML:
+
+  \vspace{5pt}
+
+  \begin{codeblock}
+    fun double (n : int) : string = n + n
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  In reality, SML is checking the type of \code{double} to make sure that it is consistent
+  with the annotations that we state.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Typing for Functions}
+
+  \begin{codeblock}
+    fun double (n : int) : int = n + n
+  \end{codeblock}
+
+  \pause 
+
+  To check the type of \code{double}, SML will take our word for what the input type
+  of \code{n} is, here.
+
+  \pause
+  \vspace{\fill}
+
+  It will then try to produce a type for the body of the function, \textit{given that}
+  \code{n : int}. If that matches up with the return type as stated, then the function is
+  well-typed.
+
+  \pause
+  \vspace{\fill}
+
+  In this case, we see that if \code{n : int}, then by our previous logic \code{n + n : int},
+  which matches the return type. When we change it to \code{string} however, that becomes
+  different, so the declaration is rejected as ill-typed.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Typing for Function Application}
+
+  How do we know that \code{double 2} is well-typed?
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, The typing rule for function application is that \code{e1 e2 : t2} iff
+   \code{e1 : t1 -> t2} and \code{e1 : t1}, for some types \code{t1}, \code{t2}.}
+
+   \pause
+  \vspace{\fill}
+
+  In essence, this is saying applying a function only returns a type \code{t2} if
+  the function has type \code{t1 -> t2}, and it is given an input of type \code{t1}.
+
+  \pause
+  \vspace{\fill}
+
+  In this case we know \code{double 2 : int} if \code{double : int -> int} and \code{2 : int}.
+
+  \pause
+  \vspace{3pt}
+
+  We know \code{double : int -> int}, because of our previous reasoning. 
+
+  \pause
+  \vspace{3pt}
+
+  We also know that \code{2 : int}.
+
+  \pause
+  \vspace{\fill}
+
+  So \code{double 2 : int}, the return type of \code{double}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Variable Declarations}
+
+  Now we need to cover how to declare variables. The key word of interest here is
+  \code{val}.
+  
+  \vspace{\fill}
+
+  \begin{codeblock}
+    val favoriteCourseNumber : int = 150
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  It functions similarly to a function declaration, but there are now no arguments
+  to type-annotate.
+
+  \pause
+  \vspace{\fill}
+
+  We will have more to say about variable declarations in the next lecture.
 \end{frame}
 
 \begin{frame}[plain]
