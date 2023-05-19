@@ -10,6 +10,10 @@
 *.swo
 *.fdb_latexmk
 *.fls
+*.pdf
+*.nav
+*.snm
+*.vrb
 *.__afs*
 content/img
 title.png
