@@ -172,8 +172,50 @@
     {\lstinline[language=sml,style=15150code,#1]`#2`}%
 \fi}}
 
+\usepackage[T1]{fontenc}
+
+\makeatletter
+\newenvironment{btHighlight}[1][]
+{\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\bt@HL@box[bt@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\btHL[1][]{%
+  \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
+}
+\def\bt@HL@endenv{%
+  \end{btHighlight}%   
+  \egroup
+}
+\newcommand{\bt@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=yellow!45,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
+\newenvironment{atHighlight}[1][]
+{\begingroup\tikzset{at@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\at@HL@box[at@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\atHL[1][]{%
+  \begin{atHighlight}[#1]\bgroup\aftergroup\at@HL@endenv%
+}
+\def\at@HL@endenv{%
+  \end{atHighlight}%   
+  \egroup
+}
+\newcommand{\at@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=red!45,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+\makeatother
+
 % code block
-\lstnewenvironment{codeblock}[1][]{\lstset{language=sml,style=15150code,numbers=none,#1,escapechar=&}}{}
+\lstnewenvironment{codeblock}[1][]{\lstset{language=sml,style=15150code,numbers=none,#1,moredelim=**[is][\btHL]{`}{`},moredelim=**[is][\atHL]{&}{&}}}{}
 % Python code block
 \lstnewenvironment{pythoncodeblock}[1][]{\lstset{language=python,style=15150code,numbers=none,#1}}{}
 % code file
