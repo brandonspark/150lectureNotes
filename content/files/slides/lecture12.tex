@@ -1,0 +1,868 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{F48C6B}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{A827E4} % the primary color of the slide borders
+    \newcommand{\bgColor}{eee6ff}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Title} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  Last time, we learned about \term{continuation-passing style}. We learned that
+  we could make our control flow even more explicit by, instead of implicitly
+  using the return values of recursive functions, instead passing lambda expressions
+  (continuations) denoting the computation to be done next to those recursive functions.
+
+  \vspace{\fill}
+
+  This separated concerns when it came to functions which had branching control
+  flow behavior, as well as allowing us to achieve clean tail-recursive code,
+  by drawing a distinction between \textbf{writing now} and \textbf{remembering later}.
+
+  \vspace{\fill}
+
+  We carried out a mechanistic process of CPS translation on various functions to
+  achieve this.
+\end{frame}
+
+\sectionSlide{1}{Exceptions}
+
+\begin{frame}[fragile]
+  \frametitle{Extensional Behaviors}
+
+  Recall our definition for all the possible behaviors of an expression:
+  \begin{itemize}
+    \item Evaluate to a value
+    \item Loop forever
+    \item \textbf{Raise an exception}
+  \end{itemize}
+
+  \vspace{\fill}
+
+  Until now, we've given an intentionally bare bones treatment of 
+  exceptions. Now, it is time to dive into exceptions in more detail. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Exceptional Language}
+
+  One of the first examples of expressions that we ever saw was the 
+  expression \code{1 div 0}. This expression raises an exception, 
+  when evaluated.
+
+  \begin{codeblock}
+    Standard ML of New Jersey (64-bit) v110.99.3 [built: Thu Jul 28 00:35:16 2022]
+    - 1 div 0;
+
+    uncaught exception Div [divide by zero]
+      raised at: stdIn:1.4-1.7
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Exceptions are baked into many common processes in SML. In fact, there are
+  three very essential ones we will discuss today!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Kinds of Exceptions}
+
+  We see exceptions like \code{Div}, which are specific to certain functions.
+
+  \vspace{\fill}
+
+  There are more fundamental exceptions which are raised upon given patterns
+  of behaviors in SML. These exceptions are:
+  \begin{enumerate}
+    \item \code{Match}, which is raised when a nonexhaustive match receives
+    an input that fails to match any of its cases
+    \item \code{Bind}, which is raised when a \code{val} binding tries to
+    bind something matching a particular pattern, and receives one which
+    does not match
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{Match} Exception}
+
+  If you were to write the following lambda expression in SML:
+  \begin{codeblock}
+    val x = fn 1 => 2
+  \end{codeblock}
+
+  you would receive the following warning:
+  \begin{codeblock}
+    stdIn:1.10-1.19 Warning: match nonexhaustive
+              1 => ...
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  What happened? We didn't specify what would happen on all possible inputs!
+  The function is only defined on the input \code{1}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{Match} Exception}
+
+  This is perfectly legal, and SML will let you proceed, but upon being given
+  an invalid input:
+  \begin{codeblock}
+    - x 2;
+
+    uncaught exception Match [nonexhaustive match failure]
+      raised at: stdIn:1.19
+  \end{codeblock}
+  we get an exception \code{Match}.
+
+  \vspace{\fill}
+
+  In essence, you could think of all such nonexhaustive cases (and this function,
+  in particular) as being defined implicitly as
+  \begin{codeblock}
+    fn 1 => 2 | _ => raise Match
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{Bind} Exception}
+
+  An archaic way of writing test cases is to try to bind an expression to a
+  constant pattern:
+  \begin{codeblock}
+    val 6 = fact 3
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This will proceed without a hitch. If the pattern were to not match the
+  returned value, however:
+
+  \begin{codeblock}
+    - val 5 = fact 3;
+    stdIn:3.5-3.15 Warning: binding not exhaustive
+              5 = ...
+
+    uncaught exception Bind [nonexhaustive binding failure]
+      raised at: stdIn:3.5-3.15
+  \end{codeblock}
+
+  we would now get an exception \code{Bind} being raised.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Why Exceptions?}
+
+  We see that \code{Bind} and \code{Match} are more consequences
+  of programming in SML, and aren't specific to any functions' logic.
+
+  \vspace{\fill}
+  
+  For exceptions like \code{Div}, we use them to \textit{escape} from
+  having to return a value, when given some input. Instead of returning
+  a value, we simply abort execution.
+
+  \vspace{\fill}
+
+  At this point in the semester, we have seen functions which return
+  optional values, which might beg the question -- why use exceptions
+  in the first place?
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Exceptions versus Options}
+
+  We see that for any function which raises exceptions, we can produce
+  an equivalent function which returns an optional value, which instead
+  returns \code{NONE} in any exceptional cases:
+
+  \begin{codeblock}
+    fun safeDiv (n, 0) = NONE 
+      | safeDiv (n, d) = SOME (n div d)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Why use exceptions at all, then, when they might cause a program to
+  unexpectedly crash?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Difference in Specification}
+
+  Let's take a look at the following specifications:
+
+  \spec
+    {div}
+    {int * int -> int}
+    {\code{n > 0}}
+    {\code{div (n, d)} evaluates to the
+    floor of \code{n} divided by \code{d}}
+
+  \spec
+    {safeDiv}
+    {int * int -> int option}
+    {\code{true}}
+    {\code{div (n, d)} evaluates to \code{NONE} if \code{d} is \code{0}, 
+    and \code{SOME x} otherwise, where x is the
+    floor of \code{n} divided by \code{d} }
+
+  They look rather similar! The difference is that \code{safeDiv} has 
+  moved the precondition into the type of its return value.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Composing with Preconditions versus Types}
+
+  In practice, \code{safeDiv} turns out to be the safer option,
+  to no surprise.
+
+  \vspace{\fill}
+
+  Forcing the caller to handle the exceptional case by handling the
+  \code{NONE} is a \term{type-level distinction}, that causes code which
+  does not acknowledge the possible failure to not compile.
+
+  \vspace{\fill}
+
+  This is a really strong enforcement, and leads to code which cannot
+  fail to address the failure!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Exceptional Calculation}
+
+  Occasionally, however, this can prove to be more of a burden than a
+  safety net.
+
+  \vspace{\fill}
+
+  For instance, we might have occasions where we know for sure that
+  an exceptional case cannot be reached. Suppose we are implementing
+  the following function to collect the average grade of every 
+  student in 150:
+  
+  \begin{codeblock}
+    fun averageGrade (grades : int list) : int =
+      (List.foldr op+ 0 grades)
+      div
+      (List.length grades)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Suppose that we wanted to be rid of exceptions, however:
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Optional Calculation}
+
+  \begin{codeblock}
+    fun averageGrades (grades : int list) : `int option` =
+      (List.foldr op+ 0 grades)
+      `safeDiv`
+      (List.length grades)
+  \end{codeblock}
+
+  Now, it is the responsibility of the caller to handle the \code{NONE} case!
+
+  \vspace{\fill}
+
+  The only sensible thing to do (if not raising an exception) is often just to
+  propagate the \code{option}, and cause all of the dependencies to also need
+  to return optional values. 
+
+  \vspace{\fill}
+
+  This quickly gets messy.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Implicit Preconditions}
+
+  The thing is, this entire mess was never really necessary. 
+
+  \vspace{\fill}
+
+  Unless something is deeply wrong, it's a fairly safe bet that
+  the database containing grade data for the entire class  
+  isn't empty.\footnotemark
+
+  \vspace{\fill}
+
+  At a certain point, we need to be able to trust the data that we input.
+  Although there is the \textit{possibility} of a failure case, in realistic
+  situations, quite often there is no reason to believe that they are possible.
+
+  \vspace{\fill}
+
+  So in this case, we might prefer the exceptional behavior, because it leads
+  to cleaner code in a hypothetically impossible case. We have an 
+  \textit{implicit precondition} on our inputs.
+
+  \footnotetext[1]{If it is, I have bigger problems.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Footguns}
+
+  This is exactly the logic that has caused a million and one bugs in production
+  code before.
+
+  \vspace{\fill}
+
+  This is why judicious use of exceptions is important! In some cases, it really
+  is OK to raise an exception in a failure case, depending on how bad the 
+  failure case is.
+
+  \vspace{\fill}
+
+  It might seem that an unrecoverable error that completely crashes the 
+  running process might be worth no amount of code golfing. Luckily,
+  SML does have ways of dealing with raised exceptions. 
+\end{frame}
+
+\sectionSlide{2}{Using Exceptions}
+
+\begin{frame}[fragile]
+  \frametitle{Raising Exceptions}
+
+  We can raise exceptions ourselves, as you may have seen many times before.
+
+  \vspace{\fill}
+
+  What expressions are we allowed to raise? SML has a type of exception values,
+  which is called \code{exn}. This may stand for "exception name". 
+
+  \vspace{\fill}
+
+  So for instance, valid constructors of type \code{exn} include:
+  \begin{itemize}
+    \item Match 
+    \item Bind 
+    \item Div
+  \end{itemize}
+
+  but not \code{Fail : string -> exn}, which takes in an additional argument
+  of type \code{string} before it can be raised. 
+
+  \vspace{\fill}
+
+  We use the syntax \code{raise e} to raise exception \code{e}, given that
+  \code{e : exn}. 
+
+  \vspace{\fill}
+
+  \noteBox{\,}{\code{raise} is not a function, it merely looks like one. So
+  \code{List.map raise} is not a valid expression.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Raising Exceptions}
+
+  We said that \code{raise e} is an expression which raises the expression
+  \code{e}. To evaluate, however, it needs to have a type, but what should
+  its type be?
+
+  \vspace{\fill}
+
+  Given that it never returns a value, it doesn't actually matter. For our
+  purposes, it's important to use that an expression of type \code{t} 
+  returns a value of type \code{t}, \textit{if it returns at all}.
+
+  \vspace{\fill}
+
+  Since \code{raise} never returns, we are free to give it any type. So
+  \code{raise e} has type \code{'a}, in that it can take on any type. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Handling Exceptions}
+
+  SML provides a language construct called \code{handle}. Here's an example
+  of how we might use it, instead:
+
+  \begin{codeblock}
+    fun reportGrades (grades : (string * int) list) =
+      let
+        val grades = List.map snd records
+      in
+        "The grade average was " ^ Int.toString (averageGrade grades) 
+      end
+      handle Div => "ERROR: No grades found" 
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  In this case, we use \code{handle} to evaluate the body of the function to
+  an error string in the case where \code{Div} is raised. Otherwise, we 
+  evaluate normally. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Handling, Generally}
+
+  A \code{handle} expression has the following behaviors: 
+
+  \vspace{\fill}
+
+  The expression 
+  \begin{codeblock}
+    e handle p1 => e1 | ... | pn => en
+  \end{codeblock}
+
+  has type \code{t} only if \code{e : t}, \code{e1 : t}, ..., \code{en : t}.
+
+  \vspace{5pt}
+
+  In addition, \code{p1}, ..., \code{pn} must all be constructors of type
+  \code{exn}.
+
+  \vspace{\fill}
+
+  The behavior of the above \code{handle} expression is that: 
+  \begin{itemize}
+    \item If the expression \code{e} never raises an exception, then it 
+    evaluates to \code{e}
+    \item If the expression \code{e} raises exception \code{ex}, then
+    it matches to the first \code{pi} that matches \code{ex}
+    \item If the exception \code{e} raises matches none of the
+    \code{handle} cases, it raises that exception again 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A \code{handle} Example}
+
+  Here are some examples of \code{handle} expressions, and how they evaluate:
+
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item \code{raise Div} raises exception \code{Div}
+    \item \code{(raise Div) handle Div => 2} $\hookrightarrow$ \code{2} 
+    \item \code{(raise Div) handle Bind => 2} raises exception \code{Div} 
+    \item \code{(raise Div) handle Bind => 1 | Div => 2} $\hookrightarrow$ \code{2} 
+    \item \code{2 handle Div => 3} $\hookrightarrow$ \code{3}
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Handling Exceptions}
+
+  So in the below example:
+
+  \begin{codeblock}
+    fun reportGrades (grades : (string * int) list) =
+      let
+        val grades = List.map snd records
+      in
+        "The grade average was " ^ Int.toString (averageGrade grades) 
+      end
+      handle Div => "ERROR: No grades found" 
+  \end{codeblock}
+
+  we are saved from needing to handle the possibly exception-raising call to
+  \code{averageGrade}, and instead we simply enclose the program's
+  logic in a \term{handler} which deals with it when we are ready.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Nested Exception Raising}
+
+  The great strength of \code{handle} is that it can be used to handle
+  exceptions from \textit{anywhere inside of the enclosing expression}.
+  
+  \vspace{\fill}
+
+  \keyBox{}{\, For non \code{handle} expressions, if a sub-expression
+  raises an exception, then that expression does too.}
+
+  \vspace{\fill}
+
+  This means that exceptions \textit{propagate outwards} from where
+  they were initially raised. This process continues until they reach
+  the \textit{nearest enclosing handler}, at which point they are
+  possibly handled, or keep going.
+
+  \vspace{\fill}
+
+  This means that, essentially, exceptions allow a program to stop
+  doing what it is doing, and resume control flow at an earlier point
+  in time.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Nonlocal Control Flow}
+
+  So in the expression \code{1 + (3 * (4 div 0)) handle Div => 5}: 
+  
+  \vspace{\fill}
+
+  The expression \code{4 div 0} raises \code{Div}. 
+
+  \vspace{3pt}
+
+  The sub-expression \code{4 div 0} to \code{3 * (4 div 0)} raises \code{Div},
+  so \code{3 * (4 div 0)} raises it too. 
+  
+  \vspace{3pt}
+
+  The sub-expression \code{3 * (4 div 0)} to \code{1 + (3 * (4 div 0))} raises 
+  \code{Div}, so \code{1 + (3 * (4 div 0))} raises it too. 
+
+  \vspace{3pt}
+  
+  The sub-expression \code{1 + (3 * (4 div 0))} to 
+  \code{1 + (3 * (4 div 0)) handle Div => 5} raises \code{Div}. Since this
+  entire expression is a \code{handle}, we match \code{Div} to the
+  handler's first case, and evaluate to \code{5}.
+
+  \vspace{\fill}
+
+  This is an example of \textit{nonlocal control flow}, because when evaluating
+  the expression \code{1 + (3 * (4 div 0))}, our \code{handle} expression
+  lets us skip directly from a deeply nested \code{div} call directly back up
+  to the handled expression!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Exceptions and Options}
+
+  Before, we saw there was a relationship between functions which returned
+  options, and functions who instead raised exceptions.
+
+  \vspace{\fill}
+
+  Using \code{handle}, we can quickly go between these functions. Suppose we
+  have a function \code{f : t1 -> t2} that possibly raises an exception. We can
+  always define \code{f_opt : t1 -> t2} as:
+  \begin{codeblock}
+    fun f_opt x = (SOME (f x)) handle _ => NONE
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \badBox{}{\, It is a really bad idea to use \code{_} in a \code{handle} clause.
+  This is because you might swallow up \textit{any} possible exception, rather
+  than just the one you are interested in. This could obfuscate certain errors.}
+
+  \vspace{\fill}
+
+  If you know the precise exception that \code{f} raises, it's better to case on
+  that here.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Exceptions are a Side Effect}
+
+  Exceptions are what we call a \term{side effect}.
+
+  \vspace{\fill}
+
+  \defBox{}{\, A \term{side effect} is an effect of an expression which is not just
+  computing a value. For instance, reading from a file, printing to the console,
+  or raising an exception.}
+
+  \vspace{\fill}
+
+  Side effects tend to make our definitions of equivalence fuzzy. For instance,
+  with exceptions, we cannot freely exchange the order of unrelated
+  \code{val} bindings without possibly changing the behavior of the program:  
+  \begin{codeblock}
+    val _ = raise Bind 
+    val _ = raise Match 
+  \end{codeblock} 
+  These two bindings are unrelated, but the order in which they happen 
+  matters! This can make mathematical reasoning annoying.
+\end{frame}
+
+\sectionSlide{3}{Custom Exceptions}
+
+\begin{frame}[fragile]
+  \frametitle{An Exceptional \code{fact}}
+
+  Suppose we wanted to revisit our old friend, \code{fact}.
+
+  \begin{codeblock}
+    fun fact 0 = 1
+      | fact n = n * fact (n - 1)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  We know that \code{fact} loops forever on negative inputs. Generally,
+  this is undesirable, because it can be difficult to debug an infinite
+  loop from a program which is just taking a really long time.
+
+  \vspace{\fill}
+
+  Let's define \code{fact_exn}\footnotemark, which raises an exception on negative inputs!
+
+  \vspace{\fill}
+
+  ...But what exception should we raise?
+
+  \footnotetext[2]{Labeling functions which possibly raise an exception 
+  with the suffix \code{_exn} is a common practice in the OCaml language, 
+  and in my opinion, a really good practice.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Raising an Arbitrary Exception}
+
+  We could define the following: 
+  \begin{codeblock}
+    fun fact_exn 0 = 1
+      | fact_exn n = 
+          if n < 0 then 
+            raise Bind
+          else
+            n * fact_exn (n - 1)
+  \end{codeblock}
+  
+  \vspace{\fill}
+
+  But this isn't actually a case where we failed to produce a binding, which
+  is what the \code{Bind} exception is supposed to be for. If we handled
+  \code{Bind} elsewhere outside callers to this function, we might end up
+  in a handler we didn't mean to! 
+
+  \vspace{\fill}
+
+  We could raise \code{Fail "negative number"}, but this becomes problematic
+  to pattern match on. How can we do better?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Extensible Type}
+
+  It turns out, we can! \code{exn} is a special type, because while it can be
+  thought of as the \code{datatype} declared via
+  \begin{codeblock}
+    datatype exn = Match | Bind | Div | Fail of string | ...
+  \end{codeblock}
+  it's actually more special than that! \code{exn} is the only 
+  \term{extensible type}.
+
+  \vspace{\fill}
+
+  \defBox{}{\, An \term{extensible type} is one where constructors can be
+  added to it \textit{after the type is declared}. \code{exn} is the only 
+  example of this in Standard ML.}
+
+  \vspace{\fill}
+
+  We can write something like
+  \begin{codeblock}
+    exception Fact
+  \end{codeblock}
+  to declare a new constructor \code{Fact : exn}, for the \code{exn} type.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Raising a Custom Exception}
+
+  So now, we can define \code{fact_exn} better: 
+  \begin{codeblock}
+    exception Fact 
+
+    fun fact_exn 0 = 1
+      | fact_exn n = 
+          if n < 0 then 
+            raise Fact
+          else
+            n * fact_exn (n - 1)
+  \end{codeblock}
+
+  After this, the expression
+  \begin{codeblock}
+    (SOME (fact_exn (~1))) handle Fact => NONE
+  \end{codeblock}
+  will evaluate to \code{NONE}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Exceptions of Arguments}
+
+  We can also define exceptions which take in arguments:
+  \begin{codeblock}
+    exception Error of string
+
+    fun runProcess (f : unit -> string) : string =
+      ("OUTPUT: " ^ f ()) handle Error s => ("ERROR: " ^ s)  
+  \end{codeblock}
+
+  such that
+  \code{runProcess (fn () => "foo")} $\hookrightarrow$ \code{"OUTPUT: foo"}
+
+  and 
+  \code{runProcess (fn () => raise Error "bad")} $\hookrightarrow$ \code{"ERROR: bad"}
+\end{frame}
+
+\sectionSlide{4}{Exceptional Control Flow}
+
+\begin{frame}[fragile]
+  \frametitle{Implicit Control Flow}
+
+  Exceptions are useful for writing code when we want to quickly be able to escape
+  from some error case!
+
+  \vspace{\fill}
+
+  We can also use them for their control-flow abilities. We saw in the last lecture
+  how we can use continuations to make our control flow explicit, by passing
+  around instructions on what to do in certain cases.
+
+  \vspace{\fill}
+
+  With exceptions, we can go the other way and make our control flow even more implicit,
+  by relying on casing on exceptions are raised. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Exceptional Control Flow}
+  
+  For instance, let's do the \code{search} function using exceptions:
+
+  \spec
+    {searchEHS}
+    {('a -> bool) -> 'a tree -> 'a}
+    {\code{p} is total}
+    {\code{searchEHS p T} raises \code{NotFound} if there is no element in
+    \code{T} that satisfies \code{p}. Otherwise, it returns the first element
+    in its preorder traversal which does.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Exceptional Control Flow}
+  \begin{codeblock}
+    exception NotFound 
+    
+    fun searchEHS p Empty = raise NotFound 
+      | searchEHS p (Node (L, x, R)) = 
+          if p x then
+            x
+          else
+            (searchEHS p L) handle NotFound => searchEHS p R 
+  \end{codeblock}
+
+  In this case, we handle the \code{NotFound} exception, which should be raised
+  by our specification \textit{only} in the case where we fail to find a 
+  satisfying element in that subtree.
+
+  \vspace{\fill}
+
+  This is known as \term{exception-handling style}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Exceptional Control Flow}
+
+  Implicit control flow is generally a bad thing. While functions written in
+  CPS \textit{can} be also written with exceptions, there is little reason to
+  do this in actual code.
+
+  \vspace{\fill}
+
+  This is largely because exceptions are a nightmare to debug. Nonlocal control
+  flow transfer introduces precisely the problem that \code{goto} statements 
+  had, which is a lack of transparency!
+
+  \vspace{\fill}
+
+  Business logic is generally better done without exceptions, but exceptions are
+  great for error cases, when the program just needs to find a way to exit
+  gracefully.
+
+  \vspace{\fill}
+
+  OK, back to the regularly scheduled programming.
+\end{frame}
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
