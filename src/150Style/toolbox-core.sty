@@ -164,13 +164,6 @@
         include, open, use, infix, infixr, o, print
     }
 }
-% code inline
-\newrobustcmd{\code}[2][]{{\sloppy
-\ifmmode
-    \text{\lstinline[language=sml,style=15150code,#1]`#2`}
-\else
-    {\lstinline[language=sml,style=15150code,#1]`#2`}%
-\fi}}
 
 \usepackage[T1]{fontenc}
 
@@ -213,6 +206,14 @@
   }%
 }
 \makeatother
+
+% code inline
+\newrobustcmd{\code}[2][]{{\sloppy
+\ifmmode
+    \text{\lstinline[language=sml,style=15150code,#1]`#2`}
+\else
+    {\lstinline[language=sml,style=15150code,#1]`#2`}%
+\fi}}
 
 % code block
 \lstnewenvironment{codeblock}[1][]{\lstset{language=sml,style=15150code,numbers=none,#1,moredelim=**[is][\btHL]{`}{`},moredelim=**[is][\atHL]{&}{&}}}{}
@@ -317,6 +318,18 @@
     \vspace{10pt}
 
     \color{presentColor} \intermedium{Passcode: #1}
+  \end{center}
+\end{frame}
+}
+
+\newrobustcmd{\questionBreak}[1]{
+\begin{frame}[plain]
+  \begin{center}
+    {\huge \color{presentColor} \intermedium{Any questions?}}
+
+    \vspace{10pt}
+
+    \color{presentColor} \intermedium{Ask anonymously: menti.com with code #1}
   \end{center}
 \end{frame}
 }

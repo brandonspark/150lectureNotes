@@ -14,7 +14,7 @@
     % Color settings
     \useauxtrue
     
-    \newcommand{\auxColor}{1A5F7A}     % the color of note boxes and stuff
+    \newcommand{\auxColor}{0f8a73}     % the color of note boxes and stuff
     \newcommand{\presentColor}{002B5B} % the primary color of the slide borders
     \newcommand{\bgColor}{a6c4e3}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
@@ -33,8 +33,8 @@
     \usepackage{lectureSlides}
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Induction and Recursion} % TODO
-    \subtitle{Awesome slides with an awesome subtitle} % TODO
-    \date{01 January 2020} % TODO
+    \subtitle{Iterating to infinity} % TODO
+    \date{23 May 2023} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -99,7 +99,280 @@
   about SML code using a notion of \textbf{extensional equivalence}. 
 \end{frame}
 
-\sectionSlide{1}{Induction and Recursion}
+\begin{frame}[plain]
+  \begin{center}
+    \huge \color{presentColor} \intermedium{0 - Equivalence} \\ 
+    \vspace{10pt}
+    \large \color{presentColor} \intermedium{This material was meant to be covered during the last
+    lecture, but was moved here due to time constraints. }
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On the Equivalence of Values}
+
+  Up until this point, we've said that a value is a "final answer". You should be able
+  to tell if values are the same just by looking at them, like with \code{2} and \code{2},
+  or with \code{(3, 4)} and \code{(3, 4)}.
+
+  \vspace{\fill}
+
+  But what about functions?
+
+  \pause
+  \vspace{5pt}
+
+  Are \code{fn (x : int) => x + x} and \code{fn (x : int) => 2 * x} extensionally equivalent?
+
+  \pause
+  \vspace{\fill}
+
+  It's now hard to tell, because these lambda expressions are values, but it's not obvious 
+  if they are extensionally equivalent or not.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Extensional Equivalence for Functions}
+
+  Functions necessitate their own rule for extensional equivalence.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, Two functions \code{f : t1 -> t2} and \code{g : t1 -> t2} are \term{extensionally equivalent}
+  if for all values \code{x : t1}, \code{f x} $\eeq$ \code{g x}}.
+
+  \pause
+  \vspace{5pt}
+
+  In other words, two functions are equivalent if \textbf{for all inputs, they give equivalent outputs}.
+
+  \pause
+  \vspace{\fill}
+  
+  \noteBox{\, We specified that \code{f x} $\eeq$ \code{g x}, not that \code{f x} and \code{g x}
+  reduce to the same value. Why?}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Totality}
+
+  The reason why is simple - some functions do not have defined outputs!
+
+  \pause
+  \vspace{\fill}
+
+  We described functions in SML as mathematical functions, which is true, but not exactly in the
+  same way as some mathematical functions, such as $+$, or $\sin$.
+
+  \pause
+  \vspace{5pt}
+
+  SML functions can be \term{partial}, that is, undefined on some input. There may be \code{f}
+  and \code{x} such that there is no \code{v} where \code{f x} $\hookrightarrow$ \code{v}.  
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, We say that \code{f : t1 -> t2} is \term{total} if for all values \code{v : t1},
+  there is a value \code{v' : t2} such that \code{f v} $\hookrightarrow$ \code{v'}.}
+
+  \vspace{5pt}
+
+  For example, the SML functions \code{+}, \code{not}, and \code{^} are all total.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Specification}
+
+  Concepts like purity, extensional equivalence, and totality are all just means to
+  an end, which is being able to \textbf{specify} the behavior of code.
+
+  \pause
+  \vspace{\fill}
+
+  In particular, for functions, we are interested in writing \textbf{descriptive} code,
+  that accurately reflects the function's behavior.
+  
+  \pause
+  \vspace{5pt}
+
+  To that end, it is helpful to write alongside a function the conditions which 
+  must be true \textbf{prior} to calling the function, and must be true \textbf{after}
+  calling the function.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    (* REQUIRES: x is not 0 *)
+    (* ENSURES: divide x is total *)
+    fun divide (x : int) : int = 2 div x 
+  \end{codeblock}
+
+  \ptmt
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Specification of Specification}
+
+  In this class, our way of writing specifications will follow the 
+  five-step methodology.
+
+  \pause
+  \vspace{\fill}
+
+  There are five components to this methodology, shockingly:
+  \pause
+  \begin{enumerate}
+    \item the function's type \pause
+    \item the \code{REQUIRES} clause (preconditions) \pause
+    \item the \code{ENSURES} clause (postconditions) \pause
+    \item the function's definition \pause
+    \item test cases! \pause
+  \end{enumerate}
+
+  \vspace{\fill}
+
+  We will frequently annotate our functions this way this semester.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Specification, pt. 2}
+
+  We use comments in the form of \code{REQUIRES} and \code{ENSURES} to describe 
+  what must be true of the inputs the function receives, and what then is guaranteed 
+  to hold of the function's behavior. 
+
+  \pause
+  \vspace{\fill}
+
+  It is often unrealistic to have a function which has meaning on \textit{every} possible 
+  input (like \code{div}, or square root, or logarithm). The \code{REQUIRES} helps to
+  describe the range of "relevant inputs", and the \code{ENSURES} helps to describe
+  what the function does.
+
+  \pause
+  \vspace{\fill}
+
+  These "contracts" pop up in real code all the time:
+  \pause
+  \begin{itemize}
+    \item this function must be called with only safe values, \pause
+    \item this library can only be invoked in single-threaded programs, \pause
+    \item this API is not guaranteed to work with non-ASCII characters \pause 
+  \end{itemize}
+
+  \vspace{\fill}
+
+  It is important that code is documented so users and maintainers know pertinent
+  information about it! 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Specification, pt. 3}
+
+  The last piece of the formula is writing tests.\footnotemark
+
+  \pause
+  \vspace{\fill}
+
+  In this class, we will use a 150-specific testing framework, where
+  we write something like:
+  
+  \begin{codeblock}
+    val () = Test.int ("test1", 2 + 2, 1 + 3)
+  \end{codeblock}
+  which will raise an exception if the second and third parts of the
+  tuple do not evaluate to the same value.
+
+  \vspace{\fill}
+
+  \noteBox{\, I realize writing tests sucks. So does life, sometimes.}
+
+  \footnotetext[1]{There's a lot I could say here about the importance
+  of writing tests. Test-driven development is a real thing, and especially
+  in imperative languages, it's very important to have a solid backbone
+  of tests to make sure you don't accidentally regress behavior when 
+  introducing a small change. However, this is a class on functional
+  programming, and not software engineering, so I'll decline to comment
+  for now.\footnotemark}
+
+  \footnotetext[2]{This is a really long footnote.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Back to Fact}
+
+  Now that we have all these tools for mathematically analyzing
+  code, let's look at a specific example. Let's take the factorial 
+  function that we wrote earlier.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun fact (0 : int) : int = 1
+      | fact n = n * fact (n - 1)
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  \customBox{Question}{\, Is \code{fact} total?}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Specific Specification}
+
+  \textbf{Answer:} It is not.
+
+  \pause
+  \vspace{\fill}
+
+  The \code{fact} function loops forever on a negative input.
+
+  \pause
+  \vspace{\fill}
+
+  But for our intents and purposes, we don't really
+  care about what \code{fact} does on negative inputs, anyways. So 
+  let's restrict our domain of interest to strictly non-negative
+  numbers.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    (* fact : int -> int *)
+    (* REQUIRES: n >= 0 *)
+    (* ENSURES: fact n evaluates to the nth factorial *)
+    fun fact (0 : int) : int = 1
+      | fact n = n * fact (n - 1)
+  \end{codeblock}
+
+  \pause
+  \customBox{Lesson}{\, Oftentimes, we are interested in only a 
+  subset of the domain of a function, and we only get to
+  make interesting claims about its behavior when we restrict
+  our attention to it.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Remark: Slide Notation}
+
+  Instead of putting specifications in comments above the code, when
+  writing code within these slides, they will often be conveyed via
+  specification blocks.
+
+  For instance, for the \code{fact} function, I would instead write:
+  \spec
+    {fact}
+    {int -> int}
+    {\code{n >= 0}}
+    {\code{fact n} evaluates to $n!$}
+\end{frame}
+
+\sectionSlide{1}{Recursion}
 
 \begin{frame}[fragile]
   \frametitle{Recursion}
@@ -107,15 +380,18 @@
   In the first lecture, we mentioned how we will be focusing on
   \term{recursion} in this class.
 
+  \pause
   \vspace{\fill}
 
   \defBox{\, We call a function \term{recursive} if it calls itself. 
   More generally, something which refers to itself is recursive.}
 
+  \pause
   \vspace{5pt}
 
   \exBox{ This sentence is recursive. }
 
+  \pause
   \vspace{\fill}
 
   SML doesn't have for loops, so recursion will be our preferred method
@@ -124,33 +400,12 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A Recursive Example}
-
-  In the last lecture, we saw this example of a recursive function:
-
-  \vspace{\fill}
-
-  \begin{codeblock}
-    (* REQUIRES: n >= 0 *)
-    (* ENSURES: fact n reduces to the factorial of n *)
-    fun fact (n : int) : int = 
-      if n = 0 then 
-        1
-      else 
-        n * fact (n - 1) 
-  \end{codeblock}
-
-  \vspace{\fill}
-
-  How do we know that it works, though?
-\end{frame}
-
-\begin{frame}[fragile]
   \frametitle{Recursion, Mathematically}
 
   While recursion is a concept which is usually taught in programming classes, 
   it's just as much a mathematical concept.
 
+  \pause
   \vspace{\fill}
 
   The factorial function is usually specified as: 
@@ -158,11 +413,11 @@
   \vspace{5pt}
 
   \begin{equation}
-    fact(n) = 
+    \text{fact}(n) = 
     \left\{
         \begin{array}{lr}
             1, & \text{if } n = 0\\
-            n * fact(n - 1), & \text{if } n > 0
+            n * \text{fact}(n - 1), & \text{if } n > 0
         \end{array}
     \right\}
   \end{equation}
@@ -172,10 +427,13 @@
   which references the factorial function in its own definition. In other words, it's 
   recursive.
 
+  \pause
   \vspace{\fill}
 
   We see that the SML code for the factorial function closely resembles the mathematical
   definition. 
+
+  \rprs
 \end{frame}
 
 \begin{frame}[fragile]
@@ -183,10 +441,92 @@
 
   There is a simple four-step formula to writing any recursive function:
 
+  \pause
   \vspace{5pt}
 
   \begin{itemize}
-    \item Identify and write the \term{base case},
+    \item Identify and write the \term{base case}, \pause
+    \item Identify the recursive case, \pause 
+    \item Assume that the function \textbf{already works} on a "smaller" input, \pause
+    \item Write the recursive case under that assumption.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, We say that the \term{base case} for a recursive function is the
+  branch of the function which does not recurse.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A \code{pow} Function}
+
+  Let's try to write out a different function using this formula. 
+
+  \spec
+    {pow}
+    {int * int -> int}
+    {\code{k >= 0}}
+    {\code{pow (n, k)} evaluates to $n^k$}
+
+  \pause
+  \vspace{\fill}
+
+  We know that raising any number to the power of $0$ will produce $1$, so 
+  our base case will simply be the case where the second value we receive is 
+  \code{0}.
+
+  \pause
+  \begin{codeblock}
+    fun pow (n : int, 0 : int) : int = 1 
+      | (* ... *)
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Since our base case is casing upon the value of the exponent, this is a good
+  indication that the exponent is going to be the value that we recurse on. We
+  call this the \term{variable of recurrence}. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{pow} Function: Recursive Case}
+
+  What should we write for our recursive case? We want to be able to compute
+  an arbitrary \code{pow(n, k)}, for non-zero \code{k}.
+
+  \pause
+  \vspace{\fill}
+
+  Thinking recursively, we want to be able to assume that our function already
+  works on a smaller input. Since our variable of recurrence is \code{k}, then
+  we can assume that \code{pow (n, k - 1)} already evaluates to the
+  $(k-1)$th power of $n$.
+  
+  \pause
+  \vspace{\fill}
+
+  Given $n^{k - 1}$, we can recover $n^k$ by just multiplying by $n$, so we get:
+
+  \begin{codeblock}
+    fun pow (n : int, 0 : int) : int = 1 
+      | pow (n, k) = n * pow (n, k - 1) 
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This is the magic of recursive thinking!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Recursive Formula, Revisited}
+
+  There is a simple four-step formula to writing any recursive function:
+
+  \begin{itemize}
+    \item Identify and write the \term{base case}, \
     \item Identify the recursive case, 
     \item Assume that the function \textbf{already works} on a "smaller" input,
     \item Write the recursive case under that assumption.
@@ -196,82 +536,25 @@
 
   \defBox{\, We say that the \term{base case} for a recursive function is the
   branch of the function which does not recurse.}
+
+  \pause
+  \vspace{\fill}
+
+  \noteBox{}{\, But wait, this formula looks similar to something we've already seen...}
+
+  Let's give the perspective a switch...
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A Matter of Fact}
-
-  Let's try to write out the factorial function using this formula. 
-
-  \vspace{\fill}
-
-  In this case, we identify that the base case is \code{0}, and that
-  the factorial of \code{0} is \code{1}. 
-
-  \vspace{10pt}
-
-  The recursive case must be any other case, given that we \code{REQUIRE}
-  a non-negative input. Assuming that \code{fact (n - 1)} is the factorial of
-  \code{n - 1} (where \code{n - 1} is a "smaller" input), then it follows that 
-  the factorial of \code{n} should just be \code{n * fact(n - 1)}.
-
-  \vspace{\fill}
-
-  \begin{codeblock}
-    fun fact (0 : int) : int = 1 
-      | fact (n : int) : int = n * fact (n - 1)
-  \end{codeblock}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Function Clauses}
-
-  \begin{codeblock}
-    fun fact (0 : int) : int = 1 
-      | fact (n : int) : int = n * fact (n - 1)
-  \end{codeblock}
-
-  \vspace{\fill}
-
-  This syntax we introduced in the last example demonstrates 
-  \term{function clauses}, which allow you to specify the
-  behavior of the function on different inputs.
-
-  \vspace{\fill}
-
-  When the \code{fact} function receives an input, it tries to 
-  "match" it against \code{0}. If it succeeds, then it evaluates to
-  \code{1}. Otherwise, it tries the remaining cases.
-
-  \vspace{5pt}
-
-  It's basically just a more powerful \code{if}!
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Inductive Proof}
-
-  Recall:
-
-  \vspace{\fill}
-
-  \defBox{\, The principle of mathematical \term{induction} is a proof technique
-  for theorems on the natural numbers. In particular, it has the logical form:}
-
-  \vspace{5pt}
+  \frametitle{Recursion, Unmasked}
 
   \begin{center}
-     $P(0) \land (\forall n. P(n) \implies P(n + 1)) \implies \forall n. P(n)$
+    \includegraphics[scale=0.3]{mask_reveal}
   \end{center}
-
-  \vspace{\fill}
-
-  In other words: "if you can prove $P(0)$, and that any step follows from the 
-  previous, then the statement is true for all numbers".
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{The Inductive Formula}
+  \frametitle{The Recursive Formula, Unmasked}
 
   There is a simple four-step formula to proving any simple inductive theorem: 
 
@@ -288,6 +571,61 @@
 
   \defBox{\, We say that the \term{base case} for an inductive proof is the
   case of the proof which does not require an inductive hypothesis.}
+  But wait, this formula looks similar to something we've already seen...
+
+  \pause
+  \vspace{\fill}
+
+  \noteBox{}{\, Perfect.}
+\end{frame}
+
+\sectionSlide{2}{Induction}
+
+\begin{frame}[fragile]
+  \frametitle{Inductive Proof}
+
+  Let's take a brief excursion into mathematical induction.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, The principle of mathematical \term{induction} (or \term{simple induction}) is a proof technique
+  for theorems on the natural numbers. In particular, it has the logical form:}
+
+  \pause
+  \vspace{5pt}
+
+  \begin{center}
+     $P(0) \land (\forall n. P(n) \implies P(n + 1)) \implies \forall n. P(n)$
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  In other words: "if you can prove $P(0)$, and that any step follows from the 
+  previous, then the statement is true for all numbers".
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Inductive Formula}
+
+  There is a simple four-step formula to proving any simple inductive theorem: 
+
+  \pause
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item Identify and write the \term{base case}, \pause
+    \item Identify the recursive case, \pause
+    \item Assume that the induction hypothesis holds, \pause 
+    \item Prove the recursive case under that assumption. \pause 
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, We say that the \term{base case} for an inductive proof is the
+  case(s) of the proof which do not require an inductive hypothesis.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -296,10 +634,12 @@
   { \small
   Let $S_n$ be the sum of the first $n$ odd natural numbers.
 
+  \pause
   \vspace{\fill}
 
   \thmBox{}{\, Prove that $S_n$ is $n^2$}
 
+  \pause
   \vspace{\fill}
 
   We proceed by mathematical induction on $n$. 
@@ -334,47 +674,152 @@
 
   We see that \term{recursion} and \term{induction} are really just two sides of the same coin.
 
+  \pause
   \vspace{\fill}
 
-  Recursion is about using the answers to sub-problems to solve a bigger one.
+  Recursion is about \textbf{using the answers to sub-problems to solve a bigger one.}
 
+  \pause
   \vspace{\fill}
 
-  Induction is about using the inductive assumption to prove the $n + 1$th case.
+  Induction is about \textbf{using the inductive assumption to prove the $n + 1$th case.}
 
+  \pause
   \vspace{\fill}
 
   The key thing to remember is the \term{recursive leap of faith}, which entails
   assuming that the function already works on a smaller input.
+
+  \ptmt
 \end{frame}
 
-\sectionSlide{2}{Patterns and Constructors}
+\begin{frame}[fragile]
+  \frametitle{Writing versus Verifying} 
+
+  We have seen now that induction can be used as a tool which can help us to
+  \textit{write} recursive functions.
+
+  \pause
+  \vspace{\fill}
+
+  But not all recursive functions are obvious in their logic! We said earlier
+  that we are not just interested in writing code, we are interested in writing
+  \textit{correct} code.
+
+  \pause
+  \vspace{\fill}
+
+  The best way to be certain of a function's correctness is to \textit{prove}
+  that it is correct. We will see now that induction helps us with recursion
+  in another way, because we can prove that SML functions are correct using
+  induction.
+
+\end{frame}
+
+\sectionSlide{3}{Proving Correctness}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Matching and Function Clauses}
+  \frametitle{Recursive Correctness}
 
-  We write function clauses in the general form as:
-  
-  \begin{codeblock}
-    fun f (<pat1> : <ty1>) : <ty2> = <expr1> 
-      | f (<pat2> : <ty1>) : <ty2> = <expr2>
-      ...
-  \end{codeblock}
+  Let's look at the \code{pow} function we just wrote.
 
   \vspace{\fill}
 
-  \code{val} bindings also use patterns!
-
   \begin{codeblock}
-    val <pat> : <ty> = <expr>
+    fun pow (n : int, 0 : int) : int = 1 
+      | pow (n, k) = n * pow (n, k - 1) 
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Let's try to write an inductive proof of correctness.
+
+  \pause
+  \vspace{\fill}
+
+  When we do induction, we usually want a quantity to induct on, however.
+  What should we pick for this function?
+
+  \pause
+  \vspace{\fill}
+
+  In this case, the \term{variable of recurrence} is usually a prime
+  candidate for our induction!
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Proving \code{pow} Correct}
+
+  \thmBox{}{\, Prove that \code{pow (n, k)} $\hookrightarrow$ $n^k$, for all 
+  \code{k >= 0}}
+
+  \pause
+  \vspace{\fill}
+
+  We proceed by mathematical induction on \code{k}. 
+
+  \pause
+  \vspace{\fill}
+  
+  \bcBox{\, \code{k = 0}} 
+  \pause
+  \begin{align*}
+       \code{pow(n, 0)} &\stepsTo \code{1} &\tag{clause 1 of \code{pow}}
+  \end{align*}
+
+  \pause
+  \vspace{\fill}
+
+  \ihBox{}{\, Assume that \code{pow (n, k)} $\hookrightarrow$ $n^k$, for some \code{k}} 
+
+  \pause
+
+  \isBox{}{\, Then, we want to show that \code{pow (n, k + 1)} $\hookrightarrow$ $n^{k + 1}$}
+  \pause
+  \begin{align*}
+       \code{pow (n, k + 1)} &\stepsTo \code{n * pow (n, k)} &\tag{clause 2 of \code{pow}} \\
+       &\stepsTo \code{n * $\,\,\, n^k$} &\tag{induction hypothesis} \\
+       &\stepsTo n^{k + 1} &\tag{math}
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Proving a Function Correct}
+
+  We see that in an inductive proof on a recursive function, the isomorphism 
+  between recursion and induction is made even more clear.
+
+  \vspace{\fill}
+
+  \begin{center}
+    \begin{tabular}{c || c} 
+      \hline & \\[-1.5ex]
+      Program & Proof \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Base case} (\code{pow (n, 0)}) & \term{Base case} ($n^0$) \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Recursive call} (\code{pow (n, k)}) & \term{Inductive hypothesis} ($n^k$) \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Variable of recurrence} (\code{k}) & \term{Induction variable} ($k$) \\ [2pt]
+      \hline
+    \end{tabular}
+  \end{center}
+
+  \ptmt
+\end{frame}
+
+\quizBreak{FARADAY}
+
+\sectionSlide{4}{More Language Features}
 
 \begin{frame}[fragile]
   \frametitle{Case Expressions}
 
   An alternative to matching on an input in a function clause is to
   use a \textit{case expression}.
+
+  \pause
 
   \begin{codeblock}
     case <expr> of
@@ -387,49 +832,12 @@
   \vspace{\fill}
 
   \noteBox{\, The first "arm" of a case expression has no bar! }
-\end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Typing Case Expressions}
-
-  Case expressions also follow typing rules!
-
+  \pause
   \vspace{\fill}
 
-  If we have
-  \begin{codeblock}
-    case <expr> of
-      <pat1> => <expr1>
-    | <pat2> => <expr2>
-    ...
-    | <patn> => <exprn> 
-  \end{codeblock}
-  then we require that, for some \code{t}, \code{expr1 : t}, \code{expr2 : t}, ..., \code{exprn : t}. 
-
-  \vspace{\fill}
-
-  Why? Because otherwise \textit{the type of an expression could change during execution}.
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Typing Gone Wrong}
-
-  Consider the following example of ill-typed code:
-
-  \begin{codeblock}
-    case x of
-      0 => "15" 
-    | _ => 150 
-  \end{codeblock}
-
-  \vspace{\fill}
-
-  Then, the type of the value the expression would reduce to is unclear! It could
-  be either \code{int} or \code{string}.   
-
-  \vspace{\fill}
-
-  As such, this program will be rejected as \textbf{ill-typed}.
+  \noteBox{\, \code{case} expressions follow similar typing rules as
+  function clauses, where each case's expression must share the same type.} 
 \end{frame}
 
 \begin{frame}[fragile]
@@ -443,12 +851,14 @@
       | _ => n * fact (n - 1)
   \end{codeblock}
 
+  \pause
   \vspace{\fill}
 
   \noteBox{\, We could have written this with \code{n} instead of the wildcard pattern,
   which would have shadowed the original \code{n} with a new binding with
   exactly the same value.}
 
+  \pause
   \vspace{\fill}
 
   It's still an expression, though, so it's totally OK to write something like
@@ -464,11 +874,13 @@
 
   To write more interesting functions, we will also introduce \term{lists}.
 
+  \pause
   \vspace{\fill}
 
   \defBox{\, For any type \code{t}, there is a type \code{t list}, which
   describes an ordered collection of 0 or more elements of type \code{t}.}
 
+  \pause
   \vspace{\fill}
 
   Here are some examples of lists:
@@ -480,6 +892,7 @@
     \item \code{[[1, 2]] : int list list}
   \end{itemize}
 
+  \pause
   \vspace{\fill}
   
   What if we want to add to an existing list, though? We can also construct lists out of other lists, using a \term{constructor}!
@@ -490,24 +903,29 @@
 
   A list is characterized by two \term{constructors}, which are used to construct
   values of some list type. These constructors are 
+  \pause
   \begin{itemize}
-    \item \code{[]}\footnotemark, which is the empty list of type \code{t list}
+    \item \code{[]}\footnotemark, which is the empty list of type \code{t list} \pause
     \item \code{::} (pronounced "cons"), an infix operator such that 
     \code{x :: xs : t list} if \code{x : t} and \code{xs : t list}.
   \end{itemize}
 
+  \pause
   \vspace{\fill}
 
   While the bracket notation is simple, it's actually just syntactic sugar! The 
   list \code{[1, 2, 3]} is really just \code{1::2::3::[]}
 
+  \pause
   \vspace{\fill}
 
   \noteBox{ The \code{::} operator is \textit{right-associative}, meaning that
   \code{1::2::3::[]} is implicitly understood to be \code{1::(2::(3::[]))}}
 
-  \footnotetext[1]{If you're viewing this presentation online, after the lecture, it's
+  \footnotetext[3]{If you're viewing this presentation online, after the lecture, it's
   important to me that you know this is pronounced "nil". Hard to convey digitally.}
+
+  \tgs
 \end{frame}
 
 
@@ -516,17 +934,23 @@
 
   Constructors are patterns too! 
 
+  \pause
   \vspace{\fill}
 
   This means that we can \code{case} upon a list to figure out what kind of 
   \term{variant} it is. For instance, we can write a function to check whether
   a list is empty as:
   
+  \pause
+
   \begin{codeblock}
-    fun isEmpty ([] : int list) : bool = true
-      | isEmpty (x::xs) = false
+    fun isEmpty (L : int list) : bool = 
+      case L of
+        [] => true
+      | x::xs => false
   \end{codeblock}
 
+  \pause
   \vspace{\fill}
 
   We might say that these constructors are all that characterize a list. A list 
@@ -539,122 +963,108 @@
 
   Let's apply the recursion formula on a simple length function on lists.
 
+  \pause
   \vspace{\fill}
 
   The base case must be the empty list \code{[]}, in which case we just return \code{0}. 
 
+  \pause
   \vspace{10pt}
 
   In the recursive case \code{x::xs}, we also assume that \code{length} works on a smaller
   input. 
 
+  \pause
   \vspace{5pt}
   
   In this case, \code{xs} happens to be exactly a smaller input than the entire 
   list \code{x::xs}, so we assume \code{length xs} works, and we get: 
 
+  \pause
   \vspace{\fill}
 
   \begin{codeblock}
     fun length ([] : int list) : int = 0 
       | length (x::xs) = 1 + length xs
   \end{codeblock}
-
 \end{frame}
 
-\sectionSlide{3}{Case Study: The Division Algorithm}
+\sectionSlide{5}{Case Study: Fast Exponentiation}
 
 \begin{frame}[fragile]
-  \frametitle{A \code{case} Study}
+  \frametitle{Fast Exponentiation}
 
-  Let's use our knowledge of patterns, induction, and recursion to implement 
-  a function. Specifically, we will be interested in the \code{divmod} function.
+  Suppose that we are interested in solving a slightly more involved problem.
 
+  \pause
   \vspace{\fill}
 
+  The \code{pow} function we just implemented is fine, but it's not necessarily
+  as fast as it could be! From eyeing the function, we can see that it would take
+  us $k$ many multiplications to compute the $k$th power of $n$. This is more 
+  than it needs to be, because of a nice fact that we can take advantage of:
+
+  \pause
+  \vspace{\fill}
+
+  If $k$ is odd, then $$n^k = n * \left (n^{\lfloor k/2 \rfloor} \right )^2$$
+
+  \pause
+
+  If $k$ is even, then $$n^k = \left (n^{k/2} \right )^2$$
+
+  \pause
+  \vspace{\fill}
+
+  Can we turn this mathematical definition into a program?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{fast_pow} Function}
+
+  Let's try it out!
+
+  \pause
   \begin{codeblock}
-    (* divmod : int * int -> int * int
-       REQUIRES: d is not 0 
-       ENSURES: divmod (n, d) evaluates to (q, r), where 
-       q * d + r = n 
-     *)
-    fun divmod (n : int, d : int) : int * int = 
-      (* to be implemented *)
+    fun fast_pow (n : int, 0 : int) : int = 1
+      | fast_pow (n, k) =
+          if k mod 2 = 0 then 
+            fast_pow (n, k div 2) * fast_pow (n, k div 2)
+          else
+            n * fast_pow (n, k - 1)
   \end{codeblock}
 
-  The \code{divmod} function computes the quotient and remainder of a numerator
-  and denominator via repeated subtraction.
-
   \vspace{\fill}
 
-  In math, we want $q, r$ such that $qd + r = n$, for a prospective $\frac{n}{d}$.
+  How's this look?\footnotemark
+
+  \footnotetext[4]{I actually adjusted the definition slightly from the
+  mathematical definition, because it makes the proof easier. It can be
+  done either way, though.}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Establishing a Base}
+  \frametitle{A "Faster" Function}
 
-  First step in our recursion formula is figuring out the base case. 
-
-  \vspace{\fill}
-
-  But what should that be? We could case on the value of \code{n} or \code{d},
-  but \code{d} was already specified to be nonzero, and it probably won't help
-  us to know what the divisor specifically is. 
+  There's a problem with this function, however. It's not actually necessarily
+  saving us that many multiplications, because we make two recursive calls!
 
   \vspace{\fill}
 
-  Another way of putting it is: what is the thing that is being inducted on?
+  We wanted to save on effort by reusing our answers from the recursive call, 
+  but we see here that we are just recomputing each time!
+
+  \pause
+  \vspace{\fill}
+
+  \code{fast_pow} is a pure function, meaning that we should be able to do some
+  extensionally equivalent refactoring, using the power of referential
+  transparency...
 
   \vspace{\fill}
 
-  In this case, our goal will be to decrease the value of \code{n}, and through 
-  recursion obtain our answer, so our induction focus will be \code{n}.
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Establishing a Base}
-
-  We specified what a base case is in the context of recursion, earlier, as 
-  the \textbf{branch of the function which does not recurse.}
-
-  \vspace{\fill}
-
-  So, put another way, \textbf{when do we not need to make a recursive call}?
-
-  \vspace{5pt}
-
-  This occurs when the answer is obvious. If the numerator is less than the
-  denominator, obviously there is no need to decrease it and try again.
-
-  \vspace{\fill}
-
-  The base case is when \code{n < d}.
-
-  \vspace{\fill}
-  \begin{codeblock}
-    fun divmod (n : int, d : int) : int * int = 
-      if n < d then
-        (0, d)
-      else
-        (* to be implemented *)
-  \end{codeblock}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{The Recursive Call}
-
-  Recall that our "induction hypothesis" will be to assume that the \code{divmod}
-  function satisfies its specification on smaller values of \code{n}.
-
-  \vspace{\fill}
-
-  We will, in particular, try to make the recursive call on the smaller numerator 
-  of \code{n - d}. But how should we use the results of the recursive call?
-
-  \vspace{\fill}
-
-  We will first explore \code{let} expressions, which allow us to produce bindings
-  within an expression.
+  To do this, however, we need to be able to bind a variable within an
+  expression. How shall we do this?
 \end{frame}
 
 \begin{frame}[fragile]
@@ -663,6 +1073,7 @@
   {\small
   The syntax for binding a variable for use within another expression is as follows:
 
+  \pause
   \vspace{\fill}
 
   \begin{codeblock}
@@ -676,10 +1087,11 @@
   where the declarations are much the same as the \code{val} and \code{fun} declarations
   that we saw earlier. This means there can be multiple of them!
 
+  \pause
   \vspace{\fill}
 
-  \noteBox{\, Similarly to what we saw earlier with \code{case} expressions, \code{let}
-  expressions are expressions in their own right, so it is valid to write}
+  \noteBox{\, \code{let} expressions are expressions in their own right, 
+  so it is valid to write}
   \begin{codeblock}
     (let 
       val x = 2
@@ -696,6 +1108,7 @@
   SML is a \term{lexically scoped} language, which means that the scope in which
   variable bindings are visible depends on its context in the text of the program.
   
+  \pause
   \vspace{\fill}
 
   This means, for instance, that anything declared within a \code{let} expression
@@ -714,34 +1127,210 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{The Recursive Call}
+  \frametitle{Back to \code{fast_pow}}
 
-  We will finish off our function by assuming that \code{divmod (n - d, d)}
-  returns a correct solution. That is, it returns the quotient and remainder 
-  of \code{n - d} by \code{d}. 
+  So let's modify our original \code{fast_pow}:
+
+  \pause
+
+  { \small
+  \begin{codeblock}
+    fun fast_pow (n : int, 0 : int) : int = 1
+      | fast_pow (n, k) =
+          if k mod 2 = 0 then 
+            let
+              val half_ans = fast_pow (n, k div 2)
+            in
+              half_ans * half_ans 
+            end
+          else
+            n * fast_pow (n, k - 1) 
+  \end{codeblock}
+  }
+
+  Now, we only ever have at maximum one recursive call to \code{fast_pow}!
+
+  \pause
+  \vspace{\fill}
+
+  How do we know that behavior is preserved, however? We want to be able to
+  prove this.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Inducting on a Strange Call}
+
+  However, we see that the recursive call is to \code{fast_pow (n, k div 2)}.
+
+  \pause
+  \vspace{\fill}
+  
+  This is not as straightforward as what we usually saw, with the recursive
+  call being on one less than the current value.
+
+  \pause
+  \vspace{\fill}
+
+  If the recursive call corresponds to our inductive hypothesis, then will
+  a change to our recursive call change what our inductive hypothesis 
+  should be?
+
+  \pause
+  \vspace{\fill}
+
+  \noteBox{}{\, Yes.}
+
+  \pause
+  \vspace{\fill}
+
+  Since we need to know something about $k/2$ rather than $k - 1$, we will
+  proceed by \term{strong induction} instead of \term{simple induction}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strong Induction}
+
+  \defBox{}{\, \term{Strong induction} is a variant of inductive proof where
+  instead of assuming the inductive hypothesis for just $n - 1$, the hypothesis
+  is assumed for all numbers between $0$ and $n$.}
+
+  \pause
+  \vspace{\fill}
+
+  You can think of it as, if we have gone to all the trouble of proving our
+  theorem incrementally by adding larger and larger numbers to our collection,
+  we should still be able to make use of all of the intermediary theorems
+  we proved (i.e. $P(0), P(1), ..., P(n)$), not just the last one.
 
   \vspace{\fill}
 
-  In which case, the remainder is the same, but \code{d} goes into \code{n}
-  once more than it does into \code{n - d}. Thus our finished function is:
-
-  \begin{codeblock}
-    fun divmod (n : int, d : int) : int * int = 
-      if n < d then
-        (0, d)
-      else
-        let 
-          val (q, r) = divmod (n - d, d) 
-        in
-          (q + 1, r)
-        end
-  \end{codeblock}
+  Now, let's do the proof.
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{\code{fast_pow} Is \code{pow}}
+
+  \thmBox{}{\, Prove that \code{fast_pow} $\eeq$ \code{pow}}
+
+  \pause
+  \vspace{\fill}
+
+  We proceed by strong induction on $k$. 
+
+  \pause
+  \vspace{\fill}
+  
+  \bcBox{\, $k = 0$} 
+  \pause
+  \begin{align*}
+       \code{fast_pow (n, 0)} &\eeq \code{1} &\tag{clause 1 of \code{fast_pow}} \\
+       &\eeq \code{pow (n, 0)} &\tag{clause 1 of \code{pow}}
+  \end{align*}
+
+  \pause
+  \vspace{\fill}
+
+  \ihBox{}{\, Assume \code{fast_pow (n, k)} $\eeq$ \code{pow (n, i)}, for all \code{0 <= i < k},
+  for some \code{k}} 
+
+  \pause
+  \vspace{\fill}
+
+  \isBox{}{\, Then, we want to show that \code{fast_pow (n, k)} $\eeq$ \code{pow (n, k)}}
+  But what do we do in this case?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Proving through Cases}
+
+  Here, we have a dilemma, because we have two cases, the case where \code{k} is even,
+  and the case where \code{k} is odd.
+
+  \pause
+  \vspace{\fill}
+  
+  The way we deal with this in a proof is that we must prove that the theorem holds
+  \textit{no matter which case we are in}.
+
+  \pause
+  \vspace{\fill}
+
+  So we must prove the theorem for both cases. To do this, we will make use of a
+  \term{lemma}:
+
+  \vspace{\fill}
+
+  \lemmaBox{1}{\, When \code{k mod 2 = 0}, then} 
+  $$\code{pow (n, k div 2) * pow (n, k div 2)} \eeq \code{pow (n, k)}$$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{fast_pow} Is \code{pow}: Inductive Step}
+  
+  \isBox{}{\, Then, we want to show that \code{fast_pow (n, k)} $\eeq$ \code{pow (n, k)}}
+
+  \pause
+  \vspace{\fill}
+
+  Case 1: \code{k mod 2 = 0}
+  \begin{align*}
+       \code{fast_pow (n, k)} &\eeq \code{half_ans * half_ans} &\tag{clause 2 of \code{fast_pow}} \\
+       &\eeq \code{fast_pow (n, k div 2) * fast_pow (n, k div 2)} &\tag{def of \code{half_ans}} \\
+       &\eeq \code{pow (n, k div 2) * pow (n, k div 2)} &\tag{induction hypothesis} \\
+       &\eeq \code{pow (n, k)} &\tag{lemma 1, case assumption} \\
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{fast_pow} Is \code{pow}: Inductive Step}
+
+  Case 2: \code{k mod 2 <> 0}
+  \begin{align*}
+    \code{fast_pow (n, k)} &\eeq \code{n * fast_pow (n, k - 1)} &\tag{clause 2 of \code{fast_pow}} \\
+    &\eeq \code{n * pow (n, k - 1)} &\tag{induction hypothesis} \\
+    &\eeq \code{pow (n, k)} &\tag{clause 2 of \code{pow}} \\
+  \end{align*}
+
+  \pause
+
+  Now, we have finished proving our theorem!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Programs and Proofs}
+
+  \begin{center}
+    \begin{tabular}{c || c} 
+      \hline & \\[-1.5ex]
+      Program & Proof \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Base case} (\code{pow (n, 0)}) & \term{Base case} ($n^0$) \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Recursive call} (\code{pow (n, k)}) & \term{Inductive hypothesis} ($n^k$) \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Variable of recurrence} (\code{k}) & \term{Induction variable} ($k$) \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Simple recursive call} (\code{k - 1}) & \term{Simple induction} \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Complex recursive call} (\code{k div 2}) & \term{Strong induction} \\ [2pt]
+      \hline & \\[-1.5ex]
+      \term{Branching behavior} (\code{if}) & \term{Proof casing} \\ [2pt]
+      \hline
+    \end{tabular}
+  \end{center}
+
+  \ptmt
+\end{frame}
+ 
 \begin{frame}[plain]
 	\begin{center} Thank you! \end{center}
-\end{frame}
 
+	\begin{center} 
+    Post-lecture survey: \\
+    \vspace{5pt}
+    \includegraphics[scale=0.035]{qr_may23}
+  \end{center}
+\end{frame}
 
 \end{document}
 

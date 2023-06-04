@@ -1,0 +1,1164 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{B109CC}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{FF3364} % the primary color of the slide borders
+    \newcommand{\bgColor}{fff0f4}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \usepackage{tikz} % Import the tikz package
+    \usetikzlibrary{automata} 
+    \usetikzlibrary{positioning} 
+    \usetikzlibrary{arrows} 
+
+    \tikzset{node distance=2.5cm, % Minimum distance between two nodes. Change if necessary.
+      every state/.style={ % Sets the properties for each state
+      semithick,
+      fill=gray!10},
+      initial text={}, % No label on start arrow
+      double distance=2pt, % Adjust appearance of accept states
+      every edge/.style={ % Sets the properties for each transition
+            draw,
+      ->,>=stealth', % Makes edges directed with bold arrowheads
+      auto,
+      semithick}}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Regular Expressions} % TODO
+    \subtitle{Finding patterns in text} % TODO
+    \date{03 July 2023} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Last time}
+
+  Last time, we discussed \term{exceptions}, which are a core facet to 
+  programming with any fallible data.
+
+  We learned about the different kinds of exceptions that are declared,
+  and learned that we could declare our own exceptions, due to the
+  \code{exn} type being \term{extensible}. We learned about handling
+  exceptions, and how we can introduce interesting control flow by
+  intercepting exceptions. 
+\end{frame}
+
+\sectionSlide{1}{Text Validation}
+
+\begin{frame}[fragile]
+  \frametitle{Reading Emails}
+
+  Suppose that we are interested in the problem of validating user input.
+
+  In this particular circumstance, assume that we are taking input that is
+  supposed to look like an email. We expect an input which looks something like
+  $$\textsf{(name)@(website).(extension)}$$
+
+  \spec
+    {validateEmail}
+    {string -> bool}
+    {\code{true}}
+    {\code{validateEmail s} $\stepsTo^*$ \code{true} iff \code{s} is a valid 
+    email address}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Reading Emails}
+
+  We note that this problem can be solved by noticing what characters fall into
+  each section of the email. We know that \code{@} and \code{.} need to show
+  up, but there are different requirements for the name, website, and extension!
+
+  For simplicity, let's assume that the extension can only be "org" or "com", and
+  that the name and website must all be alphanumeric characters. The name of the
+  address should allow underscores and periods, though. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parsing Emails}
+
+  \small
+  \begin{codeblock}
+    fun parseName [] = NONE
+      | parseName (c::cs) =
+          if Char.isAlphaNum c then
+            parseName cs 
+          else
+            case c of
+              #"." => parseName cs
+            | #"_" => parseName cs
+            | _ => NONE 
+  \end{codeblock}
+
+  \begin{codeblock}
+    fun parseWebsite [] = NONE
+      | parseWebsite (c::cs) =
+          if Char.isAlphaNum c then
+            parseWebsite cs 
+          else
+            NONE
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Validating Emails}
+
+  \begin{codeblock}
+    fun validateEmail s = 
+      case parseName (String.explode s) of
+        SOME (#"@"::cs) =>
+          (case parseWebsite cs of
+            SOME (#"."::#"o"::#"r"::#"g"::_) => true
+          | SOME (#"."::#"c"::#"o"::#"m"::_) => true
+          | _ => false
+          )
+      | _ => false 
+  \end{codeblock}
+
+  Sounds good, right?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Validating Emails}
+
+  No, actually. There's a bug with our code: 
+
+  \begin{codeblock}
+    fun validateEmail s = 
+      case parseName (String.explode s) of
+        SOME (#"@"::cs) =>
+          (case parseWebsite cs of
+            SOME (`[#".", #"o", #"r", #"g"]`) => true
+          | SOME (`[#".", #"c", #"o", #"m"]`) => true
+          | _ => false
+          )
+      | _ => false 
+  \end{codeblock}
+
+  How about now?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Handrolling}
+
+  The above is what we would term a \term{hand-rolled parser}.
+
+  This is because it's manually constructed, tedious, and as we will
+  see, more easily solvable in a way that doesn't involve coding a solution
+  from scratch. Hand-rolling is usually undesirable, because more handwritten
+  code means more possibility of errors. 
+
+  This same logic can apply to many situations. For instance, we might be
+  interested in validation for strings which look like home addresses,
+  or strings which look like filenames of images, or strings which are valid
+  social security numbers.
+
+  Can we somehow find a way to automate the boilerplate process of writing
+  parsing code?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Family of Validators}
+
+  Essentially, we are looking for a family of functions, which would have
+  type \code{t -> string -> bool}. This type \code{t} would need to be able
+  to encode the information of the entire form of one of these validation functions,
+  such as \code{validateEmail}, which would then produce the validation
+  function itself.
+
+  This type \code{t} will end up being the type of \term{regular expressions}.
+\end{frame}
+
+\sectionSlide{2}{Regular Expressions}
+
+\begin{frame}[fragile]
+  \frametitle{Essential Elements}
+
+  What are the essential elements that make up a "validator"? Recall the email
+  example we were just looking at. There's a few important things that we should
+  be able to do: 
+
+  \begin{itemize}
+    \item Concatenation - Match one pattern, and then another. For instance,
+    matching the name and then the \code{@} symbol.
+    \item Alternation - Match possibly one of two patterns. For instance, we
+    could match either \code{org} or \code{com} at the end.
+    \item Iteration - Match one pattern, an unlimited amount of times. For instance,
+    to match a website, we needed to be able to match an alphanumeric character any
+    number of times. 
+  \end{itemize}
+
+  This sure seems like a recursive definition.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Mathematical Notation}
+
+  Having now described the problem, let's describe the mathematical definition
+  of a regular expression.
+
+  \defBox{}{\, We say that an \term{alphabet} is a set of characters, that we
+  are interested in strings composed from. We usually denote this symbolically
+  as $\Sigma$.}
+
+  So for instance, we could have that $\Sigma = \{a, b\}$. Usually, our
+  alphabet of interest will simply be the alphabet of English letters.
+
+  \defBox{}{\, We denote the set of strings over an alphabet $\Sigma$ by the
+  symbol $\Sigma^*$.}
+
+  In this case, then we would have that \code{"abaa"} $\in \Sigma^*$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More Mathematical Notation}
+
+  \defBox{}{\, We say that a \term{language} $L$ is a subset of $\Sigma^*$. In
+  other words, a language is a particular set of strings composed from the 
+  alphabet $\Sigma$.}
+
+  So we might say that some examples of languages over $\Sigma = \{a, b\}$ are
+  the empty set, $\{a, aa, aaa, ...\}$, $\{b, bb, bbb, ...\}$, 
+  and $\{a, bb\}$. 
+
+  When we say "string", we mean any finite-length sequence of characters from
+  an alphabet. This includes a string of length 0, which is really hard to
+  write out. As such, as will notate the empty string as $\epsilon$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Validators and Regular Expressions}
+
+  Viewed in this notation, what is a validator?
+
+  A validator is simply a function which checks for membership within a
+  language. For instance, our \code{validateEmail} function is simply a
+  function that checks if a string is present in the language of all emails,
+  with emails defined as we said previously.
+
+  \defBox{}{\, We call a function \code{f : string -> bool} a \term{validator} 
+  for language $L$, if \code{f s} $\stepsTo^*$ \code{true} iff $s \in L$. }
+  
+  This idea of languages and validators over them is very closely tied to
+  the idea of computability! In particular, it is \textbf{not} possible, 
+  for every language $L$, to implement a validator for it. \footnotemark 
+
+  We will find that \term{regular expressions} allow us to easily implement
+  validators for a class of languages called \term{regular languages}. These
+  languages have limitations on their complexity, but in practice a large amount
+  of string validation problems fall into them. 
+
+  \footnotetext[1]{A more thorough treatment of this is reserved for a class on
+  computability theory, such as 15-251.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Structure of a Regular Expression}
+
+  Let's first define the structure of a regular expression $r$:
+
+  \begin{itemize}
+    \item $0$
+    \item $1$
+    \item $c$, for any character $c \in \Sigma$
+    \item $r_1 + r_2$, for two regular expressions $r_1$ and $r_2$
+    \item $r_1r_2$, for two regular expressions $r_1$ and $r_2$
+    \item $r*$, for a regular expression $r$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Language of a Regular Expression}
+
+  Let us define $L(r)$ as the language matched by the regular expression $r$, 
+  over some alphabet $\Sigma$. Then: 
+
+  \begin{center}
+    \begin{tabular}{c || c} 
+      \hline & \\[-1.5ex]
+      Construct & Language matched \\ [2pt]
+      \hline & \\[-1.5ex]
+      \hline & \\[-1.5ex]
+      $L(c)$ & $\{ c \}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(0)$ & $\{ \}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(1)$ & $\{ \epsilon \}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(r_1 + r_2)$ & $L(r_1) \cup L(r_2)$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(r_1r_2)$ & $\{ s_1s_2 \, | \, s_1 \in L(r_1), s_2 \in L(r_2) \}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(r^*)$ & $\{ s_1 ... s_n \, | \, \text{for } n \geq 0, \text{when } \forall i, s_i \in L(r) \}$ \\ [2pt]
+      \hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Language of a Regular Expression, In English}
+
+  \begin{center}
+    \begin{tabular}{c || c} 
+      \hline & \\[-1.5ex]
+      Construct & Matches \\ [2pt]
+      \hline & \\[-1.5ex]
+      \hline & \\[-1.5ex]
+      $L(c)$ & only $c$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(0)$ & nothing \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(1)$ & only the empty string \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(r_1 + r_2)$ & anything matched by either $r_1$ or $r_2$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(r_1r_2)$ & anything with a prefix matched by $r_1$ and suffix matched by $r_2$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $L(r^*)$ & any string which is something matched by $r$, 0 or more times \\ [2pt]
+      \hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Regular Expression Examples}
+
+  Let's look at some examples of regular expressions and the languages they match.
+
+  In this example, let's assume we are working with the alphabet $\Sigma = \{a, b\}$.
+
+  \begin{center}
+    \begin{tabular}{c || c} 
+      \hline & \\[-1.5ex]
+      Regular Expression & Language matched \\ [2pt]
+      \hline & \\[-1.5ex]
+      \hline & \\[-1.5ex]
+      $a + b$ & $\{a, b\}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $abaa + baa$ & $\{abaa, baa\}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $(abaa + baa)b$ & $\{ abaab, baab \}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $0 + a$ & $\{a\}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $1 + a$ & $\{ \epsilon, a \}$ \\ [2pt]
+      \hline & \\[-1.5ex]
+      $a^*$ & $\{ \epsilon, a, aa, aaa, aaaa, ... \}$ \\ [2pt]
+      \hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Formalism}
+
+  Let's ground ourselves a little bit. Why are we talking about this?
+
+  Regular expressions are a useful formalism that allow us to symbolically
+  specify certain languages. They are composable, since we can easily form
+  regular expressions out of other ones. As of right now, we haven't
+  specified how to turn this formalism into code that runs, but this is
+  the model by which we will design our code.
+
+  In particular, recall the website example that we were talking about
+  previously. We can express our website validator by the following
+  regular expression:
+
+  $${(r_{an} + . + \_ )}^* @ (r_{an}^*) . (org + com)\footnotemark$$
+
+  where $r_{an}$ is the regular expression of all alphanumeric 
+  characters, which could be specified as $a + b + ... + z + 1 + 2 + ... + 9 + 0$.
+
+  \footnotetext[2]{This is actually not quite it, because this regular expression
+  allows an empty name or website. But for the sake of brevity, we'll go with this.}
+\end{frame}
+
+\sectionSlide{3}{Finite-State Automata}
+
+\begin{frame}[fragile]
+  \frametitle{Regular Expressions and Automata}
+
+  It is a very interesting fact that regular expressions can be viewed as
+  \term{finite-state machines}, which are graph-like constructs with \term{states}, 
+  which change upon receiving characters as input. In particular, we can 
+  characterize them by \term{deterministic finite-state automata}.
+
+  \vspace{\fill}
+
+  For instance, here is a finite-state machine\footnotemark\, corresponding to the regex $ab + ba$:
+
+  \vspace{\fill}
+
+  \makebox[\textwidth][c]{
+    \begin{tikzpicture}
+      \node[state, initial] (q1) {$q_1$};
+      \node[state, right of=q1, above=0.3cm] (q2) {$q_2$};
+      \node[state, right of=q1, below=0.3cm] (q3) {$q_3$};
+      \node[state, accepting, right of=q2] (q4) {$q_4$};
+      \node[state, accepting, right of=q3] (q5) {$q_5$};
+      \draw (q1) edge node {$a$} (q2);
+      \draw (q1) edge node {$b$} (q3);
+      \draw (q2) edge node {$b$} (q4);
+      \draw (q3) edge node {$a$} (q5);
+    \end{tikzpicture}
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Anatomy of Automata}
+
+  \makebox[\textwidth][c]{
+    \begin{tikzpicture}
+      \node[state, initial] (q1) {$q_1$};
+      \node[state, right of=q1, above=0.3cm] (q2) {$q_2$};
+      \node[state, right of=q1, below=0.3cm] (q3) {$q_3$};
+      \node[state, accepting, right of=q2] (q4) {$q_4$};
+      \node[state, accepting, right of=q3] (q5) {$q_5$};
+      \draw (q1) edge node {$a$} (q2);
+      \draw (q1) edge node {$b$} (q3);
+      \draw (q2) edge node {$b$} (q4);
+      \draw (q3) edge node {$a$} (q5);
+    \end{tikzpicture}
+  }
+
+  \vspace{\fill}
+
+  Here, we denote the \term{starting state} by the state with an unlabeled 
+  in-arrow. 
+  
+  \vspace{\fill}
+
+  From a given state, transitions to other states upon reading a 
+  particular character are denoted by arrows labeled with characters. If there 
+  is no arrow corresponding to the input character, then the string is rejected.
+
+  \vspace{\fill}
+
+  We also say that a state is an \term{accepting state} if it is a node which
+  has a circle in it. If the state reached upon reading the entire input is an
+  accepting state, then we say that that string is in accepted by the FSM.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Anatomy of Automata}
+
+  \only<1>{
+    Let's try giving this DFA an input, namely the string $ab$.
+
+    \makebox[\textwidth][c]{
+      \begin{tikzpicture}
+        \node[state, initial, fill=black!10!yellow] (q1) {$q_1$};
+        \node[state, right of=q1, above=0.3cm] (q2) {$q_2$};
+        \node[state, right of=q1, below=0.3cm] (q3) {$q_3$};
+        \node[state, accepting, right of=q2] (q4) {$q_4$};
+        \node[state, accepting, right of=q3] (q5) {$q_5$};
+        \draw (q1) edge node {$a$} (q2);
+        \draw (q1) edge node {$b$} (q3);
+        \draw (q2) edge node {$b$} (q4);
+        \draw (q3) edge node {$a$} (q5);
+      \end{tikzpicture}
+    }
+
+    Remaining input: $ab$
+  }
+
+  \only<2>{
+    After reading $a$:
+
+    \makebox[\textwidth][c]{
+      \begin{tikzpicture}
+        \node[state, initial] (q1) {$q_1$};
+        \node[state, right of=q1, above=0.3cm, fill=black!10!yellow] (q2) {$q_2$};
+        \node[state, right of=q1, below=0.3cm] (q3) {$q_3$};
+        \node[state, accepting, right of=q2] (q4) {$q_4$};
+        \node[state, accepting, right of=q3] (q5) {$q_5$};
+        \draw (q1) edge node {$a$} (q2);
+        \draw (q1) edge node {$b$} (q3);
+        \draw (q2) edge node {$b$} (q4);
+        \draw (q3) edge node {$a$} (q5);
+      \end{tikzpicture}
+    }
+
+    Remaining input: $b$
+  }
+
+  \only<3>{
+    After reading $b$:
+
+    \makebox[\textwidth][c]{
+      \begin{tikzpicture}
+        \node[state, initial] (q1) {$q_1$};
+        \node[state, right of=q1, above=0.3cm] (q2) {$q_2$};
+        \node[state, right of=q1, below=0.3cm] (q3) {$q_3$};
+        \node[state, accepting, right of=q2, fill=black!10!yellow] (q4) {$q_4$};
+        \node[state, accepting, right of=q3] (q5) {$q_5$};
+        \draw (q1) edge node {$a$} (q2);
+        \draw (q1) edge node {$b$} (q3);
+        \draw (q2) edge node {$b$} (q4);
+        \draw (q3) edge node {$a$} (q5);
+      \end{tikzpicture}
+    }
+
+    No remaining input, so we end up in state $q_4$, which is accepting. 
+    
+    So the string $ab$ is accepted by this DFA.
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Another Regular Expression Automaton}
+
+  Here's another DFA for the regular expression $a^*bba^*$:
+
+  \vspace{\fill}
+
+  \makebox[\textwidth][c]{
+    \begin{tikzpicture}
+      \node[state, initial] (q1) {$q_1$};
+      \node[state, right of=q1] (q2) {$q_2$};
+      \node[state, accepting, right of=q2] (q3) {$q_3$};
+      \draw (q1) edge[loop above] node {$a$} (q1);
+      \draw (q1) edge node {$b$} (q2);
+      \draw (q2) edge node {$b$} (q3);
+      \draw (q3) edge[loop above] node {$a$} (q3);
+    \end{tikzpicture}
+  }
+
+  You should be able to convince yourself that this automaton accepts
+  all strings which contain any number of $a$s enclosing two $b$s.
+\end{frame}
+
+\sectionSlide{4}{Matching Regular Expressions}
+
+\begin{frame}[fragile]
+  \frametitle{On the Hardness of DFAs}
+
+  We've seen that, using the DFA for a regular expression, we can
+  visualize a computational process for validating strings within a
+  particular language.
+
+  This process is an extremely beautiful intersection where theory and
+  practice coincide, and is how many production regular expression engines\footnotemark 
+  \, work today. However, the process of producing such an automaton from
+  a regular expression is rather involved. We will take another track
+  for how to produce a validator from a regular expression.
+
+  \footnotetext[3]{https://github.com/google/re2}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Recursive Regular Expressions}
+
+  \rprs
+
+  We notice that regular expressions are a recursive datatype -- that is,
+  regular expressions are composed out of regular expressions.
+
+  The definition of the language of a regular expression is a straightforward
+  recursive definition, which depends on the language of the regular sub-expressions.
+  Let's try to write a function which can recursively decompose on a regular
+  expression, and in a backtracking way, try to match a string.
+
+  We will find that this is a good application of CPS. We will implement a 
+  function:
+  \spec
+    {match}
+    {regexp -> char list -> (char list -> bool) -> bool}
+    {\code{k} is total}
+    { \\
+      \code{match r s k} $\eeq$
+    $\left\{
+      \begin{array}{lr}
+          \code{true}, & \text{if } \code{cs} \eeq \code{p @ s} \text{ where } 
+          \code{p} \in L(r) \text{ and } \code{k s} \eeq \code{true} \\
+          \code{false}, & \text{otherwise}
+      \end{array}
+    \right\}
+    $
+    }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Special Specification}
+
+  This specification is kind of complicated. Can we desugar it at all?
+
+  \vspace{\fill}
+
+  We will find that this type makes our implementation a lot simpler. 
+  We use a continuation, specific to return type \code{bool}, to denote 
+  a \textit{future condition} we are placing upon the rest of the character
+  list. This is useful for branching possibilities, because it lets us enforce a 
+  future condition on potentially many prefixes that we might choose to
+  consume input for. 
+
+  \vspace{\fill}
+
+  For instance, we might be interested in something which looks like
+  \code{match r cs (fn cs' => List.length cs' = 3)}.
+
+  \vspace{\fill}
+
+  This essentially is a nondeterministic search over \textit{all possible prefixes}
+  that can be taken by \code{match}, by the regex \code{r}, \textit{provided} that 
+  the suffix to that prefix is of length 3. We change the continuation in order 
+  to enforce a condition on all of the possibilities we might pick.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Outline}
+
+  \begin{codeblock}
+    fun match (r : regexp) (cs : char list) (k : char list -> bool) : bool =
+      case r of
+        Zero => (* ... *) 
+      | One => (* ... *) 
+      | Char c => (* ... *) 
+      | Plus (r1,r2) => (* ... *) 
+      | Times (r1, r2) => (* ... *) 
+      | Star r => (*... *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Special Cases}
+
+  Let's write the cases for \code{Zero} and \code{One} first.
+
+  We know that \code{Zero} matches the empty language, so there is no possible
+  prefix that we can take. So we must reject.
+
+  \begin{codeblock}
+    Zero => false
+  \end{codeblock}
+
+  For \code{One}, we only allow the empty string. So our prefix must necessarily
+  be empty, meaning that the only way to return true is if the entire list satisfies
+  the continuation.
+
+  \begin{codeblock}
+    | One => k cs
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Characters}
+
+  For the \code{Char} case, we can actually start to take inputs
+  off from the list. We know that for the regexp \code{Char c}, the only
+  string in that language is \code{c}, so the only prefix we can take is
+  the singleton list \code{c}.
+
+  So we write:
+
+  \begin{codeblock}
+    | Char c => (case cs of
+        [] => false
+      | c' :: cs' => c = c' andalso k cs')
+  \end{codeblock}
+
+  because in the empty case, there is no such prefix, and in the cons case,
+  we still need to make sure the suffix satisfies the continuation.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Alternation}
+
+  What about the \code{Plus (r1, r2)} case? Here, we have the possibility of
+  picking a prefix from either \code{r1} or \code{r2}.
+
+  Thankfully, the return type of our function \code{match} is just \code{bool},
+  and we're not required to write \code{match} tail recursively, so we can
+  simply use two recursive calls:
+
+  \begin{codeblock}
+    | Plus (r1,r2) => match r1 cs k orelse match r2 cs k
+  \end{codeblock}
+
+  We are essentially searching over all the strings matched by \code{r1} and
+  \code{r2} separately, but with the same suffix condition needing to be true.
+  Either succeeding means that we succeed in general.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Concatenation}
+
+  For concatenation, we need to be able to pick a prefix from the \code{cs}
+  for the first regexp \code{r1}, but then pick another prefix after that for
+  \code{r2}.
+
+  This is exactly the same as looking for a prefix of \code{cs}, but then
+  looking for a prefix of the corresponding suffix. Let's write it:
+
+  \begin{codeblock}
+    | Times (r1, r2) => match r1 cs (fn cs' => match r2 cs' k)
+  \end{codeblock}
+
+  do a little block graphic thing here
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Repetition}
+
+  For the \code{Star r} case, we need to somehow be able to take 0 or more 
+  prefixes, all of which match the \code{r} regexp.
+
+  This means that when we make a recursive call to \code{match} to find a single
+  prefix, our continuation on the corresponding suffix needs to be able to
+  furthermore take more prefixes of what's left. In fact, we might not even
+  need to find a single prefix.
+
+  We make an observation: the regular expression $r^*$ is the same as either
+  matching the empty string, or matching $r$ one or more times.
+  
+  Essentially, we are saying that $L(r^*) = L(1 + rr^*)$.
+  
+  \begin{codeblock}
+    | Star r => 
+        k cs orelse match r cs (fn cs' => match (Star r) cs' k)
+  \end{codeblock}
+
+  However, there's something fishy here. Can you spy it?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Repetition}
+
+  \begin{codeblock}
+    | Star r => 
+        k cs orelse match r cs (fn cs' => `match (Star r) cs' k`)
+  \end{codeblock}
+
+  In the continuation, we call \code{match} again on precisely the same
+  arguments, except for \code{cs'}. Is it possible, however, that
+  \code{cs'} might be the same as \code{cs}?
+
+  \textbf{Answer: Yes, because our prefix might be empty!}
+
+  In general, you should be suspicious whenever you see a recursive call
+  which might have arguments which do not change. That's a surefire way to
+  an infinite loop!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Repetition Repeatedly}
+
+  We see that the case of $\code{r}$, where $\epsilon \in L(\code{r})$,
+  can cause a problem with this implementation. For example, the 
+  input \code{match (Star One) [#"a"]} will loop forever. How can we
+  solve this problem?
+
+  There are two ways. We can either \term{weaken the specification} or 
+  \term{strengthen the implementation}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Weakness and Strength}
+
+  What does \textit{weakening the specification} mean? It means that, instead of claiming
+  an ambitious postcondition or a minimal precondition, we can either claim to do
+  less, by promising less in our postcondition, or add more caveats, by adding
+  more restrictions to our precondition.
+
+  \vspace{\fill}
+
+  What does \textit{strengthening the implementation} mean? It means taking extra
+  care by writing more code so that we can fulfill our postconditions and preconditions
+  as-is, without needing to make any compromises.
+
+  \vspace{\fill}
+
+  For instance, suppose we have the \code{fact} function. We can either \textit{strengthen
+  the implementation} by making it return an \code{option} on a negative input, or
+  we can \textit{weaken the specification} by merely adding a precondition that
+  negative inputs are not permitted. Both are valid ways, depending on how the function
+  is used. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Weakness and Strength}
+
+  So how could we weaken the specification for our regular expression matcher? We 
+  could require that the regular expression be passed in in a form such that there
+  are no occurrences of \code{Star r}, where $\epsilon \in L(\code{r})$. This would
+  be a cheap way of escaping, by pushing the burden onto the caller.\footnotemark
+
+  Another way is that we can strengthen the implementation, by making our \code{match}
+  function able to deal with the case where our prefix is the empty string. We can
+  do that by simply observing that the suffix is the same as the original \code{char list}.
+
+  We will take this approach for now.
+
+  \footnotetext[4]{It turns out this can be done. We say that such regular expressions
+  are in \term{standard form}. There is a programmatic way of turning any regular
+  expression into one in standard form, but which matches the same language.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Repetition}
+
+  \begin{codeblock}
+    | Star r => 
+        k cs orelse match r cs (fn cs' => cs' <> cs andalso match (Star r) cs' k)
+  \end{codeblock}
+
+  Now, we check that our new suffix \code{cs'} is not the same as the entire 
+  \code{char list}! This way, we ensure that we always make progress, and because
+  of short-circuiting \code{andalso}, we ensure we never proceed to the recursive
+  call on \code{match}. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{match}: Completed}
+
+  \small
+  \begin{codeblock}
+    fun match (r : regexp) (cs : char list) (k : char list -> bool) : bool =
+      case r of
+        Zero => false
+      | One => k cs
+      | Char c => (case cs of
+          [] => false
+        | c' :: cs' => c = c' andalso k cs')
+      | Plus (r1,r2) => match r1 cs k orelse match r2 cs k
+      | Times (r1, r2) => match r1 cs (fn cs' => match r2 cs' k)
+      | Star r =>
+          k cs orelse match r cs (fn cs' => cs' <> cs andalso match (Star r) cs' k)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Validator, Completed}
+
+  Now, we can define our function \code{accept}, using \code{match}:
+
+  \spec
+    {accept}
+    {regexp -> string -> bool}
+    {\code{true}}
+    {\code{accept r s} $\eeq$ \code{true} iff \code{s} $\in L(\code{r})$, and
+    \code{false} otherwise.}
+
+  This comes from a simple observation that to accept a string, we have to
+  make sure that we match the entire string. In other words, the suffix is
+  empty:
+
+  \begin{codeblock}
+    fun accept r s = match r (String.explode s) List.null
+  \end{codeblock}
+
+  Super concise.
+\end{frame}
+
+\sectionSlide{5}{Proving Correctness}
+
+\begin{frame}[fragile]
+  \frametitle{Proving the Specification}
+
+  Recall the specification of \code{match}.
+
+  \spec
+    {match}
+    {regexp -> char list -> (char list -> bool) -> bool}
+    {\code{k} is total}
+    { \\
+      \code{match r s k} $\eeq$
+    $\left\{
+      \begin{array}{lr}
+          \code{true}, & \text{if } \code{cs} \eeq \code{p @ s} \text{ where } 
+          \code{p} \in L(r) \text{ and } \code{k s} \eeq \code{true} \\
+          \code{false}, & \text{otherwise}
+      \end{array}
+    \right\}
+    $
+    }
+
+  This is a hefty one, but can we prove that it's correct?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Proving the Specification}
+
+  Because \code{match} returns a \code{bool} at the end of everything, there
+  are four possible behaviors that we are concerned with.
+
+  It can either:
+  \begin{itemize}
+    \item return the value \code{true}
+    \item return the value \code{false}
+    \item loops forever
+    \item raises an exception
+  \end{itemize}
+
+  We would like to show that it only performs the first two behaviors, and only
+  in the right circumstances.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Reducing the Problem}
+
+  It is surprisingly hard to prove that \code{match} is total. We will assume that
+  we have already done so, because the proof is long and involved.
+
+  \vspace{\fill}
+
+  \lemmaBox{}{\, \code{match r cs k}, for total \code{k}, is always valuable.}
+
+  \vspace{\fill}
+
+  Assuming that \code{match r cs k} always terminates, we only have the following
+  two behaviors:
+  \begin{itemize}
+    \item return the value \code{true}
+    \item return the value \code{false}
+  \end{itemize}
+
+  \vspace{\fill}
+
+  In this world, then we only need to show the following theorem:
+
+  \vspace{5pt}
+  \thmBox{}{\, For total \code{k}, \code{match r cs k}, returns \code{true} iff 
+  \code{cs} $\eeq$ \code{p @ s} where \code{p} $\in L(r)$, and \code{k s} $\eeq$
+  \code{true}}
+
+  \vspace{\fill}
+
+  We call the forward implication \term{soundness}, and the reverse implication
+  \term{completeness}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Soundness and Completeness}
+
+  Recall that we prove a bi-implication by proving each of the implications
+  separately. Thus, proving our theorem reduces to proving soundness and 
+  completeness separately.
+
+  This is the shape of the problem we will now tackle. We will now prove this
+  theorem by induction.
+
+  We have three base cases: \code{Zero}, \code{One}, and \code{Char c}.
+
+  We also have three inductive cases: \code{Plus (r1, r2)}, \code{Times (r1, r2)},
+  and \code{Star r}. We will have inductive hypotheses tailored to the sub-regexes
+  in each case, for each branch of the proof.
+
+  For now, we will only prove the \code{Plus} case.
+
+  In the following two proofs, Let $P(\code{r})$ be the following:
+
+  \thmBox{}{ \, For total \code{k}, \code{match r cs k} $\hookrightarrow$ \code{true}
+  if and only if \code{cs} $\eeq$ \code{p @ s} where \code{p} $\in L(r)$, and
+  \code{k s} $\eeq$ \code{true}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Soundness Proof}
+
+  We would like to show the forward direction of $P(\code{Plus (r1, r2)})$, which is: 
+  \begin{center}
+    If \colorbox{cyan!20!white}{\code{match (Plus (r1, r2)) cs k} $\hookrightarrow$ 
+    \code{true}}, then \\ 
+    \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where 
+    \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus (r1, r2)})$}, 
+    and \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}.
+  \end{center}
+  
+  Let us assume that \colorbox{cyan!20!white}{$\code{match (Plus (r1, r2) cs k)} \eeq \code{true}$}.
+
+  \vspace{\fill}
+
+  Assume for our induction hypotheses the forward directions of $P(\code{r1})$ 
+  and $P(\code{r2})$.
+
+  In particular, $P(\code{r1})$ reads:
+  \begin{center}
+    If \colorbox{pink}{\code{match r1 cs k} $\eeq$ \code{true}}, then
+    \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
+    \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$}, and
+    \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}. 
+  \end{center}
+
+  \vspace{\fill}
+
+  Then:
+  \begin{align*}
+    & \code{true} \\
+    & \eeq \code{match (Plus (r1, r2)) cs k}  \tag{\colorbox{cyan!20!white}{our assumption}} \\ 
+    & \eeq \code{match r1 cs k orelse match r2 cs k} \tag{def of \code{match}} 
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Soundness Proof}
+
+  By the specification of \code{orelse}, this must mean that either
+  \code{match r1 cs k} or \code{match r2 cs k} $\eeq$ \code{true}.
+
+  \vspace{\fill}
+
+  Without loss of generality\footnotemark, assume that \colorbox{pink}
+  {\code{match r1 cs k} $\eeq$ \code{true}}. Then, we can apply 
+  our induction hypothesis $P(\code{r1})$, and obtain that 
+  \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
+  \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$} and 
+  \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}.
+
+  \vspace{\fill}
+
+  By the definition of $L(\code{Plus(r1, r2)})$, 
+  \colorbox{violet!30!white}{this} means that 
+  \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus(r1, r2)})$}.
+
+  \vspace{\fill}
+
+  With both \colorbox{yellow!30!white}{the previous} and 
+  \colorbox{green!25!white}{our inductive conclusion}, then this is exactly what we 
+  wanted to show, so we have proven \colorbox{orange!30!white}{the theorem}.
+
+  \footnotetext[5]{This is a fancy CMU way of saying that the proof is similar
+  in either case, so we're only going to bother to prove it for one.}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Completeness Proof}
+
+  We would like to show the backwards direction of $P(\code{Plus (r1, r2)})$, which is: 
+  \begin{center}
+    If \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where \code{p} 
+    $\in L(\code{Plus(r1, r2)})$, and \code{k s} $\eeq$ \code{true}}, then 
+    \colorbox{cyan!20!white}{\code{match (Plus (r1, r2)) cs k} $\eeq$ \code{true}}
+  \end{center}
+  
+  Let us assume that
+  \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where 
+  \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus (r1, r2)})$}, and 
+  \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}.
+
+  \vspace{\fill}
+
+  Assume for our induction hypotheses the reverse directions of $P(\code{r1})$ 
+  and $P(\code{r2})$.
+
+  In particular, $P(\code{r1})$ reads:
+  \begin{center}
+    If \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
+    \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$}, and 
+    \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}, then \\ 
+    \colorbox{pink}{\code{match r1 cs k} $\hookrightarrow$ \code{true}}.
+  \end{center}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Completeness Proof}
+
+  By the definition of $L(\code{Plus (r1, r2)})$, \colorbox{yellow!30!white}
+  {this assumption} means that either \\ \code{p} $\in L(\code{r1})$ or \code{p} 
+  $\in L(\code{r2})$. Without loss of generality, assume that 
+  \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$}.
+
+  \vspace{\fill}
+
+  Then, we can apply our induction hypothesis $P(\code{r1})$, 
+  since we know that \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
+  \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$},
+  and \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}. So
+  \colorbox{pink}{\code{match r1 cs k} $\hookrightarrow$ \code{true}}.
+  
+  \vspace{\fill}
+
+  Then:
+  \begin{align*}
+    & \code{match (Plus (r1, r2)) cs k} \\ 
+    & \eeq \code{match r1 cs k orelse match r2 cs k} \tag{def of \code{match}} \\ 
+    & \eeq \code{true} \tag{\colorbox{pink}{our previous conclusion}}
+  \end{align*}
+
+  \vspace{\fill}
+
+  So we have proven \colorbox{cyan!20!white}{the theorem}. 
+\end{frame}
+
+
+
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+
