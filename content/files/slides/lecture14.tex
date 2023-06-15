@@ -1,0 +1,856 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+ 
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+    
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+   
+    % Color settings
+    \useauxtrue
+    
+    \newcommand{\auxColor}{c9a500}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{BB5D07} % the primary color of the slide borders
+    \newcommand{\bgColor}{fff1e8}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+  
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Modules I: Structures and Signatures} % TODO
+    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \date{01 January 2020} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+    
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\sectionSlide{1}{Structures and Namespaces}
+
+\begin{frame}[fragile]
+  \frametitle{Organizing Software}
+
+  So far we have explored the core SML language features that let us write
+  interesting functions.
+
+  \vspace{\fill}
+
+  We've seen functions and datatypes, exceptions and variables, and many
+  applications thereof. These are essential for the purpose of solving interesting
+  problems, but what about problems that are not strictly computational?
+
+  \vspace{\fill}
+
+  Code is not just meant to be written, it is meant to be used,
+  documented, and organized. We are interested in the problem of organizing software.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Namespaces}
+
+  One particular idea for organizing software is the idea of \term{namespaces}.
+
+  \vspace{\fill}
+
+  \defBox{}{\, A \term{namespace} is a particular group of defined elements which
+  live separately from others. In a programming language, there will usually be
+  ways of referring to different namespaces, to separate out used names from each
+  other.}
+  
+  \vspace{\fill}
+
+  For instance, we exhibit this with the syntax that we have used so far, with
+  names such as \code{List.length} and \code{Int.compare}. The \code{compare}
+  function lives in the namespace associated to \code{Int}, and the \code{length}
+  function lives in the namespace associated to \code{List}.
+
+  \vspace{\fill}
+
+  \noteBox{}{\, This means there could be definitions of the same name in different
+  namespaces! We could have separate \code{List.compare} and \code{Int.compare}
+  functions.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Structures}
+
+  It turns out that \code{List} and \code{Int} are just examples of what SML
+  calls \term{modules}, or \term{structures}.
+
+  \vspace{\fill}
+
+  \defBox{}{\, A \term{module} or \term{structure} is a grouping of declarations
+  underneath a particular name.}
+
+  \vspace{\fill}
+
+  For instance, we could write the following syntax:
+  \begin{codeblock}
+    structure Foo =
+      struct
+        datatype t = Bar of int 
+        val x = Bar 5
+        exception E of t
+      end
+  \end{codeblock}
+
+  such that the names \code{t}, \code{Bar}, \code{x}, and \code{E} are entirely
+  local to the structure \code{Foo}.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Separation of Concerns}
+
+  This means that outside the structure, we could write:
+
+  \begin{codeblock}
+    val y = Foo.Bar 1
+    val z = raise Foo.E y
+  \end{codeblock}
+  to access the inner contents.
+
+  \vspace{\fill}
+
+  This is helpful for when we're working with many definitions, and we want to
+  group them distinctly! For instance, we might be interested in functions specific
+  to a particular part of our codebase. With modules, we can group domain-specific logic under the
+  module for that specific application. 
+
+  \vspace{\fill}
+
+  \noteBox{}{\, Because modules can contain exceptions and types, and their
+  components can be referred to by name, they are more powerful than just simple
+  tuples, which can only contain values organized by position!\footnotemark}
+
+  \footnotetext[1]{Technically, SML has a notion of \term{records}, which are
+  tuples with fields organized by name. But records also can only contain
+  values, and not things like types.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Collection of Definitions}
+
+  How does this differ from just organizing the contents of modules into
+  their own files? For one, files do not promote their own personal
+  namespacing in the same way as modules. If we have two files, with contents:
+
+  \begin{codeblock}
+    val x = 2
+  \end{codeblock}
+
+  \begin{codeblock}
+    val y = 3
+  \end{codeblock}
+
+  then loading both of these SML files will result in an environment containing
+  both \code{x} and \code{y}. We want to be able to separate out unrelated parts
+  by more than just the file they are located in.
+
+  \vspace{\fill}
+
+  But, modules share the same drawbacks as files in other senses. Both are just
+  collections of definitions, at the end of the day. Consider the problem of 
+  the \code{msort} function.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Example File}
+
+  {\tiny
+  \begin{codeblock}
+    fun split [] = []
+      | split [x] = [x]
+      | split (x::y::xs) = 
+          let
+            val (A, B) = split xs
+          in
+            (x::A, y::B)
+          end
+
+    fun merge ([], R) = R
+      | merge (L, []) = L
+      | merge (x::xs, y::ys) =
+          case Int.compare (x, y) of
+            LESS => x :: merge (xs, y::ys)
+          | _ => y :: merge (x::xs, ys)
+
+    fun msort [] = []
+      | msort [x] = [x]
+      | msort L = 
+          let
+            val (A, B) = split L 
+          in
+            merge (msort A, msort B)
+          end
+  \end{codeblock}
+  }
+
+  \vspace{\fill}
+
+  Here's an example of a potential SML file, call it \code{msort.sml}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Namespace Clutter}
+
+  The pitfalls of packaging code as just a collection of definitions is
+  that there's no way to be clear about which parts are important!
+
+  \vspace{\fill}
+
+  The definition of \code{msort} relies on two helper functions, \code{merge}
+  and \code{split}. We cannot avoid writing these functions, but because they
+  are written at the top-level, loading this SML file will also load those
+  functions into the namespace automatically.
+
+  \vspace{\fill}
+  
+  This causes \term{namespace clutter}, because now we have introduced two
+  definitions for \code{merge} and \code{split}, when we only wanted them
+  for the purpose of writing \code{msort}! 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Local Approach}
+
+  One way to get around this is with something called a \term{local definition}.
+
+  \vspace{\fill}
+
+  This looks like:
+
+  \begin{codeblock}
+    local
+      fun split L = (* ... *)
+      fun merge (L1, L2) = (* ... *)
+    in
+      fun msort [] = []
+        | msort [x] = [x]
+        | msort L = (* ... *) 
+    end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This form makes it more clear where the dependencies are. But it's also a burden
+  on the writer of the code! We'd like a solution which ideally doesn't burden
+  the source code. 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What's in a File?}
+
+  How can we somehow convey the contents of a collection of code, without necessarily
+  needing to alter the source significantly?
+
+  \vspace{\fill}
+
+  We could just write this at the top of the file, for instance:
+
+  \begin{codeblock}
+    (* This file contains `msort : int list -> int list' *)
+
+    (* IGNORE *)
+    fun split L = (* ... *)
+    fun merge (L1, L2) = (* ... *)
+    fun msort L = (* ... *)
+  \end{codeblock}
+
+  But now, what happens if we refactor our code?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What's in a File?}
+
+  \begin{codeblock}
+    (* This file contains `msort : int list -> int list' *)
+
+    (* IGNORE *)
+    fun split L = (* ... *)
+    fun merge `cmp` (L1, L2) = (* ... *)
+    fun msort `cmp` L = (* ... *)
+  \end{codeblock}
+
+  Suppose that we change our implementation of \code{msort}, to one 
+  which is now \code{msort : ('a * 'a -> order) -> 'a list -> 'a list}.
+
+  \vspace{\fill}
+
+  Well, now we have to go and change our documentation! Our comment
+  isn't actually checked for accuracy, so it might be the case that it
+  gets outdated. We can't necessarily trust documentation, because it's
+  not verified by anything.
+
+  Can we do better?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Interface}
+
+  \customBox{Idea}{\, What if we had an interface for our file that was
+  checked by the compiler?}
+
+  \vspace{\fill}
+
+  What kind of information are we interested in having present in this interface?
+
+  \vspace{\fill}
+
+  We will check for:
+  \begin{itemize}
+    \item the presence of certain declarations
+    \item the type of value bindings within the file
+  \end{itemize}
+
+  \vspace{\fill}
+
+  This is the idea of a \term{signature}.
+\end{frame}
+
+\sectionSlide{2}{Signatures and Interfaces}
+
+\begin{frame}[fragile]
+  \frametitle{Signatures}
+
+  \defBox{}{\, A \term{signature} is an SML construct, consisting of a collection
+  of \term{specifications} for things such as types, values, and exceptions.}
+
+  \vspace{\fill}
+
+  Here is an example of a signature we could have for a module containing our
+  \code{msort} code, instead of putting it into a separate file \code{msort.sml}:
+
+  \begin{codeblock}
+    signature MSORT =
+      sig 
+        val msort : ('a * 'a -> order) -> 'a list -> 'a list
+      end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  By convention, we usually put the name of a signature in all-caps.
+
+  \vspace{\fill}
+
+  This is the signature of a module which publicly contains just a single value,
+  that being a function \code{msort} of type \code{('a * 'a -> order) -> 'a list -> 'a list}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Module for \code{msort}}
+
+  Suppose we wanted to define our new shiny \code{Msort} module. We might write:
+
+  \begin{codeblock}
+    structure Msort =
+      struct 
+        fun split L = (* ... *)
+        fun merge cmp (L1, L2) = (* ... *)
+        fun msort cmp L = (* ... *)
+      end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Now, we can access our \code{msort} function via \code{Msort.msort}.
+
+  \vspace{\fill}
+
+  But, we haven't yet looped in our \code{MSORT} signature! This means that
+  as currently written, we can still write \code{Msort.split} and \code{Msort.merge}.
+  We also don't have any check that \code{msort} is truly of type 
+  \code{('a * 'a -> order) -> 'a list -> 'a list}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Ascription}
+
+  \defBox{}{\, The act of specifying that a module should implement a given 
+  signature is called \term{ascription}.}
+
+  \vspace{\fill}
+
+  To ensure that our \code{Msort} module has to be compatible with the
+  \code{MSORT} signature, we have to perform \term{ascription}. We write it
+  like this:
+
+  \begin{codeblock}
+    structure Msort `: MSORT` =
+      struct 
+        fun split L = (* ... *)
+        fun merge cmp (L1, L2) = (* ... *)
+        fun msort cmp L = (* ... *)
+      end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This means that, after this ascription, the \textit{only declarations} that 
+  are visible within \code{Msort} from a user are the declarations contained
+  within the \code{MSORT} signature! 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Ascription and Typechecking}
+
+  This means that we cannot use \code{Msort.split} or \code{Msort.merge},
+  because we're restricted to knowledge of the interface. 
+
+  \vspace{\fill}
+
+  The other great advantage of ascription is that it only succeeds if
+  all of the declarations that are present in the signature are present in
+  the structure, \textit{and} the declarations in the structure must have
+  consistent types with those in the signature.
+
+  \vspace{\fill}
+
+  So if we implemented \code{msort} with any type other than 
+  \code{('a * 'a -> order) -> 'a list -> 'a list}, the program would
+  fail to compile. This means that our interfaces are not just well-specified,
+  but significantly stronger than comments. They are guaranteed to be safe.
+\end{frame}
+
+\sectionSlide{3}{Abstraction}
+
+\begin{frame}[fragile]
+  \frametitle{Abstraction Boundaries}
+
+  One of the greatest wins in computer science is the idea of \term{abstraction}.
+
+  \vspace{\fill}
+
+  This means, essentially, deliberately forming higher-level models of things which
+  ignore irrelevant details. This helps us a lot in understanding things with our
+  human brains. For instance, we choose to think about evaluation of expressions,
+  rather than flipping of bits in computer hardware.
+
+  \vspace{\fill}
+
+  At the software level, abstraction abounds as well. We want to choose to 
+  ignore the parts of implementations that do not matter to us. This is the 
+  entire point of specifications.
+  
+  \vspace{\fill}
+
+  Signatures and structures offer us a way to enforce this idea of abstraction.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Abstract Sort}
+
+  The way that we defined \code{MSORT} and \code{Msort} earlier are actually
+  in violation of this idea of abstraction!
+
+  \vspace{\fill}
+
+  Consider the signature \code{MSORT}:
+
+  \begin{codeblock}
+    signature MSORT =
+      sig 
+        val msort : ('a * 'a -> order) -> 'a list -> 'a list
+      end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Why is it important to me, as a user of this sorting library, that it
+  is implemented as a merge sort? The reason why I am using it is that I 
+  want a sorted list -- but the concrete implementation details 
+  \textbf{do not matter} to me.\footnotemark
+
+  \footnotetext[2]{The astute reader might raise complaints about how it
+  may be important to know the run-time complexity of the sorting function.
+  Merge sort isn't the only $O(n \log n)$ sorting algorithm out there, though,
+  and generally when using a library, you should be able to trust that the
+  authors implemented it in a vaguely efficient way.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Abstracting Implementation}
+
+  Here's a better signature:
+  
+  \begin{codeblock}
+    signature `SORT` =
+      sig
+        val `sort` : ('a * 'a -> order) -> 'a list -> 'a list
+      end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  We changed very little, but the idea is that we want to remove as many irrelevant
+  details as possible from the users of the library! They want a sort, and they
+  get a sort. The name is suggestive enough.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Alternate Implementation}
+
+
+  Another reason for doing this, is that we might define multiple sorting libraries,
+  and we want them to ascribe to a common signature! So now, we can also define a 
+  \code{InsertionSort} module:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    structure InsertionSort : SORT =
+      struct 
+        fun sort cmp L = (* ... *)
+      end
+  \end{codeblock}
+\end{frame}
+
+
+\sectionSlide{4}{Information Hiding}
+
+\begin{frame}[fragile]
+  \frametitle{Types in Structures}
+
+  Recall that structures can also contain types. Consider a signature which 
+  describes a library for sets of integers. 
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    signature INTSET =
+      sig
+        type t 
+
+        val empty : t 
+        val insert : int -> t -> t
+        val remove : int -> t -> t
+        val mem : int -> t -> bool
+      end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  We call the type \code{t} in this signature \term{abstract}, because it
+  is left unspecified! Structures which implement this signature (or \term{ascribe}
+  to it) can choose whatever representation they want.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Types in Structures}
+
+  Consider a structure which implements \code{INTSET} with lists. 
+
+  \small
+  \begin{codeblock}
+    structure IntSet : INTSET =
+      struct
+        type t = int list
+
+        val empty = []
+        fun insert v [] = [v]
+          | insert v (x::xs) = 
+              if v = x then x::xs
+              else v::x::xs
+        fun remove v [] = []
+          | remove v (x::xs) = 
+              if v = x then xs else (x :: remove v xs)
+        fun mem v [] = false
+          | mem v (x::xs) = v = x orelse mem v xs
+      end 
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Opening Up}
+
+  \begin{center}
+    \includegraphics[scale=0.35]{open}
+  \end{center}
+
+  \noteBox{}{\, The \code{open} keyword allows you to open all the things in a
+  module into the enclosing scope.}
+
+  \vspace{\fill}
+
+  The important thing is the line \code{type t = int list}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Transparent Ascription}
+
+  The type of ascription we showed you earlier is called \term{transparent ascription}.
+
+  \vspace{\fill}
+  
+  The key thing that it does is that, even though the type of \code{t} in the
+  signature \code{INTSET} is unspecified, transparent ascription makes it so that
+  the type of \code{IntSet.t} is publicly known to be \code{int list}.
+
+  \vspace{\fill}
+
+  This is \textbf{really bad}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{I'm Gonna Wreck It}
+
+  Because \code{IntSet.t} is the same as \code{int list}, it is OK to write
+  the following:
+
+  \begin{codeblock}
+    val set : IntSet.t = [1, 1, 1, 1]
+
+    val set_without_1_i_promise = IntSet.remove 1 set
+
+    val _ = 
+      if IntSet.mem 1 set_without_1_i_promise then
+        destroy_universe ()
+      else
+        dont ()
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This code destroys the universe.\footnotemark
+
+  \footnotetext[3]{Sometimes that happens.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Invariant Violation}
+
+  What happened here? We violated an invariant.
+
+  \vspace{\fill}
+  
+  The \code{IntSet} library was carefully constructed so that by using
+  \code{empty}, \code{insert}, and \code{remove}, every set would act like
+  a set -- that is, \code{mem (x, remove (x, S))} $\eeq$ \code{false}. Every
+  set should have precisely at most one entry for each integer.
+
+  \vspace{\fill}
+
+  When outside users of the library know \textit{how it's implemented}, they
+  can violate this invariant! This means if there was code somewhere which
+  relied on receiving an \code{IntSet.t}, we could mess them up.
+
+  \vspace{\fill}
+
+  So how do we prevent this?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Opaque Ascription}
+
+  The converse to transparent ascription is called \term{opaque ascription}.
+
+  \vspace{\fill}
+
+  \defBox{}{\, \term{Opaque ascription} is transparent ascription, but any
+  abstract types in the signature are unknown to users of the structure.}
+
+  \begin{codeblock}
+    structure IntSetOpaque `:>` INTSET =
+      struct
+        type t = int list
+
+        val empty = []
+        (* ... *)
+        fun mem v [] = false
+          | mem v (x::xs) = v = x orelse mem v xs
+      end 
+  \end{codeblock}
+
+  Here's how we write it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Invariants, Invincible}
+
+  In the resulting structure \code{IntSetOpaque}, users of the module have
+  no idea that the type \code{IntSetOpaque.t} is \code{int list}, and the compiler will 
+  enforce that. The compiler will fail to recognize that \code{IntSetOpaque.t}
+  is the same as \code{int list}. We have \textbf{hidden} the fact that the
+  \code{IntSetOpaque} library is implemented with lists.
+
+  \vspace{\fill}
+
+  This means that now it is \textit{impossible} to obtain a value of type
+  \code{IntSetOpaque.t} without going through \code{IntSetOpaque.empty}, 
+  \code{IntSetOpaque.remove}, or \code{IntSetOpaque.insert}. This means that
+  now it is \textbf{provably impossible} to ever break our set invariant.
+
+  That's pretty neat.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Users and Maintainers}
+
+  Again, this might seem strange. We just implemented \code{IntSetOpaque} as an 
+  \code{int list} like five minutes ago, what do you mean we don't know it's an
+  \code{int list}?
+
+  \vspace{\fill}
+
+  The idea is that \textbf{signatures are for the user}, and \textbf{structures
+  are for the maintainer}. The user of a library should only have to know things 
+  which are in the interface, and the implementation details are left to the
+  maintainer, in the structure.
+
+  \vspace{\fill}
+
+  Being a programmer is a tenuous dance, because you're both. You implement libraries
+  that you end up using, meaning you are both consumer and producer. Why is this
+  important?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Users and Maintainers}
+
+  There are several advantages to being able to close your eyes and think like a 
+  user, rather than a maintainer:
+
+  \begin{itemize}
+    \item \textbf{it lightens your conceptual load}. Instead of thinking about the implementation
+    of \code{insert}, \code{remove}, and co, you can think intuitively about what
+    a set is.
+    \item \textbf{it prevents you from breaking your own invariants}. If you set your invariants
+    ahead of time, and design your API so you can never break it through the interface,
+    then being unable to access the representation from outside the library prevents
+    you from mangling your invariants later.
+    \item \textbf{it helps you maintain your code}. If you later decide to refactor your code
+    to use a different representation, such as a \code{int tree}, you don't need to 
+    touch any of the code outside of the module, so long as you adhere to the
+    original interface.
+  \end{itemize}
+
+  \vspace{\fill}
+
+  SML's ability to \textit{enforce} that you don't break this abstraction layer
+  is one of the most powerful benefits that it provides. 
+\end{frame}
+
+% The signature is for the USER
+% The structure is for the MAINTAINER
+% Occasionally, you are both. But usually you will need to switch
+% between both mindsets.
+
+\sectionSlide{5}{Case Study: Typeclasses}
+
+\begin{frame}[fragile]
+  \frametitle{Abstraction Boundaries}
+
+  Another issue is that this violates abstraction.
+
+  Ideally, the reader of some part of a codebase shouldn't need to necessarily
+  concern themselves with exactly how the implementation achieves something.
+  
+  A user of a function only needs to know \textit{abstractly} what some function
+  does, what its type is, and how it relates to the broader scope of the project.
+
+  This is the great strength of \textit{modularity} in a codebase, where parts
+  can be isolated individually, and precise implementation details can be hidden,
+  so that no one needs to go look at source code unless they have to.
+
+  In this particular example, it's possible that this library only should provide
+  a generic \code{sort} function, one whose implementation is left unknown to the
+  user. After all, sorting is a self-explaining specification -- the precise details
+  are unimportant.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Modules}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+  \frametitle{}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{}
+
+\end{frame}
+
+
+
+
+\begin{frame}[plain]
+  \begin{center}
+    \huge \intermedium{1 - Section Title}
+  \end{center}
+\end{frame}
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}
+

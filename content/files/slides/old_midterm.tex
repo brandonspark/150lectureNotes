@@ -1,0 +1,690 @@
+%\documentclass[12pt]{article} 
+
+%\documentclass[addpoints,12pt]{exam}
+\documentclass[answers,addpoints,12pt]{exam}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{ulem}
+
+\title{\Huge\bf 15-150 Midterm Exam 1}
+\author{Tuesday, June 6 , 2017}
+\date{}
+
+%\def\omit#1{{}}
+\begin{document}
+\maketitle
+
+\section*{\mbox{Name:\qquad\qquad\qquad Andrew ID:\qquad\qquad\ Section:}}
+\begin{itemize}
+\item Write your NAME and Andrew ID on your exam. 
+
+\item Answers should be SHORT and TO THE POINT. Obey the {\it type} and specification constraints, and write syntactically legal ML programs!
+
+\item You do not need to give specifications for the functions you write unless explicitly required.
+
+\item Read the problem descriptions carefully. 
+  In proofs use valid reasoning, state clearly what kind of induction you use, and justify the proof steps.
+
+\item You may assume that SML-defined operators and functions are total and correct, and operations such as ::, and pattern matching have constant running time.
+
+\item  You may tear off the page with the table of Common Recurrences and the extra page at the end to use as scrap paper.
+
+
+% \item You can tear off the extra page containing background information.
+
+\end{itemize}
+
+\vqword{}
+\vpword{Max}
+\begin{center}
+\gradetable[v][questions]
+\end{center}
+
+\newpage
+
+\section*{Questions}
+
+\begin{questions}
+\question{\textbf{Types and values}}
+
+For each of the expressions below, give its most general type and its value.
+
+\textbf{If the expression is not well-typed then say so and explain your answer briefly.}
+
+\textbf{If the expression does not evaluate to a value then say so and explain your answer briefly.}
+
+If the value is a function, write out the function as an \texttt{fn} expression.
+
+\begin{parts}
+
+\part[2]\hfill
+\begin{verbatim}
+
+(2.0, 5+2, true)
+
+\end{verbatim}
+
+\textbf{Type:} \begin{solutionorlines}[2em] (real * int * bool) \end{solutionorlines}
+
+\textbf{Value:} \begin{solutionorlines}[2em] (2.0, 7, true) \end{solutionorlines}
+
+
+\part[2] \hfill
+\begin{verbatim}
+
+(fn x => x + 2) 5       
+
+\end{verbatim}
+\textbf{Type:} \begin{solutionorlines} \begin{verbatim} int  \end{verbatim} \end{solutionorlines}
+
+\textbf{Value:} \begin{solutionorlines}[2em] 7 \end{solutionorlines}
+
+
+\part[2]\hfill
+\begin{verbatim}
+
+fn x => case x of   0 => [] 
+                  | _ => [[x + 1]]
+                  
+\end{verbatim}
+\textbf{Type:} \begin{solutionorlines}[2em] \begin{verbatim} int -> int list list  \end{verbatim} \end{solutionorlines}
+
+\textbf{Value:} \begin{solutionorlines}[2em] fn expression of the question \end{solutionorlines}
+
+\newpage
+\part[2]\hfill
+\begin{verbatim}
+
+(fn x => case x of 0 => [] | _ => [[x + 1]]) "test"
+
+\end{verbatim}
+\textbf{Type:} \begin{solutionorlines}[2em] not well-typed \end{solutionorlines}
+
+\textbf{Value:} \begin{solutionorlines}[2em] Not evaluated because not well-typed. \end{solutionorlines}
+
+
+
+\part[4]\hfill
+\begin{verbatim}
+let 
+  fun f (x: int) : int = f (f(x))
+in
+  f 3
+end
+\end{verbatim}
+Type: \begin{solutionorlines}[2em] int \end{solutionorlines}
+Value: \begin{solutionorlines} [2em]The evaluation does not terminate -- no value \end{solutionorlines}
+
+\end{parts}
+
+\newpage
+
+\question{\textbf{Evaluation and equality}} 
+
+For each of the statements below, write whether it is TRUE or FALSE. If you write FALSE, explain your answer briefly.
+
+\begin{parts}
+\part[2]
+
+\verb|[1,2,3] @ [4,5]| $=$ \verb|1 :: [2,3,4,5]|
+
+
+TRUE or FALSE: \begin{solutionorlines}[4em] TRUE \end{solutionorlines}
+
+        
+\part[2] \hfill
+
+%\begin{verbatim}
+ 
+\verb|(fn (x,y) : (int * int) => 2 * (x + y)) (3,4)|  $\Longrightarrow^*$  \verb|(2 * 3) + (2 * 4)|
+
+%\end{verbatim}
+
+TRUE or FALSE: \begin{solutionorlines}[4em] FALSE. (2 + 3) is reduced first. \end{solutionorlines}
+
+\part[2] 
+%\begin{verbatim}
+
+\verb|(fn x : int  => x + 5)| $=$ \verb|(fn y : int  => 2 + y + 3)|
+
+%\end{verbatim}
+
+TRUE or FALSE: \begin{solutionorlines}[4em] FALSE. The LHS expression is alreadya  value.\end{solutionorlines}
+
+\part[2] \hfill
+%\begin{verbatim}
+
+\verb|(fn x : int  => x + 2 + 3)| $\Longrightarrow^*$  \verb|(fn x : int  => x + 5)|
+
+%\end{verbatim}
+
+TRUE or FALSE: \begin{solutionorlines}[4em] TRUE \end{solutionorlines}
+
+\newpage
+
+\part[2]
+For all expressions \texttt{e} of type \texttt{int}, if \texttt{e} evaluates to 100 then \\ \texttt{((fn x: int => 0) e)} $=$ \texttt{0}.
+
+
+TRUE or FALSE: \begin{solutionorlines}[4em] TRUE \end{solutionorlines}
+
+
+\part[2]
+For all expressions \texttt{e} of type \texttt{int},
+\texttt{((fn x: int => 0) e)} $=$ \texttt{0}.
+%\begin{verbatim}
+%(fn x: int => 0) e = 0
+%\end{verbatim}
+
+TRUE or FALSE: \begin{solutionorlines}[4em] FALSE. Evaluation of e may not terminate. \end{solutionorlines}
+
+\end{parts} 
+
+\newpage
+
+\question{\textbf{Specifications}}
+\begin{parts}
+
+\part[3] A suffix of a list \texttt{L} is a list \texttt{S} such that \texttt{L = A@S}, for some list \texttt{A}. For example, the list \texttt{[1,2,3]} has the suffixes \texttt{ [1,2,3], [2,3], [3], and []}.
+Consider the following function:
+
+\begin{verbatim}
+(* suffs : int list -> int list list 
+   REQUIRES: true
+   ENSURES: suffs L = a list containing  all of the suffixes of L
+*)
+
+fun suffs [] = []
+  | suffs (x::L) = (x::L) :: (suffs L)
+\end{verbatim}
+
+There is a mismatch between the code and the specification.  What modification can you make in the \texttt{ENSURES} clause to make the code satisfy its specification? \\
+
+\texttt{ENSURES: suffs L = a list of} \hrulefill
+
+\begin{solution}
+a list of all non-empty suffixes of L
+\end{solution}
+
+\newpage
+
+\part[3] Instead of changing the specification you can change the code to satisfy the given specification. Write a new base case below that will make the code satisfy the given specification. 
+ 
+\begin{verbatim}
+(* suffs : int list -> int list list 
+   REQUIRES: true
+   ENSURES: suffs L = a list containing all suffixes of L
+*)
+
+fun suffs [ ] = 
+  | suffs (x::L) = (x::L) :: (suffs L)
+\end{verbatim}
+
+\begin{solution}
+\texttt{[[]]}
+\end{solution}
+
+
+\part[3] Consider the function \texttt{prefix} below. The code for the function does not exactly satisfy its specification because the patterns are non-exhaustive. Give an example of a pair of integer lists \texttt{(L1,L2)} for which the function should return false but it does not (gives an error instead). Explain briefly why it does not give false.
+
+\begin{verbatim}
+(* prefix : int list * int list -> bool 
+   REQUIRES: true
+   ENSURES: prefix(L1, L2) = true if there is some list L3 
+            such that L1 @ L3 = L2, and
+            prefix(L1, L2) = false, otherwise.
+*)
+                      
+fun prefix ([], l) = true
+  | prefix ((a::A), (b::B)) = a = b andalso prefix(A, B) 
+\end{verbatim}
+\begin{solution}[4em]
+For example, L1 = [1,2,3]  and L2 = [1,2] or any pair of lists where recursive calls lead to a call with the second list having a value of [].
+\end{solution}
+
+
+\newpage
+
+\part[3] Below is a dataype for binary trees with integer values at leaf nodes:
+\begin{verbatim}
+   datatype btree = Leaf of int | Branch of btree * btree
+\end{verbatim}
+Consider the function {\tt mystery : int -> btree} given below.  It creates binary trees of a certain form. Complete its specification.
+\begin{verbatim}
+
+(* mystery : int -> btree
+   REQUIRES: n >= 1
+   ENSURES: mystery n = 
+
+*)
+
+fun mystery 1 = Leaf 150
+ |  mystery n = Branch(mystery(n-1), mystery(n-1))
+\end{verbatim}
+
+\begin{solution}
+ A balanced tree of depth $n-1$. We did not really teach the terminology for the students to express themselves so be lenient and try to understand what they are saying.  What we are looking for is the observation of branch formation at $(n-1)$ levels, and balancedness expressed in some way. For example, accept 
+the answers complete tree, full tree etc.  An answer that says a balanced tree of depth $n$ is also acceptable since we did not really define depth for them.   
+\end{solution}
+\end{parts}
+
+\newpage
+
+\question{\textbf{Processing lists}}
+
+\begin{parts}
+\part[8] Write a recursive ML function  
+
+\texttt{search: int * int list -> bool * int} 
+
+with the specification given below.  Do not use any helper functions.
+
+\begin{verbatim}
+ (* search: int * int list -> bool * int 
+    REQUIRES: true
+    ENSURES:  search (x,L) = (false, 0) if x does not occur in L,
+    and search (x,L) = (true, n) if there are n occurrences of x in L     
+ *)   
+   
+ fun search (x: int, []: int list): (bool, int) = 
+ 
+   | search (x, y :: L) =  
+                             
+\end{verbatim}
+
+
+\begin{solution}[10em]
+\begin{verbatim}
+fun search (x: int, []: int list): (bool, int) = (false, 0)
+  | search (x, y :: L) =  let val (b,count) = search (x,L)
+                           in 
+                             ((x = y) orelse b, if x = y then count + 1 else count) 
+                           end
+\end{verbatim}        
+\end{solution}
+
+\part[3] Write 3 tests for your function in the form that you would write in a homework assignment. Make sure you have at least one test for each of the two cases given in the specification (when \verb|x| is not found in the list and when \verb|x| is found in the list). Your tests should be such that if the function satisfies its specification, then the tests you write will pass.
+
+
+ \begin{solution}[6em]
+  val (false,0) = search (1, [2,0,5])
+  val (true,2) = search (1, [2,1,1,5])
+  val (false,0) = search (1,[])
+\end{solution}
+
+\end{parts}
+
+\newpage
+
+
+\question{\textbf{Using an accumulator}}
+
+Below is an ML function that computes the list of leaf values of a binary tree that are greater than a given integer \texttt{m}.
+\begin{verbatim}
+datatype  tree = Empty | Leaf of int  | Branch of  tree * tree
+
+fun leaflist (Empty, m) = []
+  | leaflist ((Leaf x), m) = if x > m then [x] else []
+  | leaflist (Branch (T1,T2), m) = leaflist(T1, m) @ (leaflist(T2, m))
+\end{verbatim}
+
+
+\begin{parts}
+\part[2] What is the type of the function \texttt{leaflist}?
+\begin{solutionorlines}[2em]
+tree * int -> int list
+\end{solutionorlines}
+
+The depth of a tree is defined as follows:
+\begin{verbatim}
+
+
+(* depth : tree -> int *)  
+fun depth Emp = 0
+ |  depth (Leaf x) = 0
+ |  depth (Branch(T1, T2)) = Int.max(depth T1, depth T2) + 1;
+
+\end{verbatim}
+
+
+A tree value {\tt T} is {\it balanced} if and only if  {\tt T} is {\tt Empty}, {\tt Leaf x}, or {\tt Branch(T1, T2)} where {\tt depth(T1) = depth(T2)} and
+{\tt T1} and {\tt T2} are balanced.
+
+
+
+
+\part[5] Derive a recurrence relation for $W_{\tt leaflist}(n)$, the work to evaluate {\tt leaflist(T)} when {\tt T} is a balanced tree with $n$ nodes and give a tight big-O estimate. You may use the table of common recurrences.
+\begin{solution}[18em]
+\[
+\begin{array}{l}
+W_{\tt leaflist}(0) = c_0\\
+W_{\tt leaflist}(1) = c_1\\
+W_{\tt leaflist}(n) = 2 W_{\tt leaflist}(n / 2) + n / 2 + c_2\ \mbox{for}\ d>0\\
+\end{array}
+\]
+for some constants $c_0, c_1$. [OK to use $c_0=c_1=1$, etc.] $n / 2$ comes from the work of \texttt{append}. The table of common occurrences gives $O(n log n)$.
+
+Note: We explicitly want the relation over size not depth. Yet, if there is a fully correct answer given in terms of depth award half the credit.
+\end{solution}
+
+\newpage
+
+\part[10] Write a recursive ML function
+
+\texttt{leaflister : tree * int * int list -> int list} 
+
+that uses \texttt{::} but not \texttt{@}, and satisfies the following specification:
+
+For all values \texttt{T} of type \texttt{tree}, \texttt{n} of type \texttt{int}, and \texttt{A} of \texttt{int list},
+
+\begin{verbatim}
+leaflister (T, m, A) = (leaflist (T, m)) @ A. 
+\end{verbatim}
+
+\textbf{You must not call \texttt{leaflist} or write any helper functions.}
+
+\begin{verbatim}
+fun leaflister (Empty, m, A) = 
+
+  | leaflister (Leaf x, m, A) = 
+  
+  | leaflister (Branch (T1,T2), m, A) = 
+  
+  
+  
+  
+\end{verbatim}
+
+\begin{solution}[30em]
+\begin{verbatim}
+fun leaflister (Empty, m, A) = A
+  | leaflister (Leaf x, m, A) = if x > m then x :: A else A
+  | leaflister (Branch (T1,T2), m, A) = leaflister(T1, m , 
+                                            (leaflister(T2, m, A)))
+\end{verbatim}
+\end{solution}
+
+\newpage
+
+\part[5] Derive a recurrence relation for $W_{\tt leaflister}(n,k)$, the work to evaluate {\tt leaflister(T, m, A)} when {\tt T} is a balanced tree with $n$ nodes, and {\tt A} is a list of length $k$.  Give a tight big-O estimate. You may use the table of common recurrences. After writing the recurrence, think carefully about whether $W_{\tt leaflister}(n,k)$ depends both on $n$ and $k$. In coming up with the bound, you may ignore the one that it does not depend on. 
+\begin{solution}[18em]
+\[
+\begin{array}{l}
+W_{\tt leaflister}(0, k) = c_0\\
+W_{\tt leaflister}(1, k) = c_1\\
+W_{\tt leaflister}(n, k) = W_{\tt leaflister}(n/ 2, k ) + W_{\tt leaflister}(n / 2, (n/ 2 + k )) + c_3  
+\end{array}
+\]
+Note that the work is independent of the length of the accumulator so we can treat the recursive case as $W_{\tt leaflister} (n) = 2 W_{\tt leaflister} (n / 2)+ c_3$. The table of common occurrences gives $O(n)$.
+
+Note: We explicitly want the relation over size not depth. Yet, if there is a fully correct answer given in terms of depth award half the credit.
+\end{solution}
+\end{parts}
+
+
+\newpage
+
+\question[15]{\textbf{Correctness Proof}}
+
+This question refers to binary trees with values at leaf nodes:
+\begin{verbatim}
+   datatype  tree = Empty | Leaf of int  | Branch of  tree * tree
+\end{verbatim}
+
+Let {\tt norm: tree -> tree} and {\tt size: tree -> int} be given by:
+\begin{verbatim}   
+   fun size Empty= 0
+    |  size (Leaf x) = 1
+    |  size (Branch(T1, T2)) = size(T1) + size(T2);
+
+   fun norm Empty = Empty
+    |  norm (Leaf x) = Leaf x
+    |  norm (Branch(T1, T2)) =
+         case (norm(T1), norm(T2)) of
+            (Empty, T2') => T2'
+          | (T1', Empty) => T1'
+          | (T1', T2') => Branch(T1', T2')
+\end{verbatim}
+Prove by structural induction that for all values {\tt T: tree},
+\verb|size(norm T)| $=$ \verb|size T|.
+
+You can avoid repeating proof details in cases that are similar, if justified.\\
+You can assume without proof that for all tree values {\tt T},
+{\tt norm(T)} evaluates to a tree value, and {\tt size(T)} evaluates to a non-negative integer.
+
+\begin{solution}
+GRADING NOTES
+\begin{itemize}
+\item  Be liberal with ``referential transparency'':  when it's obvious which equation 
+justifies such a step, don't insist on citing ref. trans.
+\item We tell them that
+``For all values {\tt T}, {\tt size(T)} terminates'', similarly for {\tt norm(T)}, without proof.
+
+\item It's OK if they express their proof using $\Longrightarrow^\ast$. For example:
+\begin{verbatim}
+ For all tree values T, there is an integer n such that 
+    size(norm T) =>* n and size(T) =>* n.
+\end{verbatim}
+
+\item Be liberal with proofs that elide some of the evaluation steps, e.g. in how the case expression performs the pattern-matching,
+provided what they write down is accurate.
+\end{itemize}
+
+\newpage
+
+\noindent{\bf Case for {\tt T=Emp}}: (fill in below)\\
+
+
+\noindent{\bf To show}:\qquad {\tt size(norm Emp) = size Emp}
+
+\noindent{\bf Proof details}:
+
+\begin{verbatim}
+By def of norm, 
+   norm Emp = Emp.     
+So, by referential transparency [OK to omit this since it's clear]
+   size(norm Emp) = size Emp,
+as required.
+\end{verbatim}
+
+
+NOTE: OK to show that {\tt size(norm Emp) = 0} and {\tt size Emp = 0}.
+
+
+\noindent{\bf Case for {\bf T = Leaf x}, when {\tt x} is a value of type {\tt int}}: \\
+
+{\bf To show:}\qquad {\tt size(norm(Leaf x)) = size(Leaf x)}
+
+{\bf Proof details}:
+\begin{verbatim}
+By def of norm,
+   norm(Leaf x) = Leaf x.
+So, by referential transparency [OK to omit, since clear]
+  size(norm (Leaf x)) = size(Leaf x),
+as required.
+\end{verbatim}
+
+\vspace{1cm}
+
+NOTES:
+\begin{itemize}
+\item These two cases are similar, since in each we have {\tt norm T = T}.\\
+It's OK to give the details for one case and say ``the proof is similar'' for the other case.
+
+\item Not necessary to expand out {\tt size Emp = 0} and {\tt size(Leaf x) = 1},
+but these cases can be done that way, i.e. to show that
+\begin{verbatim}
+   size(norm Emp) = 0 & size Emp = 0
+   size(norm (Leaf x)) = 1 & size (Leaf x) = 1.
+\end{verbatim}
+
+\end{itemize}
+
+
+
+\noindent{\bf Case for T = Branch(T1, T2), when {\tt T1}, {\tt T2} are values of type \mbox{\tt t tree}}: (fill in)
+
+{\bf Induction hypotheses:}\\
+\mbox{\qquad }{\tt size(norm T1) = size T1}\\
+\mbox{\qquad }{\tt size(norm T2) = size T2}.\\
+
+{\bf To show:}\qquad {\tt size(norm(Branch(T1, T2))) = size(Branch(T1, T2))}.\\
+
+
+{\bf Proof details}:
+By function definition,
+\begin{verbatim}
+norm(Branch(T1, T2)) = case (norm(T1), norm(T2)) of 
+                        (Emp, T2') => T2'
+                     |  (T1', Emp) => T1'
+                     |  (T1', T2') => Branch(T1', T2')
+\end{verbatim}
+By induction hypotheses, {\tt norm(T1)} and {\tt norm(T2)} evaluate to tree values. Case analysis based on these values.
+\begin{itemize}
+\item[(i)]
+If {\tt norm(T1)=Emp}, it follows that {\tt norm(Branch(T1, T2)) = T2'}, where {\tt T2'} is the value of {\tt norm(T2)}.
+And {\tt size(norm T1) = size Emp = 0}, so by IH {\tt size T1 = 0}; and by IH  {\tt size T2' = size T2}. So
+\begin{verbatim}
+  size(Branch(T1, T2)) = size T1 + size T2 = size T2
+  size(norm(Branch(T1, T2))) = size(T2') = size T2
+\end{verbatim}
+
+\item[(ii)] If {\tt norm(T2) = Emp} we argue similarly.
+
+\item[(iii)] Otherwise, let {\tt T1' = norm T1} and {\tt T2' = norm T2}. By def of {\tt norm},
+\begin{verbatim}
+   norm(Branch(T1, T2)) = Branch(T1', T2')
+\end{verbatim}
+By IH, {\tt size T1' = size T1} and {\tt size T2' = size T2}.
+So
+\begin{verbatim}
+   size(norm(Branch(T1, T2))) 
+      = size(Branch(T1', T2'))   [by ref trans]
+      = size T1' + size T2'      by def of size
+      = size T1 + size T2    [by IH and ref trans]
+      = size(Branch(T1, T2))    by def of size
+\end{verbatim}
+\end{itemize}
+
+NOTE: we elided details about the {\tt case} evaluation in (i) and (iii), but what we wrote is valid.
+It's OK to skip the justification details here!
+
+\end{solution}
+
+\newpage
+\textbf{Extra space if needed}
+\newpage
+\textbf{Extra space if needed}
+\newpage
+
+\question{\textbf{Work and span}}
+
+The depth of a tree is defined as follows:
+\begin{verbatim}
+   (* depth : tree -> int *)  
+   fun depth Empty = 0
+    |  depth (Leaf x) = 0
+    |  depth (Branch(T1, T2)) = Int.max(depth T1, depth T2) + 1;
+\end{verbatim}
+You can assume without proof that for all tree values {\tt T}, {\tt depth(T)} evaluates to a non-negative integer.
+
+
+Here is the definition of {\tt norm: tree -> tree} again:
+\begin{verbatim}
+   fun norm Empty = Empty
+    |  norm (Leaf x) = Leaf x
+    |  norm (Branch(T1, T2)) =
+         case (norm(T1), norm(T2)) of
+            (Empty, T2') => T2'
+          | (T1', Empty) => T1'
+          | (T1', T2') => Branch(T1', T2')
+\end{verbatim}
+
+A tree value {\tt T} is {\it balanced} if and only if  {\tt T} is {\tt Empty}, {\tt Leaf x}, or {\tt Branch(T1, T2)} where {\tt depth(T1) = depth(T2)} and
+{\tt T1} and {\tt T2} are balanced.
+
+
+
+\begin{parts}
+\part[5]
+Derive a recurrence relation for $W_{\tt norm}(d)$, the work to evaluate {\tt norm(T)} when {\tt T} is a balanced tree of depth $d$. You do not need to find a closed form solution for your equations.
+
+\begin{solution}[16em]
+
+\[
+\begin{array}{l}
+W_{\tt norm}(0) = c_0\\
+W_{\tt norm}(d) = 2 W_{\tt norm}(d-1) + c_1\ \mbox{for}\ d>0\\
+\end{array}
+\]
+for some constants $c_0, c_1$. [OK to use $c_0=c_1=1$, etc.]
+
+Note: We explicitly want the relation depth. Yet, if there is a fully correct answer given in terms of size award half the credit.
+\end{solution}
+
+
+\part[3] Give a tight big-O estimate for this function. You may use the table of common recurrences.
+\begin{solution}[4em]
+$O(2^d)$ 
+\end{solution} 
+
+\newpage
+
+\part[5] Derive a recurrence relation for $S_{\tt norm}(d)$, the span to evaluate {\tt norm(T)} when {\tt T} is a balanced tree of depth $d$. You do not need to find a closed form solution for your equations.
+
+\begin{solution}[16em]
+
+\[
+\begin{array}{l}
+S_{\tt norm}(0) = c_0\\
+S_{\tt norm}(d) = S_{\tt norm}(d-1) + c_1\ \mbox{for}\ d>0\\
+\end{array}
+\]
+for some constants $c_0, c_1$. [OK to use $c_0=c_1=1$, etc.]
+
+Note: We explicitly want the relation over size not depth. Yet, if there is a fully correct answer given in terms of depth award half the credit.
+\end{solution}
+
+\part[3] Give a tight big-O estimate for this function. You may use the table of common recurrences.
+\begin{solution}[4em]
+$O(n)$. 
+\end{solution}
+
+
+%\item[({c})] Explain briefly what justifies your answer.  
+
+\end{parts}
+
+
+
+\end{questions}
+
+\newpage
+
+\section*{Common Recurrences}
+
+Case for $n>0$, $c$ is a constant
+\begin{itemize}
+\item $T(n)=T(n\ {\tt div}\ 2) + c$\hfill
+ $T(n)$ is ${\tt O}(log\ n)$
+ 
+ \item $T(n)=T(n-1)+c$\hfill
+ $T(n)$ is ${\tt O}(n)$
+ 
+ \item $T(n)=2*T(n\ {\tt div}\ 2)+c$\hfill
+ $T(n)$ is ${\tt O}(n)$
+ 
+ \item $T(n)=T(n-1)+c*n$\hfill
+ $T(n)$ is ${\tt O}(n^2)$
+ 
+ \item $T(n)=2*T(n\ {\tt div}\ 2)+c*n$\hfill
+ $T(n)$ is ${\tt O}(n\,{\it log}\,n)$
+ 
+ \item $T(n) = k*T(n-1) + c$, $k>1$\hfill
+ $T(n)$ is ${\tt O}(k^n)$
+\end{itemize}
+
+\newpage
+\textbf{Extra page to tear off}
+
+\end{document}
