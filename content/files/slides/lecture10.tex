@@ -33,9 +33,9 @@
 
     \usepackage{lectureSlides}
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
-    \title{Title} % TODO
-    \subtitle{Awesome slides with an awesome subtitle} % TODO
-    \date{01 January 2020} % TODO
+    \title{Combinators and Staging} % TODO
+    \subtitle{Taking higher-order to the next level} % TODO
+    \date{15 June 2023} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -77,11 +77,14 @@
 \end{frame}
 }
 
+\menti{6911 0749}
+
 \begin{frame}[fragile]
   \frametitle{Lesson Plan}
 
   \tableofcontents
 \end{frame}
+
 
 \begin{frame}[fragile]
   \frametitle{Last time}
@@ -89,9 +92,15 @@
   Last time, we went over \term{higher-order functions}, which are functions which
   can take in functions as input and return other functions.
 
+  \pause
+  \vspace{\fill}
+
   We learned that \term{curried} functions take in multiple arguments at separate
   times, by taking them in one-by-one, and returning functions which take in the
   rest.
+
+  \pause
+  \vspace{\fill}
 
   We also learned about the menagerie of HOFs that we will use in this class, 
   being \code{map}, \code{filter}, \code{o}, \code{foldl}, \code{foldr}. 
@@ -104,18 +113,30 @@
 
   What is the advantage of currying?
 
+  \pause
+  \vspace{\fill}
+
   Before, we talked about how we can use currying to define hierarchies of functions.
   
+  \pause
+  \vspace{\fill}
+
   We can instantiate functions we'd ordinarily have to write recursive function definitions
   for, by using HOFs like \code{map} as templates, and producing expressions such as
   \code{map Int.toString}.
 
-  Currying is then important because each curried argument represents a \code{specialization}
+  \pause
+  \vspace{\fill}
+
+  Currying is then important because each curried argument represents a \textit{specialization}
   of a function!
 
+  \pause
+  \vspace{\fill}
+  
   \begin{itemize}
-    \item \code{foldr} - general template for accumulating in a list
-    \item \code{foldr (op+)} - general template for summing elements in list to a value
+    \item \code{foldr} - general template for accumulating in a list \pause
+    \item \code{foldr (op+)} - general template for summing elements in a list, plus a value \pause
     \item \code{foldr (op+) 0} - function for finding sum of a list
   \end{itemize}
 \end{frame}
@@ -123,12 +144,14 @@
 \begin{frame}[fragile]
   \frametitle{Trivial Totality}
 
-  A fun fact is that syntactically sugared curried functions are trivially total\footnotemark.  
+  A \code{fun fact} is that syntactically sugared curried functions are trivially total\footnotemark.  
 
+  \pause
   \vspace{\fill}
 
   Consider the definition of a function like \code{map}:
 
+  \pause
   \vspace{5pt}
 
   \begin{codeblock}
@@ -136,15 +159,53 @@
       | map f (x::xs) = f x :: map f xs
   \end{codeblock}
 
+  \pause
   \vspace{\fill}
 
-  Is \code{map} total? Yes!
+  Is \code{map} total? I claim -- yes!
+
+  \pause
+  \vspace{\fill}
+
+  But now, we also know that \code{map f [1, 2, 3]} should be extensionally
+  equivalent to \code{[f 1, f 2, f 3]}, and \code{f} might not be a total function.
+  What gives?
+
+  \pause
+  \vspace{\fill}
+
+  Indeed, if we evaluate \code{map (fn x => x div 0) [1, 2, 3]}, we get a
+  raised exception \code{Div}. What gives?
+
+  \footnotetext[1]{An even more fun fact is that there were three alliterations in that sentence.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Trivial Totality}
+
+  \customBox{Key Fact}{\, We said that \code{map} was total -- this does not necessarily say anything about
+  the totality of \code{map f}! These are \textit{two different functions}.}
+
+  \pause
+  \vspace{\fill}
+
+  Consider the definition of \code{map}, which can be desugared to the following:
+  \begin{codeblock}
+    val map = fn f => fn [] => (* ... *) | x::xs => (* ... *)
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   It is easy to see that for any function value \code{f : t1 -> t2}, \code{map f} immediately
   evaluates to a lambda expression, which takes in a list and evaluates to either
   case of \code{map}. 
 
-  \footnotetext[1]{An even more fun fact is that there were three alliterations in that sentence.}
+  \pause
+  \vspace{\fill}
+
+  This is an important conceptual distinction to keep in your mind. So we say that
+  a curried function like \code{map} is "trivially total".
 \end{frame}
 
 \begin{frame}[fragile]
@@ -152,9 +213,13 @@
 
   A question remains then - is every value \code{t1 -> t2 -> t3} total?
 
+  \pause
+  \vspace{\fill}
+  
   The answer: \textit{no!} Just because \code{map} and friends are, doesn't mean
   all such values of curried type are. For instance, take the following example:
 
+  \pause
   \begin{codeblock}
     fun loop () = loop () 
 
@@ -166,6 +231,9 @@
       end
   \end{codeblock}
 
+  \pause
+  \vspace{\fill}
+
   This function does not immediately return a lambda expression upon being given a
   value. It actually immediately evaluates \code{loop ()}, an infinite loop.
 \end{frame}
@@ -175,9 +243,15 @@
 
   Suppose that you are building a booth.
 
+  \pause
+  \vspace{\fill}
+
   It's the day of move-on, and you still haven't finished painting the wall boards. Your
   good friend stays behind to get them painted, and you refuse to move the rest of 
   the booth to Midway until they're done.
+
+  \pause
+  \vspace{\fill}
 
   That is silly.
 \end{frame}
@@ -188,6 +262,9 @@
   When building a booth, painting the walls is necessary, but comes much after 
   other steps, like setting up the floorboards, constructing the walls, and 
   moving the wood to Midway in the first place! 
+
+  \pause
+  \vspace{\fill}
 
   The point: It's absurd to wait on something completely unrelated, when you
   could do the work now with what you have!
@@ -200,17 +277,29 @@
 
   We refer to this as \term{staging}.
 
+  \pause
+  \vspace{\fill}
+  
   \defBox{\, We use the term \term{staging} to describe the act of deliberately placing
   computations at certain points with respect to receiving curried arguments}.
+
+  \pause
+  \vspace{\fill}
 
   So instead of saving all computations for when all the curried arguments are received,
   we can instead move some computations to when only the \textit{necessary} arguments
   have been received.
 
+  \pause
+  \vspace{\fill}
+
   Suppose we have the following function:
   \begin{codeblock}
     val f = fn x => fn y => x + y
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   Can we move the expression \code{x + y} any earlier in the curried function? The 
   answer is \textit{no}, because \code{x + y} depends on both arguments!
@@ -220,6 +309,9 @@
   \frametitle{A Code Example}
 
   This comes up all the time!
+
+  \pause
+  \vspace{\fill}
 
   Consider the following artificial code example:
 
@@ -231,6 +323,9 @@
         res + y
       end 
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   \code{horrible_computation} takes 3 years to evaluate.
 \end{frame}
@@ -247,6 +342,9 @@
       end 
   \end{codeblock}
 
+  \pause
+  \vspace{\fill}
+
   3 years is kind of a long time. Suppose we're interested in evaluating the following:
 
   \begin{codeblock}
@@ -255,30 +353,44 @@
     val res3 = mystery 2 5
   \end{codeblock}
 
+  \pause
+  \vspace{\fill}
+
   This code takes 9 years in total, to run. But it doesn't need to!
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Speed Gains}
 
-  It doesn't need to, however. Something we notice about \code{mystery} is that
-  \code{horrible_computation} doesn't actually depend on \code{y}!
+  Something we notice about \code{mystery} is that
+  \code{horrible_computation} doesn't actually depend on \code{y}.
+
+  \pause
+  \vspace{\fill}
 
   So we can rewrite it as:
   \begin{codeblock}
-    fun mystery2 x = 
+    fun mystery2 x `=`
       let
         val res = horrible_computation x
       in
-        fn y => res + y
+        `fn y =>` res + y
       end 
   \end{codeblock}
 
+  \pause
+  \vspace{\fill}
+
   Now instead of returning a lambda which accepts \code{y}, computes the horrible 
   computation, and then returns, we first compute the horrible computation!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Speed Gains}
 
   This lets us write:
 
+  \pause
   \begin{codeblock}
     val f = mystery2 2
     val g = mystery2 1
@@ -286,6 +398,9 @@
     val res2 = g 2
     val res3 = f 5
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   We can't avoid the cost of computing \code{mystery2} twice, but 6 years isn't so long.
 \end{frame}
@@ -297,6 +412,9 @@
   equivalence. We might care about things which go beyond simple extensional equivalence
   however, such as expensive computations, or things that break extensional equivalence,
   such as side effects or mutability.
+
+  \pause
+  \vspace{\fill}
   
   Later this semester, we will see how side effects can make correct knowledge of staging
   even more essential.
@@ -310,12 +428,21 @@
   We've written some higher-order functions at this point, and we're fairly convinced
   of their correctness, but what can we say about their efficiency?
 
+  \pause
+  \vspace{\fill}
+
   Take \code{map} for example.
+
+  \pause
+  \vspace{\fill}
 
   \begin{codeblock}
     fun map (f : 'a -> 'b) ([] : 'a list) : 'b list = []
       | map f (x::xs) = f x :: map f xs
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   From first glance, it looks like the recurrence is a standard recursion on a list,
   and thus comes out to a bound of $O(n)$. When analyzing the recursive case, a question
@@ -325,35 +452,52 @@
 \begin{frame}[fragile]
   \frametitle{The Cost of Code}
 
+  \ptmt 
+
   Because HOFs like \code{map} are code which is parameterized on other code, 
   the run-time cost of functions like \code{map} is also parameterized by 
   the cost of the input function!
 
+  \pause
+  \vspace{\fill}
+  
   This is different than before HOFs, when we only had to deal with being passed
   values that didn't have any notion of cost associated with them -- they just were.
+
+  \pause
+  \vspace{\fill}
 
   In this case, we would say that the cost of \code{map} is $O(n)$ in the number of
   calls to \code{f}, but we can't really say anything better than that.
 \end{frame}
 
-\sectionSlide{3}{HOFs and Trees}
+\quizBreak{NEWFOUNDLAND}
 
+\sectionSlide{3}{HOFs and Trees}
 \begin{frame}[fragile]
   \frametitle{Mapping and Folding}
+  
+  \tgs
 
   We've so far seen mapping and folding on lists. These aren't notions that are 
   specific to lists, however\footnotemark.
+
+  \pause
+  \vspace{\fill}
 
   Suppose we have a polymorphic tree type, as we've defined before, such as:
   \begin{codeblock}
     datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree
   \end{codeblock}
 
+  \pause
+  \vspace{\fill}
+
   We are interested in a \code{map} function which transforms every element of the
   tree, and a \code{fold} function which combines the elements of the tree in a 
   particular order. How can we define these functions?
 
-  \footnotetext[1]{Indeed, "almost every" datatype admits a concept of mapping and
+  \footnotetext[2]{Indeed, "almost every" datatype admits a concept of mapping and
   folding. Proper treatment of this is outside the scope of this course, however.}
 \end{frame}
 
@@ -362,12 +506,23 @@
 
   The type signature for \code{treemap} will look similar to \code{map}:
 
+  \pause
+  \vspace{\fill}
+
+  \spec
+    {treemap}
+    {('a -> 'b) -> 'a tree -> 'b tree}
+    {\code{f is total}}
+    {\code{treemap f T} evaluates to \code{T} with \code{f} called on
+    each element}
+
+  \pause
+  \vspace{\fill}
+
   \begin{codeblock}
-    (* treemap : ('a -> 'b) -> 'a tree -> 'b tree *)
-    (* REQUIRES: f is total *)
-    (* ENSURES: treemap f T evaluates to T with f called on each element *)
     fun treemap f Empty = Empty
-      | treemap f (Node (L, x, R)) = Node (treemap f L, x, treemap f R)
+      | treemap f (Node (L, x, R)) = 
+          Node (treemap f L, f x, treemap f R)
   \end{codeblock}
 \end{frame}
 
@@ -378,16 +533,37 @@
   go with \term{inorder} traversal, which is the more intuitive "left-to-right"
   traversal.
 
+  \pause
+  \vspace{\fill}
+
+  \spec
+    {treefoldl}
+    {('a * 'b -> 'b) -> 'b -> 'a tree -> 'b}
+    {\code{true}}
+    {\code{treefold f z T} $\eeq$ \code{foldl f z (inord T)}}
+
+  \pause
+  \vspace{\fill}
+
+  We see that the types of \code{foldl} and \code{treefoldl} look very
+  similar.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Folding}
+
+  Now, let's implement it.
+
+  \pause
+  \vspace{\fill}
+
   \begin{codeblock}
-    (* treefold : ('a * 'b -> 'b) -> 'b -> 'a tree -> 'b *)
-    (* REQUIRES: true *)
-    (* ENSURES: treefold f z T =~= foldl f z (inord T) *)
-    fun treefold f z Empty = z
-      | treefold f z (Node (L, x, R)) =
+    fun treefoldl f z Empty = z
+      | treefoldl f z (Node (L, x, R)) =
           let
-            val left_folded = treefold f z L
+            val left_folded = treefoldl f z L
           in
-            treefold f (f (x, left_folded)) R
+            treefoldl f (f (x, left_folded)) R
           end
   \end{codeblock}
 \end{frame}
@@ -395,9 +571,8 @@
 \begin{frame}[fragile]
   \frametitle{Tree Folding: Example}
 
-  Let's see tree folding in action!
+  {\color{blue}\href{https://asciinema.org/a/vb4tp7vH1aFMNHKabkex1TsJH}{Let's see tree folding in action (click me!)}}
 
-  (I need to make mulligan work well here with curried functions.)
 \end{frame}
 
 \begin{frame}[fragile]
@@ -406,14 +581,30 @@
   Using HOFs, we can also encapsulate the design pattern for a generic function which
   performs a search on trees.
 
+  \pause
+  \vspace{\fill}
+
   To facilitate this, similarly to how \code{sort} took in a generic comparison function,
   our \code{search} function will take in an arbitrary \term{predicate} on elements, which
   returns a boolean on whether the element is what we are meant to search for. 
 
+  \pause
+  \vspace{\fill}
+
+  \spec
+    {search}
+    {('a -> bool) -> 'a tree -> 'a option}
+    {\code{p} is total}
+    {\code{search p T} evaluates to the first element in \code{T} that satisfies \code{p}, in
+    inorder traversal}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tree Search}
+
+  \rprs
+
   \begin{codeblock}
-    (* search : ('a -> bool) -> 'a tree -> 'a option *)
-    (* REQUIRES: p is total *)
-    (* ENSURES: search p T evaluates to the first element in T that satisfies p *)
     fun search p Empty = NONE
       | search p (Node (L, x, R)) = 
         case search p L of
@@ -422,6 +613,11 @@
             else search p R 
         | SOME res => SOME res
   \end{codeblock}
+
+  \vspace{\fill}
+
+  This search function follows the same sort of logic as the original
+  \code{inord} function we defined -- it obeys the left-root-right ordering.
 \end{frame}
 
 \sectionSlide{4}{Simplifying Programming}
@@ -433,8 +629,14 @@
   functions from generalized templates of program logic, which is an improvement that
   is almost linguistic in nature.
 
+  \pause
+  \vspace{\fill}
+
   It's not quite, since we're really writing code to write other code. But there are
   other useful applications of HOFs, which allows us to write literally simpler code.
+
+  \pause
+  \vspace{\fill}
 
   For instance, suppose we had a very nested function application. It would look
   something like:
@@ -451,14 +653,21 @@
   generally annoying to deal with, due to the parentheses. It also requires being
   read "inside out", since \code{baz} comes after \code{foo}, but is evaluated first!
 
+  \pause
+  \vspace{\fill}
+
   To that end, we can define the \code{|>}\footnotemark operator, which allows us to
   \textit{reverse} the order of function application. It is defined as: 
 
+  \pause
   \begin{codeblock}
     infix |> 
 
     fun x |> f = f x 
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   Thus, we could rewrite the first example as:
 
@@ -466,7 +675,7 @@
     x |> baz |> qux |> bar |> foo
   \end{codeblock}
 
-  \footnotetext[1]{Pronounced "pipe"}
+  \footnotetext[3]{Pronounced "pipe"}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -474,6 +683,9 @@
 
   This might seem weird to look at at first, but this is extremely useful for
   producing legible code, that reads like simple instructions.
+
+  \pause
+  \vspace{\fill}
 
   For instance, take the following recipe:
   \begin{itemize}
@@ -487,8 +699,11 @@
 \begin{frame}[fragile]
   \frametitle{The Pipe Operator}
 
-  This might seem weird to look at at first, but this is extremely useful for
-  producing legible code, that reads like simple instructions.
+  Well, let's see what happens if we try to codify these instructions as 
+  actual SML code.
+
+  \pause
+  \vspace{\fill}
 
   For instance, take the following recipe:
   \begin{codeblock}
@@ -500,16 +715,31 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pipes with Fallible Operations}
+  \frametitle{A Student Problem}
 
   We can think of the pipe operator as stringing together operations, in the same way
   that we might construct a pipe out of components with compatible ends.
 
-  The pipe operator works because each of those operations can be applied as a function.
-  But what if some of the functions we want to pipe are fallible? In other words, they 
-  return \code{t option}, for some type \code{t}.
+  \pause
+  \vspace{\fill}
 
-  For instance, suppose we have:
+  Let's take a look at another problem which might benefit from usage of the 
+  pipe operator. Suppose we would like to write: 
+
+  \pause
+  \vspace{\fill}
+
+  \spec 
+    {findStudentGrade}
+    {(string * string) -> string -> int}
+    {\code{true}}
+    {\code{findStudentGrade (student, assignment) file} looks up the grade of \code{student}
+    on assignment \code{assigment} in the grades file \code{file}}
+
+  \pause
+  \vspace{\fill}
+
+  And then, suppose we have the following helpers: 
   \begin{itemize} 
     \item \code{readFile : string -> string}, which reads in the contents of a file
     \item \code{parseGrades : string -> grades}, which tries to read a string as a grade sheet 
@@ -519,10 +749,12 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Whatever Can Go Wrong...}
+  \frametitle{A Pipeable Problem?}
 
-  Except, that might not actually be true. If the functions we just described truly had
-  those types, we could just solve it via regular pipe operators:
+  It looks like we can just straightforwardly use \code{|>}!
+
+  \pause
+  \vspace{\fill}
 
   \begin{codeblock}
     fun findStudentGrade (student, assignment) grades_file =
@@ -532,22 +764,45 @@
       |> lookup (student, assignment)
   \end{codeblock}
 
-  Except, a great deal of things might go wrong during this whole process! We can't
-  trust that each of these functions actually returns a sensible value.
+  \pause
+  \vspace{\fill}
 
-  So we have:
+  Except, that might not actually be true. The pipe operator works because each 
+  of those operations can be applied as a function. But what if some of the 
+  functions we want to pipe are fallible? In other words, they return 
+  \code{t option}, for some type \code{t}?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Whatever Can Go Wrong...}
+
+  We see that our helpers defined previously have a host of problems that 
+  might cause them to want to return \code{option} types!
+
+  \pause
+  \vspace{\fill}
+
   \begin{itemize} 
     \item \code{readFile : string -> string option}, because the file might not exist 
     \item \code{parseGrades : string -> grades option}, because the grades might not be in the
     correct format to be parsed 
     \item \code{lookup : (string * string) -> grades -> int}, because the student might not exist 
   \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Let's rewrite the code to accommodate this.
 \end{frame}
+
 
 \begin{frame}[fragile]
   \frametitle{Reframed with Options}
 
   So let's try doing this example again, except now all our functions return options.
+
+  \pause
+  \vspace{\fill}
 
   \begin{codeblock}
     fun findStudentGrade (student, assignment) grades_file =
@@ -562,6 +817,9 @@
           | SOME grade => SOME grade))
   \end{codeblock}
 
+  \pause
+  \vspace{\fill}
+
   This is disgusting.
 \end{frame}
 
@@ -573,25 +831,35 @@
   since we otherwise have no way of dispatching on what exactly was returned, but the
   redundancy is in the \code{NONE} case.
 
+  \pause
+  \vspace{\fill}
+
   When \code{SOME} is returned, we proceed as normal, but in every single case where we
   receive \code{NONE}, we just return \code{NONE}. This is \textit{boilerplate logic},
   because it just bloats the code, and doesn't add anything substantive to the interesting
   behavior of the function.
 
+  \pause
+  \vspace{\fill}
+
   Fortunately, \code{option} is something called a \term{monad}.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{\, A \term{monad} is a particular kind of type constructor that supports some
+  operations that obey certain mathematical laws.}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Enter the Monad}
 
-  \defBox{\, A \term{monad} is a particular kind of type constructor that supports some
-  operations that obey certain mathematical laws.}
-
-  \vspace{\fill}
+  \tgs
 
   It's not actually super important what a monad is, but the main idea is that we can
   write a single function, \code{bind}:
 
+  \pause
   \begin{codeblock}
     fun bind (x : 'a option) (f : 'a -> 'b option) = 
       case x of
@@ -599,31 +867,35 @@
       | SOME res => f res
   \end{codeblock}
 
+  \pause
   \vspace{\fill}
 
   This kind of looks like the boilerplate logic around each one of our earlier steps!
 
+  \pause
   \vspace{\fill}
 
   What this function does is take a function which is supposed to operate on a non-optional
   value, which might fail. It then passes an optional value into it by handling the 
   \code{NONE} case explicitly, as we did earlier. This takes care of the casing for us,
   so that we don't have to!
-
-  \tgs
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Piping with \code{bind} {\transparent{0.45}(Programmatic Thinking is Mathematical Thinking)}}
+  \frametitle{Piping with \code{bind}}
 
   Now, we can write:
 
+  \pause
   \begin{codeblock}
     fun findStudentGrade (student, assignment) grades_file =
       bind (readFile grades_file) (fn contents =>
       bind (parseGrades contents) (fn grades =>
-      lookup (student, assignment)))
+      lookup (student, assignment) grades))
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   Now, much more readable!
 \end{frame}
@@ -633,7 +905,13 @@
 
   Some enthusiasts also enjoy defining \code{bind} as an infix operator.
 
+  \pause
+  \vspace{\fill}
+  
   Traditionally, this is named \code{>>=}.\footnotemark
+
+  \pause
+  \vspace{\fill}
 
   They define: 
   \begin{codeblock}
@@ -641,6 +919,9 @@
 
     fun x >>= f = bind (x, f)
   \end{codeblock}
+
+  \pause
+  \vspace{\fill}
 
   to get:
   \begin{codeblock}
@@ -650,7 +931,7 @@
       lookup (student, assignment)))
   \end{codeblock}
 
-  \footnotetext[3]{This is big in the Haskell community.}
+  \footnotetext[4]{This is big in the Haskell community.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -661,6 +942,9 @@
   leverages simple principles to simplify program logic that would 
   otherwise bloat a program.
 
+  \pause
+  \vspace{\fill}
+
   It seems like a little, but code readability is really important when 
   maintaining a codebase! We posited on the first day that functional 
   programming is a refinement on our ability to communicate, and this is 
@@ -668,8 +952,155 @@
   linguistic benefits.
 \end{frame}
 
+\sectionSlide{5}{Case Study: Staging (Bonus)}
+
+\begin{frame}[fragile]
+  \frametitle{Benefits of Staging}
+
+  Let's look at a concrete instance of a problem that could be staged, for
+  performance benefits.
+
+  \pause
+  \vspace{\fill}
+
+  Consider a function \code{nth_largest}, which has the following specification: 
+
+  \pause
+  \vspace{\fill}
+
+  \spec
+    {nth_largest}
+    {int list -> int -> int}
+    {\code{i >= 0}}
+    {\code{nth_largest L i} evaluates to the \code{i}th largest element in \code{L}}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Naive Approach}
+
+  Here's a simple way that we might implement \code{nth_largest}. Assume that
+  we have the \code{sort} function that we defined earlier. 
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun nth_largest L i =
+      let
+        val sorted = sort (Int.compare, L)
+      in
+        List.nth (L, i) 
+      end
+  \end{codeblock}
+
+  where \code{List.nth} is the function which gets the \code{n}th element of
+  a list.
+
+  \pause
+  \vspace{\fill}
+
+  Simple enough!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Cost Analysis}
+
+  But wait, what's the complexity of this function? We know that our previous
+  work bound for sorting was $O(n \log n)$, when we implemented merge sort, and
+  the standard library's \code{List.nth} function is $O(\code{i})$, where \code{i}
+  is the index that we are trying to access.\footnotemark
+
+  \pause
+  \vspace{\fill}
+
+  So then if we ran \code{nth_largest L i} on varying values of \code{i}, and 
+  we did it $k$ times, we would incur $k \cdot n \log n$ in cost!
+
+  \pause
+  \vspace{\fill}
+
+  This is primarily because on \textit{every call} to \code{nth_largest}, we 
+  sort the list. This is massively wasted effort! Can we do better?
+
+  \footnotetext[4]{This is because \code{List.nth} just pops off the first 
+  \code{i} elements, until it reaches the \code{i}th one. There's no magic.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Doing Just Fine}
+
+  We can do better.
+
+  \pause
+  \vspace{\fill}
+
+  We notice that there is no data dependency between sorting the list and 
+  the second argument, \code{i}. This means that the computation of
+  \code{sort (Int.compare, L)} can be moved up!
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun nth_largest L = 
+      let 
+        val sorted = sort (Int.compare, L)
+      in
+        fn i => List.nth (sorted, i) 
+      end
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Staged Experience}
+
+  Now, instead of calling \code{nth_largest L i} a bunch of times, we can first
+  call \code{nth_largest L}, and obtain a \textit{staged} version of 
+  \code{nth_largest}, which is particular to the list \code{L}. We can then query
+  it as many times as we like, with only a linear cost each time.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    val staged_nth_largest = nth_largest L (* O(n log n) *)
+
+    (* each of these are O(n) *)
+    val first_largest = staged_nth_largest 0
+    val second_largest = staged_nth_largest 1
+    val third_largest = staged_nth_largest 2
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Effect}
+
+  Does it matter, at the end of the day? By sorting the list at all, we still
+  incur a $O(n \log n)$ cost, so maybe we haven't actually saved much.
+
+  \pause
+  \vspace{\fill}
+
+  If we were only planning on doing a constant number of queries, it won't actually
+  asymptotically matter, in the long run.
+
+  \pause
+  \vspace{\fill}
+
+  This particular situation isn't one that will be asymptotically improved, but
+  it's still \textit{better}. Avoiding a potentially large amount of duplicate
+  sorts is still a big deal. It's important to be mindful of the computations
+  you're doing, and see opportunities for improvement. 
+\end{frame}
+
 \begin{frame}[plain]
 	\begin{center} Thank you! \end{center}
+
+	\begin{center} 
+    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLScxujBV8sYyq4j2tyh4isfQZrNmN9X--LQ0FI6ebP_jriVEzQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
+    \vspace{5pt}
+    \includegraphics[scale=0.035]{qr_june15}
+  \end{center}
 \end{frame}
 
 

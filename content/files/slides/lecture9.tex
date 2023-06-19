@@ -197,7 +197,7 @@
   \begin{codeblock}
     fun mod12Compare (x, y) = Int.compare (x mod 12, y mod 12) 
 
-    val sorted = sort (intCompare, [4, 3, 1, 2])
+    val sorted = sort (mod12Compare, [4, 3, 1, 2])
   \end{codeblock}
 \end{frame}
 
@@ -380,10 +380,10 @@
 
   \begin{codeblock}
     fun incrementAll [] = []
-      | incrementAll (x::xs) = (x + 1) :: xs
+      | incrementAll (x::xs) = (x + 1) :: incrementAll xs
 
     fun toStringAll [] = [] 
-      | toStringAll (x::xs) = Int.toString x :: xs 
+      | toStringAll (x::xs) = Int.toString x :: toStringAll xs 
   \end{codeblock}
 
   \vspace{\fill}
