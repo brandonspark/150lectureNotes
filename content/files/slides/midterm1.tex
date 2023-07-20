@@ -1,4 +1,4 @@
-\documentclass[addpoints,12pt]{exam}
+\documentclass[addpoints,12pt, answers]{exam}
 
 \usepackage{amsmath, amsthm, amssymb, amsfonts}
 \usepackage{thmtools}
@@ -193,7 +193,7 @@
   \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
 }
 \def\bt@HL@endenv{%
-  \end{btHighlight}%   
+  \end{btHighlight}%
   \egroup
 }
 \newcommand{\bt@HL@box}[2][]{%
@@ -212,7 +212,7 @@
   \begin{atHighlight}[#1]\bgroup\aftergroup\at@HL@endenv%
 }
 \def\at@HL@endenv{%
-  \end{atHighlight}%   
+  \end{atHighlight}%
   \egroup
 }
 \newcommand{\at@HL@box}[2][]{%
@@ -267,12 +267,12 @@
 
 \vspace{-3cm}
 
-\hspace{-1cm} Name \rule{5cm}{0.4pt} \, Andrew ID \rule{3cm}{0.4pt} \, House \rule{3.5cm}{0.4pt} 
+\hspace{-1cm} Name \rule{5cm}{0.4pt} \, Andrew ID \rule{3cm}{0.4pt} \, House \rule{3.5cm}{0.4pt}
 
 \vspace{5pt}
 
 \begin{itemize}
-  \item Write your name, Andrew ID, and House name on this page. 
+  \item Write your name, Andrew ID, and House name on this page.
   \item This is an 80 minute examination of 6 parts.
   \item Answers should be short and to the point. Obey question constraints, wherever
   they appear, and write syntactically legal SML programs!
@@ -324,20 +324,20 @@ If the value is a function, write out the function as an \texttt{fn} expression.
   \part[2]\hfill
 
   \code{(1 + 2, (true, ["hi"]))}
-  
+
   \textbf{Type:} \begin{solutionorlines}[2em] \code{int * (bool * int list)} \end{solutionorlines}
-  
+
   \textbf{Value:} \begin{solutionorlines}[2em] \code{(3, (true, ["hi"]))} \end{solutionorlines}
-  
-  
+
+
   \part[2] \hfill
 
   \code{(fn x => true andalso x) true}
 
   \textbf{Type:} \begin{solutionorlines}[2em] \code{bool} \end{solutionorlines}
-  
+
   \textbf{Value:} \begin{solutionorlines}[2em] \code{true} \end{solutionorlines}
-    
+
   \part[2]\hfill
 
   \begin{codeblock}
@@ -348,9 +348,9 @@ If the value is a function, write out the function as an \texttt{fn} expression.
   \end{codeblock}
 
   \textbf{Type:} \begin{solutionorlines}[2em] \code{int -> int} \end{solutionorlines}
-  
+
   \textbf{Value:} \begin{solutionorlines}[2em] \code{fn y => 2 + y} \end{solutionorlines}
-  
+
   \newpage
 
   \part[2]\hfill
@@ -363,24 +363,24 @@ If the value is a function, write out the function as an \texttt{fn} expression.
   \end{codeblock}
 
   \textbf{Type:} \begin{solutionorlines}[2em] ill-typed, case branches do not agree \end{solutionorlines}
-  
+
   \textbf{Value:} \begin{solutionorlines}[2em] no value because ill-typed! \end{solutionorlines}
-  
+
   \part[2]\hfill
-  
+
   \begin{codeblock}
   let
     fun f (x : int) : int list = x :: f x
-    val _ = f 150 
+    val _ = f 150
   in
     2
   end
   \end{codeblock}
-  
+
   \textbf{Type:} \begin{solutionorlines}[2em] \code{int} \end{solutionorlines}
-  
+
   \textbf{Value:} \begin{solutionorlines}[2em] no value, loops forever \end{solutionorlines}
-  
+
 \end{parts}
 
 \newpage
@@ -390,20 +390,20 @@ If the value is a function, write out the function as an \texttt{fn} expression.
 \textbf{Evaluation and Equivalence}
 
 For each of the questions below, please mark whether they are "true" or
-"false". If your answer is false, please briefly justify why. 
+"false". If your answer is false, please briefly justify why.
 
 \begin{parts}
   \part[2]\hfill
 
   If, for expressions \code{e1, e2 : t}, we have that \code{e1} $\hookrightarrow$ \code{v}, and
-  \code{e2} $\hookrightarrow$ \code{v}, for some value \code{v : t}, then it must be 
+  \code{e2} $\hookrightarrow$ \code{v}, for some value \code{v : t}, then it must be
   true that \code{e1} $\stepsTo^*$ \code{e2}.
 
   \begin{solutionorlines}[2em] False. Consider \code{1 + 1} and \code{2 + 0}. \end{solutionorlines}
 
   \part[2]\hfill
 
-  If an expression \code{e : t1 -> t2} is total, then \code{e} is also 
+  If an expression \code{e : t1 -> t2} is total, then \code{e} is also
   valuable.
 
   \begin{solutionorlines}[2em] True \end{solutionorlines}
@@ -417,13 +417,13 @@ For each of the questions below, please mark whether they are "true" or
 
   \part[2]\hfill
 
-  For any expression \code{e : t}, \code{SOME e} is valuable. 
+  For any expression \code{e : t}, \code{SOME e} is valuable.
 
   \begin{solutionorlines}[2em] False, \code{e} may not terminate. \end{solutionorlines}
 
   \part[2]\hfill
 
-  For any value \code{v : t}, \code{SOME v} is valuable. 
+  For any value \code{v : t}, \code{SOME v} is valuable.
 
   \begin{solutionorlines}[2em] True. \end{solutionorlines}
 
@@ -440,7 +440,7 @@ Recall the type of \code{tree}s, from lecture:
 \end{codeblock}
 
 A \textit{binary search tree} is a value of the \code{tree} type, that satisfies the
-following definition: 
+following definition:
 
 \textbf{Definition.} A value \code{v : t} is called a \textit{binary search tree} if:
 \begin{enumerate}
@@ -461,12 +461,12 @@ following definition:
     {int * tree -> bool}
     {\code{true}}
     {\code{isGeqTree (x, T)} evaluates to \code{true} iff \code{x} is greater than
-    or equal to every element of \code{T}.} 
+    or equal to every element of \code{T}.}
 
-  \begin{solutionorbox}[20em] 
+  \begin{solutionorbox}[20em]
     \begin{codeblock}
       fun isGeqTree (n : int, Empty : tree) : bool = true
-        | isGeqTree (n, Node (L, x, R)) = 
+        | isGeqTree (n, Node (L, x, R)) =
             n >= x andalso isGeqTree (n, L) andalso isGeqTree (n, R)
     \end{codeblock}
   \end{solutionorbox}
@@ -482,10 +482,10 @@ following definition:
       {int * tree -> bool}
       {\code{true}}
       {\code{isLeqTree (x, T)} evaluates to \code{true} iff \code{x} is less than
-      or equal to every element of \code{T}.} 
+      or equal to every element of \code{T}.}
     \end{adjustwidth}
 
-    then we can define our \code{isBST} function with the following specification: 
+    then we can define our \code{isBST} function with the following specification:
 
     \vspace{7pt}
     \begin{adjustwidth}{0em}{0em} % adjust the left margin to 2em
@@ -493,44 +493,44 @@ following definition:
       {isBST}
       {tree -> bool}
       {\code{true}}
-      {\code{isBST T} evaluates to \code{true} iff \code{T} is a binary search tree.} 
+      {\code{isBST T} evaluates to \code{true} iff \code{T} is a binary search tree.}
     \end{adjustwidth}
 
     % TODO: could give to them?
     \begin{codeblock}
       fun isBST (Empty : tree) : bool = true
-        | isBST (Node (L, x, R)) = 
-            isBST L andalso isBST R 
+        | isBST (Node (L, x, R)) =
+            isBST L andalso isBST R
             andalso isLeqTree (x, R) andalso isGeqTree (x, L)
     \end{codeblock}
   \end{EnvUplevel}
 
   \part[2]\hfill
 
-  Assuming that the work of both \code{isGeqTree} and \code{isLeqTree} are 
-  $O(n)$ in the number of nodes in the tree, write a recurrence for the \textbf{work} 
-  of \code{isBST}, in terms of $n$, the number of nodes in the input tree, when given 
+  Assuming that the work of both \code{isGeqTree} and \code{isLeqTree} are
+  $O(n)$ in the number of nodes in the tree, write a recurrence for the \textbf{work}
+  of \code{isBST}, in terms of $n$, the number of nodes in the input tree, when given
   a \textbf{balanced} tree. You do not need to give a bound.
 
   You may assume that \code{isLeqTree} has the same complexity as \code{isGeqTree}.
 
-  \begin{solutionorbox}[20em] 
+  \begin{solutionorbox}[20em]
     $W_{\code{isBST}}(0) = c_0$
-    $W_{\code{isBST}}(n) = 2W_{\code{isBST}}(\frac{n}{2}) + 
+    $W_{\code{isBST}}(n) = 2W_{\code{isBST}}(\frac{n}{2}) +
     W_{\code{isLeqTree}}(\frac{n}{2}) + W_{\code{isGeqTree}}(\frac{n}{2}) + c_1$
 
     Solves to $O(n \log n)$.
   \end{solutionorbox}
 
-  \newpage 
+  \newpage
 
   \part[5]\hfill
 
   Solve the recurrence from the previous part to obtain a bound in
   $n$. Show your work! You may combine terms of the same asymptotic complexity
-  together to simplify your analysis. 
+  together to simplify your analysis.
 
-  \begin{solutionorbox}[40em] 
+  \begin{solutionorbox}[40em]
     By the Tree Method.
 
     We note that there are $\log n$ levels, $2^i$ nodes per level, and
@@ -548,7 +548,7 @@ following definition:
 \textbf{Binary Search Trees, Better}
 
 That's a pretty silly way to do \code{isBST}. Let's try via a different
-method. 
+method.
 
 Recall the \textit{inorder traversal} of a tree, which looks something like this:
 
@@ -571,7 +571,7 @@ Recall the \textit{inorder traversal} of a tree, which looks something like this
     \end{tikzpicture}
 \end{center}
 
-Essentially, we visit the nodes from "left to right", as a normal 
+Essentially, we visit the nodes from "left to right", as a normal
 human would read it. It just so happens to be that, if a tree is a binary
 search tree, then an inorder traversal of that tree should only visit
 nodes in a nondecreasing order.
@@ -602,16 +602,16 @@ nodes in a nondecreasing order.
     You must implement \code{isNondecreasing} via direct recursion, with
     no helper functions.
 
-    \code{isNondecreasing} must be implemented in $O(n)$ in the length 
+    \code{isNondecreasing} must be implemented in $O(n)$ in the length
     of the input list.
   \end{constraint}
-  
-  \begin{solutionorbox}[12em] 
+
+  \begin{solutionorbox}[12em]
     \begin{codeblock}
       fun isNondecreasing ([] : int list) = true
         | isNondecreasing [x] = true
-        | isNondecreasing (x::y::ys) = 
-            x <= y andalso isNondecreasing (y::ys) 
+        | isNondecreasing (x::y::ys) =
+            x <= y andalso isNondecreasing (y::ys)
     \end{codeblock}
   \end{solutionorbox}
 
@@ -626,8 +626,8 @@ nodes in a nondecreasing order.
     Suppose we were given the following implementation of \code{inord'}:
 
     \begin{codeblock}
-      fun inord' (Empty : tree, acc) : int list = acc 
-        | inord' (Node (L, x, R), acc) = 
+      fun inord' (Empty : tree, acc) : int list = acc
+        | inord' (Node (L, x, R), acc) =
             inord' (L, x :: inord' (R, acc))
     \end{codeblock}
   \end{EnvUplevel}
@@ -635,13 +635,13 @@ nodes in a nondecreasing order.
   \part[5]\hfill
 
     Write a recurrence for the \textbf{work} of \code{inord'}, in
-    terms of the \textbf{depth} of the input tree. Assume you are 
+    terms of the \textbf{depth} of the input tree. Assume you are
     given a \textbf{balanced} tree.
 
     Give a \textbf{tight bound} as well. You are \textbf{not required
     to show your work}, merely stating the bound is fine.
 
-    \begin{solutionorbox}[10em] 
+    \begin{solutionorbox}[10em]
       $W_{\code{inord'}}(0) = c_0$
       $W_{\code{inord'}}(d) = 2 \cdot W_{\code{inord'}}(d - 1) + c_1$
 
@@ -651,13 +651,13 @@ nodes in a nondecreasing order.
   \part[5]\hfill
 
     Write a recurrence for the \textbf{span} of \code{inord'}, in
-    terms of the \textbf{depth} of the input tree. Assume you are 
+    terms of the \textbf{depth} of the input tree. Assume you are
     given a \textbf{balanced} tree.
 
     Give a \textbf{tight bound} as well. You are \textbf{not required
     to show your work}, merely stating the bound is fine.
 
-    \begin{solutionorbox}[10em] 
+    \begin{solutionorbox}[10em]
       $W_{\code{inord'}}(0) = c_0$
       $W_{\code{inord'}}(d) = 2 W_{\code{inord'}}(d - 1) + c_1$
 
@@ -667,7 +667,7 @@ nodes in a nondecreasing order.
   \newpage
 
   \begin{EnvUplevel}
-    Recall the definition of \code{isBST}: 
+    Recall the definition of \code{isBST}:
 
     \begin{codeblock}
       fun isBST (T : tree) = isNondecreasing (inord' T)
@@ -678,21 +678,21 @@ nodes in a nondecreasing order.
 
   \part[2]\hfill
     Give a \textbf{tight bound} for the \textbf{work} of \code{isBST} on
-    a \textbf{balanced} tree, in terms of the \textbf{depth}. You are 
+    a \textbf{balanced} tree, in terms of the \textbf{depth}. You are
     \textbf{not required to show your work}, merely stating the bound is fine.
 
-    \begin{solutionorbox}[10em] 
+    \begin{solutionorbox}[10em]
       $O(2^d)$
     \end{solutionorbox}
 
   \part[2]\hfill
 
     Given your answer to the previous part, state a bound for
-    the \textbf{work} of \code{isBST} in terms of $n$, the number of nodes of the tree. 
-    Justify why, in a sentence, this is the bound. Assume you are given a 
+    the \textbf{work} of \code{isBST} in terms of $n$, the number of nodes of the tree.
+    Justify why, in a sentence, this is the bound. Assume you are given a
     \textbf{balanced} tree.
 
-    \begin{solutionorbox}[10em] 
+    \begin{solutionorbox}[10em]
       $O(n)$, because $d = \log n$ in a balanced tree, so $O(2^d) = O(2^{\log n}) = O(n)$.
     \end{solutionorbox}
 \end{parts}
@@ -705,30 +705,30 @@ nodes in a nondecreasing order.
 \begin{parts}
   \part[10]\hfill
 
-  Write a function \code{tlistmax}, satisfying the following specification: 
+  Write a function \code{tlistmax}, satisfying the following specification:
 
   \spec
     {tlistmax}
     {int list * int option -> int option}
     {\code{true}}
-    { 
+    {
       \code{tlistmax (L, acc)} $\eeq$
 
       \vspace{3pt}
 
       $\left\{
         \begin{array}{@{}l l@{}}
-            \code{NONE}, & \text{if } \code{L} $\eeq$ \code{[]} and \code{acc} $\eeq$ \code{NONE} \\ 
-            \code{SOME x}, & \text{if \code{acc} $\eeq$ \code{SOME y}, where 
+            \code{NONE}, & \text{if } \code{L} $\eeq$ \code{[]} and \code{acc} $\eeq$ \code{NONE} \\
+            \code{SOME x}, & \text{if \code{acc} $\eeq$ \code{SOME y}, where
             \code{x} is the max element of \code{y::L}} \\
-            \code{SOME x}, & \text{if \code{acc} $\eeq$ \code{NONE}, where 
+            \code{SOME x}, & \text{if \code{acc} $\eeq$ \code{NONE}, where
             \code{x} is the max element of \code{L}}
         \end{array}
       \right\}
       $
     }
 
-  You may assume that you have been given a function 
+  You may assume that you have been given a function
   \code{max : int * int -> int} which simply computes the maximum of two integers.
 
   \vspace{3pt}
@@ -746,10 +746,10 @@ nodes in a nondecreasing order.
     \code{tlistmax} must be tail recursive.
   \end{constraint}
 
-  \begin{solutionorbox}[20em] 
+  \begin{solutionorbox}[20em]
     \begin{codeblock}
-      fun tlistmax ([] : int list, acc : int option) : int option = acc 
-        | tlistmax (x::xs, acc) = 
+      fun tlistmax ([] : int list, acc : int option) : int option = acc
+        | tlistmax (x::xs, acc) =
             case acc of
               NONE => tlistmax (xs, SOME x)
             | SOME y => tlistmax (xs, SOME (max (x, y)))
@@ -780,7 +780,7 @@ function:
     | insert (v, Node (L, x, R)) =
         if v <= x then
           Node (insert (v, L), x, R)
-        else 
+        else
           Node (L, x, insert (v, R))
 \end{codeblock}
 
@@ -789,18 +789,63 @@ function:
 
   Prove the following theorem:
 
-  For all values \code{T : tree} and \code{v : int}: 
-  
+  For all values \code{T : tree} and \code{v : int}:
+
   $$\code{count (insert (v, T))} \eeq \code{count T + 1}$$
 
   You may use the following lemma in your proof:
 
   \textbf{Lemma 1:} \code{insert} is total.
 
-  \begin{solutionorbox}[20em] 
-  \end{solutionorbox}
+  \begin{solutionorbox}[20em]
+    BC: \code{count Empty + 1} $\eeq$ \code{count (insert (y, Empty))}
 
-  \begin{solutionorbox}[50em] 
+    LHS:
+    \begin{align*}
+      & \code{count Empty + 1} \\
+      &= \code{1} \tag{math, clause 1 of \code{count}} \\
+    \end{align*}
+
+    RHS:
+    \begin{align*}
+      & \code{count (insert (y, Empty))} \\
+      &= \code{count (Node (Empty, y, Empy))} \tag{clause 1 of \code{insert}} \\
+      &= \code{count Empty + 1 + count Empty} \tag{clause 2 of \code{count}} \\
+      &= \code{1} \tag{clause 1 of \code{count} and math} \\
+    \end{align*}
+
+
+    WTS: \code{count T + 1} $\eeq$ \code{count (insert (y, T))}
+
+    IH1: \code{count L + 1} $\eeq$ \code{count (insert (y, L))}
+
+    IH2: \code{count R + 1} $\eeq$ \code{count (insert (y, R))}
+
+    WTS: \code{count (Node (L, x, R)) + 1} $\eeq$ \code{count (insert (y, Node (L, x, R)))}
+
+    LHS:
+    \begin{align*}
+      & \code{count (Node (L, x, R)) + 1} \\
+      &= \code{count L + 1 + count R + 1} \tag{clause 2 of \code{count}}
+    \end{align*}
+
+    RHS:
+    \code{count (insert (y, Node (L, x, R)))}
+
+    case 1: y < x then
+
+    \begin{align*}
+      &= \code{count (Node (insert (y, L), x, R))} \tag{if condition, case assump} \\
+      &= \code{count (insert (y, L)) + 1 + count R} \tag{clause 2 of \code{count}, \code{insert} total} \\
+      &= \code{count L + 1 + 1 + count R} \tag{induction hypothesis}
+    \end{align*}
+
+    case 2: else
+    \begin{align*}
+      &= \code{count (L, x, Node (insert (y, R)))} \tag{else condition, case assump} \\
+      &= \code{count (L) + 1 + count (insert (y, R))} \tag{clause 2 of \code{count}, \code{insert} total} \\
+      &= \code{count L + 1 + count R + 1} \tag{induction hypothesis}
+    \end{align*}
   \end{solutionorbox}
 \end{parts}
 
@@ -814,9 +859,9 @@ function:
 
 Please write the type and value of each given expression,
 if applicable. If the expression does not have a type, please give a brief
-justification as to why. 
+justification as to why.
 If the expression is not valuable, please give a brief justification as to
-why. 
+why.
 
 \vspace{5pt}
 

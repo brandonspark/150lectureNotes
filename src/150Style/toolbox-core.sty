@@ -36,6 +36,8 @@
 \definecolor{solution_color}  {RGB}{  0,   0, 128}
 \definecolor{constraint_color}{RGB}{175,   0,   0}
 
+\usepackage{tcolorbox}
+
 % task environment
 \RequirePackage{framed}
 \providerobustcmd{\attribute}[1]{}
@@ -176,7 +178,7 @@
   \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
 }
 \def\bt@HL@endenv{%
-  \end{btHighlight}%   
+  \end{btHighlight}%
   \egroup
 }
 \newcommand{\bt@HL@box}[2][]{%
@@ -195,7 +197,7 @@
   \begin{atHighlight}[#1]\bgroup\aftergroup\at@HL@endenv%
 }
 \def\at@HL@endenv{%
-  \end{atHighlight}%   
+  \end{atHighlight}%
   \egroup
 }
 \newcommand{\at@HL@box}[2][]{%
@@ -216,7 +218,14 @@
 \fi}}
 
 % code block
-\lstnewenvironment{codeblock}[1][]{\lstset{language=sml,style=15150code,numbers=none,#1,moredelim=**[is][\btHL]{`}{`},moredelim=**[is][\atHL]{&}{&}}}{}
+\lstnewenvironment{codeblock}[1][]{\lstset{
+  language=sml,style=15150code,numbers=none,#1,moredelim=**[is][\btHL]{`}{`},moredelim=**[is][\atHL]{&}{&},
+  moredelim=**[is][\color{red}]{<r}{r>},
+  moredelim=**[is][\color{blue}]{<b}{b>},
+  moredelim=**[is][\color{black}]{<bl}{bl>},
+  moredelim=**[is][\color{green!50!black}]{<g}{g>},
+  moredelim=**[is][\color{orange}]{<p}{p>}
+}}{}
 % Python code block
 \lstnewenvironment{pythoncodeblock}[1][]{\lstset{language=python,style=15150code,numbers=none,#1}}{}
 % code file
@@ -249,26 +258,37 @@
     }%
 }
 \newrobustcmd{\customBox}[2][white]{\par%
-    \colorbox{auxColor}{%
+    \tcbox[on line,
+    boxsep=3pt,colback=auxColor, left=0pt,right=0pt,top=0pt,bottom=0pt, boxrule=0pt]{%
         {\color{#1} #2}%
     }%
 }
 \newrobustcmd{\tgs}{
+  \vspace{-20pt}
   \begin{tikzpicture}[remember picture,overlay]
     \node[xshift=-2.8cm,yshift=-0.34cm] at (current page.north east){%
     {\footnotesize \colorbox{auxColor}{{\color{white} Types Guide Structure}}}};
   \end{tikzpicture}
 }
 \newrobustcmd{\rprs}{
+  \vspace{-20pt}
   \begin{tikzpicture}[remember picture,overlay]
     \node[xshift=-4.2cm,yshift=-0.34cm] at (current page.north east){%
     {\footnotesize \colorbox{auxColor}{{\color{white} Recursive Problems, Recursive Solutions}}}};
   \end{tikzpicture}
 }
 \newrobustcmd{\ptmt}{
+  \vspace{-20pt}
   \begin{tikzpicture}[remember picture,overlay]
     \node[xshift=-4.8cm,yshift=-0.34cm] at (current page.north east){%
     {\footnotesize \colorbox{auxColor}{{\color{white} Programmatic Thinking is Mathematical Thinking}}}};
+  \end{tikzpicture}
+}
+\newrobustcmd{\ptsnmtmt}{
+  \vspace{-20pt}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[xshift=-6cm,yshift=-0.34cm] at (current page.north east){%
+    {\footnotesize \colorbox{auxColor}{{\color{white} Programmatic Thinking is Sometimes Not Mathematical Thinking}}}};
   \end{tikzpicture}
 }
 \newrobustcmd{\exBox}[1][white]{\par%
