@@ -169,6 +169,17 @@
 
 \usepackage[T1]{fontenc}
 
+
+\definecolor{hlBlue}{HTML}{aedcfc}
+\definecolor{hlOrange}{HTML}{ffca8a}
+\colorlet{hlYellow}{yellow!45}
+\colorlet{hlRed}{red!45}
+
+\colorlet{fgCodeBlue}{keywordColor}
+\definecolor{fgCodeOrange}{HTML}{ffa51f}
+\definecolor{fgCodeRed}{HTML}{db3535}
+\definecolor{fgCodeGreen}{HTML}{2cad1d}
+
 \makeatletter
 \newenvironment{btHighlight}[1][]
 {\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
@@ -185,7 +196,7 @@
   \tikz[#1]{%
     \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
     \pgfusepath{use as bounding box}%
-    \node[anchor=base west, fill=yellow!45,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+    \node[anchor=base west, fill=hlYellow,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
   }%
 }
 
@@ -204,9 +215,50 @@
   \tikz[#1]{%
     \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
     \pgfusepath{use as bounding box}%
-    \node[anchor=base west, fill=red!45,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+    \node[anchor=base west, fill=hlRed,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
   }%
 }
+
+\newenvironment{ctHighlight}[1][]
+{\begingroup\tikzset{ct@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\ct@HL@box[ct@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\ctHL[1][]{%
+  \begin{ctHighlight}[#1]\bgroup\aftergroup\ct@HL@endenv%
+}
+\def\ct@HL@endenv{%
+  \end{ctHighlight}%
+  \egroup
+}
+\newcommand{\ct@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlBlue,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
+
+\newenvironment{dtHighlight}[1][]
+{\begingroup\tikzset{dt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\dt@HL@box[dt@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\dtHL[1][]{%
+  \begin{dtHighlight}[#1]\bgroup\aftergroup\dt@HL@endenv%
+}
+\def\dt@HL@endenv{%
+  \end{dtHighlight}%
+  \egroup
+}
+\newcommand{\dt@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlOrange,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
+
 \makeatother
 
 % code inline
@@ -217,14 +269,19 @@
     {\lstinline[language=sml,style=15150code,#1]`#2`}%
 \fi}}
 
+
 % code block
 \lstnewenvironment{codeblock}[1][]{\lstset{
-  language=sml,style=15150code,numbers=none,#1,moredelim=**[is][\btHL]{`}{`},moredelim=**[is][\atHL]{&}{&},
-  moredelim=**[is][\color{red}]{<r}{r>},
-  moredelim=**[is][\color{blue}]{<b}{b>},
+  language=sml,style=15150code,numbers=none,#1,
+  moredelim=**[is][\btHL]{`}{`},
+  moredelim=**[is][\atHL]{&}{&},
+  moredelim=**[is][\ctHL]{/}{/},
+  moredelim=**[is][\dtHL]{?}{?},
+  moredelim=**[is][\color{fgCodeRed}]{<r}{r>},
+  moredelim=**[is][\color{fgCodeBlue}]{<b}{b>},
   moredelim=**[is][\color{black}]{<bl}{bl>},
-  moredelim=**[is][\color{green!50!black}]{<g}{g>},
-  moredelim=**[is][\color{orange}]{<p}{p>}
+  moredelim=**[is][\color{fgCodeGreen}]{<g}{g>},
+  moredelim=**[is][\color{fgCodeOrange}]{<p}{p>}
 }}{}
 % Python code block
 \lstnewenvironment{pythoncodeblock}[1][]{\lstset{language=python,style=15150code,numbers=none,#1}}{}
@@ -252,16 +309,14 @@
         {\color{#1} Thm. #2}%
     }%
 }
-\newrobustcmd{\defBox}[1][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} Def.}%
-    }%
-}
 \newrobustcmd{\customBox}[2][white]{\par%
     \tcbox[on line,
     boxsep=3pt,colback=auxColor, left=0pt,right=0pt,top=0pt,bottom=0pt, boxrule=0pt]{%
         {\color{#1} #2}%
     }%
+}
+\newrobustcmd{\defBox}[1]{\par%
+    \customBox{Def}{#1}
 }
 \newrobustcmd{\tgs}{
   \vspace{-20pt}
@@ -296,15 +351,11 @@
         {\color{#1} Ex.}%
     }%
 }
-\newrobustcmd{\keyBox}[1][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} Key Fact}%
-    }%
+\newrobustcmd{\keyBox}[1]{\par%
+    \customBox{Key}{#1}
 }
-\newrobustcmd{\noteBox}[1][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} Note}%
-    }%
+\newrobustcmd{\noteBox}[1]{\par%
+    \customBox{Note}{#1}
 }
 
 \newrobustcmd{\badBox}[1][white]{\par%

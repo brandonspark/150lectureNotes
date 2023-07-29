@@ -1,0 +1,1780 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+
+    % Color settings
+    \useauxtrue
+
+    \newcommand{\auxColor}{375EE9}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{dbb21f} % the primary color of the slide borders
+    \newcommand{\bgColor}{fffbd9}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Sequences} % TODO
+    \subtitle{Making our data structures parallel} % TODO
+    \date{20 July 2023} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+    \expandafter\definecolor\expandafter{myblue}{HTML}{93c8ed}
+    \expandafter\definecolor\expandafter{hexcolor}{HTML}{d8c0fc}
+    \usetikzlibrary {shapes.symbols}
+    \usetikzlibrary {calc}
+    \tikzset{
+      every path/.style={line width=0.25mm},
+      hex/.style={
+        draw,
+        inner sep=0.5pt,
+        line width=0.4mm,
+        fill=green!20!white,
+        minimum size=0.6cm,
+        align=center,
+        font=\small,
+        signal,
+        signal to=east and west,
+        signal pointer angle= 130
+      },
+      between/.style args={#1 and #2}{
+        at = ($(#1)!0.5!(#2)$)
+      },
+      dot/.style={
+        fill=myblue, draw=black, circle, inner sep=2pt,
+      }
+    }
+
+    \newcommand{\hex}[4][]{\node[hex, #1, minimum size=1cm] (#2) {$W$: #3 \\ $S$: #4}}
+    \newcommand{\fhex}[3][]{\node[hex, #1, fill=hexcolor, minimum width=0.4in] (#2) {#3}}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\menti{5146 4874}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\sectionSlide{1}{Fundamental Data Structures}
+
+\begin{frame}[fragile]
+  \frametitle{Fundamental Data Structures}
+
+  We previously claimed that, in computer science, there are only a few
+  fundamental data structures, from which everything else pretty much
+  is derived from.
+
+  \pause
+  \vspace{\fill}
+
+  One of these items is the \code{list}. The other is the \code{tree}. Many
+  things, such as priority queues, tries, queues, and sets can be implemented
+  with just these two ideas.
+
+  \pause
+  \vspace{\fill}
+
+  The third is the \term{array}, which we have given substantially less
+  treatment of, so far in this course. That changes today.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Arrays}
+
+  \defBox{}{\term{Arrays} are a kind of mutable data structure that have a
+  fixed number of elements, all of the same type. These elements support
+  \textit{indexing}, which allows access of any given element by its position in
+  the array, in constant time.}
+
+  \pause
+  \vspace{\fill}
+
+  Arrays are usually associated with lower-level programming languages, meaning
+  that they are mutable by default -- indices of the array can be rewritten and
+  assigned, which will change future accesses.
+
+  \pause
+  \vspace{\fill}
+
+  Constant time access is cool. We can skip the mutability.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{From Arrays to Sequences}
+
+  \tgs
+
+  Instead of arrays, we will discuss a similar type of data structures called
+  \term{sequences}.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\term{Sequences}\footnote{Worth noting that as far as I can tell, "sequences" to refer
+  to essentially immutable arrays is a CMU thing. Other people don't use this
+  terminology.} are a kind of \textbf{immutable} data structure that have a
+  fixed size of elements, all of the same type. These elements support
+  \textit{indexing}, which allows access of any given element by its position in
+  the array, in constant time.}
+
+  \pause
+  \vspace{\fill}
+
+  The key is that sequences are not mutable, however! Changing an given element of
+  a sequence entails producing a new sequence entirely. This is how we will be able
+  to take advantage of the various benefits of arrays, without falling for the
+  trap of mutability.
+
+  \pause
+  \vspace{\fill}
+
+  \noteBox{}{Other than the fact that sequences are immutable, you can think of
+  them as being implemented as arrays.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Part Where I Tell You About The Inner Implementation of Sequences}
+
+  But how are sequences implemented?
+
+  \pause
+  \vspace{\fill}
+
+  The answer: \textbf{It's a secret}.
+
+  \pause
+  \vspace{\fill}
+
+  No, actually. For our purposes, we are taking advantage of the module system,
+  and using a library which implements sequences as an abstract type, which
+  prevents us from knowing anything about the way that it is implemented under
+  the hood. This means we cannot pattern-match, nor can we interact with
+  sequences in any way which is not prescribed to us by the sequences interface.
+
+  \vspace{\fill}
+
+  The signature of the \code{Seq} module is available on the next few slides (and
+  {\color{blue}\href{http://www.cs.cmu.edu/~15150/resources/libraries/sequence.pdf}{online, at this link}}):
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{SEQUENCE} Signature}
+
+  \small
+  \begin{codeblock}
+    signature SEQUENCE =
+      sig
+        type 'a t
+        type 'a seq = 'a t (* abstract *)
+
+        exception Range of string
+
+
+        (* Constructing a Sequence *)
+
+        val empty : unit -> 'a seq
+        val singleton : 'a -> 'a seq
+        val tabulate : (int -> 'a ) -> int -> 'a seq
+        val fromList : 'a list -> 'a seq
+
+        (* ... *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{SEQUENCE} Signature}
+
+  \small
+  \begin{codeblock}
+    (* ... *)
+        (* Deconstructing a Sequence *)
+
+        val nth : 'a seq -> int -> 'a
+        val null : 'a seq -> bool
+        val length : 'a seq -> int
+        val toList : 'a seq -> 'a list
+        val toString : ('a -> string) -> 'a seq -> string
+        val equal : ('a * 'a -> bool) -> 'a seq * 'a seq -> bool
+
+        (* Simple Transformations *)
+
+        val rev : 'a seq -> 'a seq
+        val append : 'a seq * 'a seq -> 'a seq
+        val flatten : 'a seq seq -> 'a seq
+        val cons : 'a -> 'a seq -> 'a seq
+    (* ... *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{SEQUENCE} Signature}
+
+  \tiny
+  \begin{codeblock}
+    (* ... *)
+      (* Combinators and Higher - Order Functions *)
+
+      val filter : ('a -> bool) -> 'a seq -> 'a seq
+      val map : ('a -> 'b) -> 'a seq -> 'b seq
+      val reduce : ('a * 'a -> 'a) -> 'a -> 'a seq -> 'a
+      val reduce1 : ('a * 'a -> 'a) -> 'a seq -> 'a
+      val mapreduce : ('a -> 'b) -> 'b -> ('b * 'b -> 'b) -> 'a seq -> 'b
+      val zip : ('a seq * 'b seq) -> ('a * 'b) seq
+      val zipWith : ('a * 'b -> 'c) -> 'a seq * 'b seq -> 'c seq
+
+      (* Indexing-Related Functions *)
+      val enum : 'a seq -> (int * 'a) seq
+      val mapIdx : (int * 'a -> 'b) -> 'a seq -> 'b seq
+      val update : ('a seq * (int * 'a)) -> 'a seq
+      val inject : 'a seq * (int * 'a) seq -> 'a seq
+
+      val subseq : 'a seq -> int * int -> 'a seq
+      val take : 'a seq -> int -> 'a seq
+      val drop : 'a seq -> int -> 'a seq
+      val split : 'a seq -> int -> 'a seq * 'a seq
+
+      (* Sorting and Searching *)
+
+      val sort : ('a * 'a -> order) -> 'a seq -> 'a seq
+      val merge : ('a * 'a -> order) -> 'a seq * 'a seq -> 'a seq
+      val search : ('a * 'a -> order) -> 'a -> 'a seq -> int option
+      (* ... *)
+    end
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Taking It In}
+
+  OK, that's a lot. Moreover, there isn't any description on what each
+  function does!\footnote{There is at the online reference, though.}
+
+  \vspace{\fill}
+
+  If you glance at the names of each function, however, it doesn't look
+  terribly different than the list library (though a little better equipped).
+  What gives?
+
+  \pause
+  \vspace{\fill}
+
+  Sequences don't offer us anything that can't be done with lists, in terms
+  of their structure. We could very well be using lists instead. The difference
+  will be in each function's \textbf{cost}, as sequences admit a different
+  cost model.
+
+  \pause
+  \vspace{\fill}
+
+  \keyBox{}{In particular, \textbf{sequences are very parallelizable}.}
+
+  \pause
+  \vspace{\fill}
+
+  For instance, we can execute \code{Seq.map f} within constant time, for a
+  constant function \code{f}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Advantages of Sequences}
+
+  We mentioned previously that sequences will admit constant time access to
+  each element, whereas in a list you must perform $O(i)$ work to access the
+  $i$th element.
+
+  \pause
+  \vspace{\fill}
+
+  We can implement the \code{nth} function for lists as such:
+
+  \begin{codeblock}
+    fun nth ([], 0)   = raise Subscript
+      | nth (x::_, 0) = x
+      | nth (x::xs, n) = nth (xs, n - 1)
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Other advantages of sequences are that length can be computed in constant time,
+  and that they are parallel-friendly, meaning that bulk operations (like
+  \code{map}, \code{fold}, and \code{filter}) can be done
+  without having to always pay a linear cost up front.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Disadvantages of Sequences}
+
+  For all those advantages, however, we have some disadvantages that come as a
+  consequence. The most prominent one, from a programming standpoint, is that
+  you cannot pattern match upon a sequence. This means that something as simple
+  as the following, with lists:
+
+  \begin{codeblock}
+    case L of
+      []    => (* 1 *)
+    | x::xs => (* 2 *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Disadvantages of Sequences}
+
+  ...requires the following, for a sequence \code{S}:
+  \begin{codeblock}
+    case Seq.length S of
+      0 => (* 1 *)
+    | _ =>
+      let
+        val (x, xs) = (Seq.nth S 0, Seq.drop S 1)
+      in
+        (* 2 *)
+      end
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Tradition dictates that I mention: \textit{this is disgusting}.\footnote{Time
+  permitting, at the end of this lecture we can discuss a nicer way of doing
+  this. The point stands.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Disadvantages of Sequences}
+
+  The other disadvantage of sequences is the same as its primary benefit:
+  \textit{sequences are designed with
+  parallelism in mind}. This means that bulk operations, as in, operations
+  which require dealing with a fixed number of elements all at once, are
+  very easy, but sequential operations are slow.
+
+  \pause
+  \vspace{\fill}
+
+  This is most salient through the fact that \textbf{cons is expensive}.
+  For sequences, consing an element onto the sequence takes linear time in
+  the length of the sequence, as opposed to constant time for lists.
+
+  \pause
+  \vspace{\fill}
+
+  \customBox{Key Fact}{\, The root cause for this is that when you cons an element onto a sequence,
+  you must create a brand new sequence, meaning you must copy over everything
+  that was in the old sequence! This is an easy linear cost.\footnote{Usually, talk of things like "copying" and "memory" are
+  beneath us. But this is a case where it actually matters, because it shows
+  up in our cost bound.}}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence Basics}
+
+  When discussing sequences, we will usually textually represent them using
+  the mathematical notation $\langle x_1, x_2, ..., x_n \rangle$, for the
+  sequence with elements $x_1, ..., x_n$ at each index.
+
+  \pause
+  \vspace{\fill}
+
+  For instance, we might write that \code{Seq.map f }$\,\, \langle x_1, x_2, ... x_n \rangle$
+  has the cost of $\max_{x_i \in S}(W($\code{f xi}$))$, meaning the
+  maximum cost over any given application of \code{f} to an element of
+  the sequence, and evaluates to the
+  sequence $\langle \code{f x1}, \code{f x2}, ..., \code{f xn} \rangle$.
+
+  \pause
+  \vspace{\fill}
+
+  Before we can do a deeper dive into the cost of sequences, we need to come
+  up with a conceptual model of how to think about the cost of sequence
+  functions.
+
+  \pause
+  \vspace{\fill}
+
+  To that end, we need to discuss \term{cost graphs}.
+\end{frame}
+
+\sectionSlide{2}{Cost Graphs}
+
+\begin{frame}[fragile]
+  \frametitle{The Cost of Sequences}
+
+  We use \term{cost graphs} to visually reason about the cost of a given
+  operation of a sequence. Although we don't know specifically the underlying
+  implementation of sequences, cost graphs still give us a way of reasoning
+  about their cost.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{A \term{cost graph} is a graph which indicates the cost of
+  performing a certain function, but with visual indications for when
+  parallelism can be achieved.}
+
+  \pause
+  \vspace{\fill}
+
+  This is exactly the same as the idea of task dependency graphs, from
+  the previous lecture on asymptotic analysis! We will boil in a few more
+  sequence-specific things, however.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Fundamentals of Cost Graphs}
+
+  \ptmt
+
+  \begin{center}
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \node (G1) at (0,0) {[graph 1]};
+      \node (G2) at (0,2) {[graph 2]};
+      \draw (G1) -- (G2);
+    \end{tikzpicture}
+
+    \vspace{10pt}
+
+    \term{sequential composition} of cost graphs
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \node (G1) {\small[graph 1]};
+      \node (G2) [right of = G1, node distance=1in] {\small[graph 2]};
+      \node[dot, between=G1 and G2, yshift=1cm] (J1) {};
+      \node[dot, between=G1 and G2, yshift=-1cm] (J2) {};
+      \draw[shorten >= 5pt] (G1) -- (J1);
+      \draw[shorten >= 5pt] (G2) -- (J1);
+      \draw[shorten >= 5pt] (G1) -- (J2);
+      \draw[shorten >= 5pt] (G2) -- (J2);
+    \end{tikzpicture}
+
+    \vspace{10pt}
+
+    \term{parallel composition} of cost graphs
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{0.32\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \fhex[yshift=1cm]{UA}{\code{f}};
+      % \hex[yshift=1.15cm] {A}{work}{span};
+      \node at (0, 0) {};
+    \end{tikzpicture}
+
+    \vspace{10pt}
+
+    node denoting computation of \code{f}
+  \end{minipage}
+  \end{center}
+
+  \vspace{\fill}
+
+  Cost graphs are \term{inductively defined} by these three constructs.
+
+  \pause
+  \vspace{\fill}
+
+  Cost graphs always run from top to bottom, so while we can view them as directed,
+  we will omit the arrows for brevity. Every graph also has a \term{source} and
+  \term{sink}, which denote the starting and ending positions of executing that
+  cost graph.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sources and Sinks}
+
+  For the sequential case, the source and sink are just the source and sink of
+  graphs 1 and 2, respectively.
+
+  \pause
+  \vspace{\fill}
+
+  For the parallel case, the source is the originating dot, which then
+  \term{forks} to perform graph 1 and graph 2 in parallel, before \term{joining}
+  back together.
+
+  \pause
+  \vspace{\fill}
+
+  The single node is itself both source and sink.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More on Cost Graphs}
+
+  \begin{center}
+  \begin{minipage}{0.5\textwidth}
+    \raggedright
+
+  Cost graphs can be mixed and matched and put together! This means that
+  although forking has a source and sink which are just before
+  and after the two graphs in between, it can be sequentially merged with
+  other graphs.
+
+  \vspace{10pt}
+
+    So for instance, we might say that the cost graph of the computation
+    \code{(1 + 2) * (3 + 4)} has cost graph:
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+    \centering
+    \begin{tikzpicture}[scale=0.6]
+      \fhex {G1} {\code{+}};
+      \fhex[right of = G1, node distance=1.5in] {G2} {\code{+}};
+      \node[dot, between=G1 and G2, yshift=1cm] (J1) {};
+      \fhex[between=G1 and G2, yshift=-1cm] {G3} {\code{*}};
+      \draw[shorten >= 5pt] (G1.north) -- (J1);
+      \draw[shorten >= 5pt] (G2.north) -- (J1);
+      \draw (G1.south) -- (G3);
+      \draw (G2.south) -- (G3);
+    \end{tikzpicture}
+  \end{minipage}
+  \end{center}
+
+  \pause
+  \vspace{10pt}
+
+  This comes from \term{forking} to perform each addition in parallel
+  (in constant work and span), before \term{joining} to then perform
+  the multiplication, also in constant work and span. Note that each
+  purple node here has a constant cost.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Computation Nodes and Cost Nodes}
+
+  \begin{center}
+  \begin{minipage}{0.5\textwidth}
+    \raggedright
+
+    Once we know the cost of a particular computation node, we might also
+    replace it with a work/span node (or \textbf{cost node}), like in the resulting graph:
+
+    \vspace{10pt}
+
+    Now, we can easily see that the work of this graph is just a constant $O(1)$,
+    and the span is also.
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+    \centering
+    \begin{tikzpicture}[scale=0.6]
+      \hex {G1} {$O(1)$} {$O(1)$};
+      \hex[right of = G1, node distance=1.5in] {G2} {$O(1)$}{$O(1)$};
+      \node[dot, between=G1 and G2, yshift=1cm] (J1) {};
+      \hex[between=G1 and G2, yshift=-1.5cm] {G3} {$O(1)$}{$O(1)$};
+      \draw[shorten >= 5pt] (G1.north) -- (J1);
+      \draw[shorten >= 5pt] (G2.north) -- (J1);
+      \draw (G1.south) -- (G3);
+      \draw (G2.south) -- (G3);
+    \end{tikzpicture}
+  \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More on Cost Graphs}
+
+  \begin{center}
+  \begin{minipage}{0.65\textwidth}
+    \raggedright
+    As before, the work of the entire cost graph is simply the work of each
+    node, summed up. The span of a cost graph is the greatest cost among
+    paths from the source to the sink.
+
+    \vspace{10pt}
+
+    Actually, we don't necessarily need labeled cost nodes, as in the last
+    slide, as we can rederive it from just the parallel and sequential
+    composition cases. For instance, we could rederive this node:
+
+    \vspace{5pt}
+
+    \begin{center}
+      \begin{tikzpicture}
+        \hex{}{$O(n)$}{$O(n)$};
+      \end{tikzpicture}
+    \end{center}
+
+   \vspace{5pt}
+
+   as the cost graph on the right:
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.34\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \node[dot] (N1) {};
+      \node[dot, below of=N1] (N2) {};
+      \node[below of=N2, node distance=0.5in] (N3) {[$O(n)$ many more nodes]};
+      \node[dot, below of=N3, node distance=0.5in] (N4) {};
+      \node[dot, below of=N4] (N5) {};
+
+      \draw[shorten >= 5pt, shorten <= 5pt] (N1) -- (N2);
+      \draw[shorten <= 5pt] (N2) -- (N3);
+      \draw[shorten >= 5pt] (N3) -- (N4);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N4) -- (N5);
+    \end{tikzpicture}
+  \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More on Cost Graphs}
+
+  We will also use the following shorthand for many simultaneously
+  forking paths:
+
+  \begin{center}
+    \begin{tikzpicture}
+      \node (N1) {(graph 1)};
+      \node[right of=N1, node distance=1in] (N2) {[graph 2]};
+      \node[right of=N2, node distance=2in] (N3) {[graph $n - 1$]};
+      \node[between=N2 and N3] (C) {$\cdots$};
+      \node[right of=N3, node distance=1in] (N4) {[graph $n$]};
+      \node[dot, between=N1 and N4, yshift=0.35in] (J1) {};
+      \node[dot, between=N1 and N4, yshift=-0.35in] (J2) {};
+
+      \draw[shorten >= 5pt] (N1.north) -- (J1);
+      \draw[shorten >= 5pt] (N2.north) -- (J1);
+      \draw[shorten >= 5pt] (N3.north) -- (J1);
+      \draw[shorten >= 5pt] (N4.north) -- (J1);
+      \draw[shorten >= 5pt] (N1.south) -- (J2);
+      \draw[shorten >= 5pt] (N2.south) -- (J2);
+      \draw[shorten >= 5pt] (N3.south) -- (J2);
+      \draw[shorten >= 5pt] (N4.south) -- (J2);
+    \end{tikzpicture}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  This could be desugared as just many parallel composed graphs on top of each
+  other, but nobody has time for that.
+
+  \pause
+  \vspace{\fill}
+
+  When all of the subgraphs are themselves constant cost nodes, this ends up being
+  the same as the cost node:
+  \begin{center}
+    \begin{tikzpicture}
+      \hex{}{$O(n)$}{$O(1)$};
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Cost Graphs, Concluded}
+
+  That's pretty much all you need to know about cost graphs.
+
+  \pause
+  \vspace{\fill}
+
+  It's worth noting that all of the ideas present in this section
+  are strictly conceptually interesting, and the actual encoding doesn't
+  matter. You will not be tested on your ability to faithfully render a
+  cost graph exactly, so long as you are approximately correct. Don't
+  worry too much about the smaller details.
+
+  \pause
+  \vspace{\fill}
+
+  Now, we can move on to discussion of sequence functions in general.
+\end{frame}
+
+\quizBreak{COPLANAR}
+
+\sectionSlide{3}{Sequence Functions}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence Functions}
+
+  We don't have nearly enough time to go through every sequence function,
+  so we won't. Fortunately, many functions within the sequence library
+  are themselves derivable in terms of others, meaning that we only need
+  to discuss a few fundamental functions to be able to understand the
+  whole library.
+
+  \pause
+  \vspace{\fill}
+
+  For our purposes, the interesting functions to note will be
+  \code{Seq.tabulate}, \code{Seq.map}, \code{Seq.filter}, and \code{Seq.reduce}.
+  We will also have some brief notes on some other sequence functions, and their
+  cost.
+
+  \pause
+  \vspace{\fill}
+
+  \noteBox{}{We will occasionally make reference to values as though we are
+  inside of the \code{Seq} structure. That means we would ordinarily write
+  \code{Seq.map} or \code{'a Seq.seq}, but for brevity I will write \code{map}
+  and \code{'a seq}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{tabulate}}
+
+  \spec
+    {tabulate}
+    {(int -> 'a) -> int -> 'a seq}
+    {For all $0 \leq \code{i} < \code{n}$, \code{f i} is valuable.}
+    {\code{tabulate f n} evaluates to $\langle \code{f 0}, \, \code{f 1}, \,..., \,\code{f (n - 1)}\rangle$}
+
+  \vspace{\fill}
+
+  This function actually exists for lists too, but it's rarely used, and not very
+  parallelizable.
+
+  \pause
+  \vspace{\fill}
+
+  This specification means that, for instance, \code{Seq.tabulate (fn x => x) n}
+  is equivalent to the sequence $\langle \code{0}, \code{1}, ..., \code{n - 1} \rangle$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{tabulate}: Cost}
+
+  Cost graph:
+
+  \begin{center}
+    \begin{tikzpicture}
+      \fhex{N1}{\code{f 0}};
+      \fhex[right of=N1, node distance=1in] {N2} {\code{f 1}};
+      \fhex[right of=N2, node distance=2in] {N3} {\code{f (n-2)}};
+      \node[between=N2 and N3] (C) {$\cdots$};
+      \fhex[right of=N3, node distance=1in] {N4} {\code{f (n-1)}};
+      \node[dot, between=N1 and N4, yshift=0.4in] (J1) {};
+      \node[dot, between=N1 and N4, yshift=-0.4in] (J2) {};
+
+      \draw[shorten >= 5pt] (N1.north) -- (J1);
+      \draw[shorten >= 5pt] (N2.north) -- (J1);
+      \draw[shorten >= 5pt] (N3.north) -- (J1);
+      \draw[shorten >= 5pt] (N4.north) -- (J1);
+      \draw[shorten >= 5pt] (N2.south) -- (J2);
+      \draw[shorten >= 5pt] (N1.south) -- (J2);
+      \draw[shorten >= 5pt] (N3.south) -- (J2);
+      \draw[shorten >= 5pt] (N4.south) -- (J2);
+    \end{tikzpicture}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  Recall that this cost graph indicates that each of the calls to \code{f}
+  can be parallelized! This means that, for instance, given a constant time
+  function \code{f}, \code{Seq.tabulate f n} is $O(n)$ work and $O(1)$ span.
+
+  \pause
+  \vspace{\fill}
+
+  This is much improved over the $O(n)$ span for the list equivalent. The
+  main difference is that for lists, the list must be made
+  by consing on elements repeatedly. For sequences, the entire sequence can be
+  created at once, with each part independent, without any sequential operations
+  at all.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{nth}}
+
+  As promised before, one of the most important functions for sequences
+  will be \code{nth}, which allows constant time access to any given element
+  of the sequence.
+
+  \pause
+  \vspace{\fill}
+
+    \spec
+      {nth}
+      {'a seq -> int -> 'a}
+      {\code{true}}
+      {\code{nth S i} evaluates to the \code{i}th element of \code{S}.
+      If \code{i} is negative or greater than or equal to \code{length S},
+      then \code{Range} is raised.}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+  \begin{minipage}{0.7\textwidth}
+    The cost graph just looks like:
+
+    \vspace{20pt}
+
+    It has exactly one edge, denoting that there is only one operation, and
+    it runs in $O(1)$ work and span.
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.25\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \node[dot] (N1) {};
+      \node[dot, below of=N1, node distance=0.8in] (N2) {};
+      \draw[shorten >= 5pt, shorten <= 5pt] (N1) -- (N2);
+    \end{tikzpicture}
+  \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{length}}
+
+  Similarly, sequences promise a length function in $O(1)$ work and span as
+  well. This is achieved by just storing the length of the sequence within
+  the sequence itself.
+
+  \pause
+  \vspace{\fill}
+
+  \spec
+    {length}
+    {'a seq -> int}
+    {\code{true}}
+    {\code{length} $\langle \code{x}_0,\, \code{x}_1,\, ...,\, \code{x}_{n - 1} \rangle$
+    $\eeq$ \code{n}}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+  \begin{minipage}{0.7\textwidth}
+    The cost graph looks the same as \code{nth}:
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.25\textwidth}
+    \centering
+    \begin{tikzpicture}
+      \node[dot] (N1) {};
+      \node[dot, below of=N1, node distance=0.8in] (N2) {};
+      \draw[shorten >= 5pt, shorten <= 5pt] (N1) -- (N2);
+    \end{tikzpicture}
+  \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{map}}
+
+  \spec
+    {map}
+    {('a -> 'b) -> 'a seq -> 'b seq}
+    {$\code{f x}_i$ is valuable for all elements $\code{x}_i$ in the input sequence}
+    {\code{map f} $\langle \code{x}_0,\, \code{x}_1,\, ...,\, \code{x}_{n - 1}\rangle$ $\eeq$
+    $\langle \code{f x}_0,\, \code{f x}_1,\, ...,\, \code{f x}_{n - 1}\rangle$}
+
+  \pause
+  \vspace{\fill}
+
+  \code{map} will end up having an identical cost profile to \code{tabulate}, but
+  this ends up being because we don't need special case it in terms of our
+  definitions, because we can derive it in terms of the functions we've already seen!
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun map f S = `tabulate` (fn i => f (`nth` S i)) S
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Namely, \code{tabulate} and \code{nth}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{map}: Cost}
+
+  How do we analyze the cost of \code{map}? Well, intuitively it should be
+  the same, but what do we say about the cost graph?
+
+  \pause
+  \vspace{\fill}
+
+  The \code{f} function in the expression
+  \code{tabulate (fn i => f (nth S i)) S} is just the lambda \code{fn i => f (nth S i)},
+  which is the sequential combination of the call to \code{nth}, and the call to
+  \code{f}. This means that our cost graph actually looks like:\footnote{Actually, I have simplified notation a bit. There should
+  technically be another edge above each purple node, but I have just contracted
+  a constant number of edges into one.}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \begin{tikzpicture}
+      \fhex{N1}{\code{f 0}};
+      \fhex[right of=N1, node distance=1in] {N2} {\code{f 1}};
+      \node[between=N2 and N3] (C) {$\cdots$};
+      \fhex[right of=N2, node distance=2in] {N3} {\code{f (n-2)}};
+      \fhex[right of=N3, node distance=1in] {N4} {\code{f (n-1)}};
+
+      \node[dot, above of=N1, node distance=0.5in] (U1) {};
+      \node[dot, above of=N2, node distance=0.5in] (U2) {};
+      \node[dot, above of=N3, node distance=0.5in] (U3) {};
+      \node[dot, above of=N4, node distance=0.5in] (U4) {};
+
+      \node[dot, between=N1 and N4, yshift=0.9in] (J1) {};
+      \node[dot, between=N1 and N4, yshift=-0.4in] (J2) {};
+
+      \draw[shorten >= 5pt] (N1.south) -- (J2);
+      \draw[shorten >= 5pt] (N2.south) -- (J2);
+      \draw[shorten >= 5pt] (N3.south) -- (J2);
+      \draw[shorten >= 5pt] (N4.south) -- (J2);
+
+      \draw[shorten <= 5pt] (U1) -- (N1);
+      \draw[shorten <= 5pt] (U2) -- (N2);
+      \draw[shorten <= 5pt] (U3) -- (N3);
+      \draw[shorten <= 5pt] (U4) -- (N4);
+
+      \draw[shorten >= 5pt, shorten <= 5pt] (U1) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (U2) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (U3) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (U4) -- (J1);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{map}: Cost}
+
+  This produces the same cost, because a constant addition to each path does
+  not alter the asymptotic complexity of the function.
+
+  \pause
+  \vspace{\fill}
+
+  The key conceptual understanding here is that the way to derive this cost
+  graph, is simply to compose the cost graphs of \code{nth} and the original
+  \code{f}, and then substitute it into the cost graph of \code{tabulate}!
+
+  \pause
+  \vspace{\fill}
+
+  These kinds of nested computations are common with sequences, and it's
+  important to be able to accurately derive their cost.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Fold for Sequences}
+
+  The most fundamental operator we would like to analyze is that of
+  folding on sequences.
+
+  \pause
+  \vspace{\fill}
+
+  We are familiar with left folds and right folds for lists, and for
+  sequences it turns out we are going to have a natural equivalent. There
+  will be some differences, however, to take advantage of the parallel
+  nature of sequences.
+
+  \pause
+  \vspace{\fill}
+
+  The standard specification of \code{foldl} is that \code{foldl f acc [x1, ..., xn]}
+  is equivalent to \code{f (xn, ..., f (x2, f (x1, acc)) ... )}. \code{foldl}
+  achieves this by literally computing that expression in sequence\footnote{It's funny how "in sequence" ends up being the worst case
+  for sequences. It's even funnier how a data structure specifically built for
+  parallelism ended up named after the word "sequential".},
+  but this is a naturally $O(n)$ work and span operation! We can't possibly
+  do any better than sequentially march along, because there's a giant data
+  dependency, as each computation depends on its inner consistuents.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Fold for Sequences}
+
+  But how will we go about producing this fold for sequences, in a way that
+  takes advantage of parallelism? We can't avoid this data dependency.
+
+  \pause
+  \vspace{\fill}
+
+  Indeed, we aren't going to be able to avoid the fact that each outer
+  \code{f} depends on the inner ones, but we can change the problem statement
+  slightly.
+
+  \pause
+  \vspace{\fill}
+
+  By analogy, let's consider an operation like addition. If we were summing
+  all of the elements of a list, must this take $O(n)$ span?
+
+  \pause
+  \vspace{\fill}
+
+  The answer: \textbf{No, it does not}!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Additive Example}
+
+  Suppose we were summing a list of elements, and that list is
+  \code{[1, 2, 3, 4, 5, 6, 7, 8]}. There's a closed form, but pretend
+  we weren't actually privy to the contents of the list.
+
+  \pause
+  \vspace{\fill}
+
+  The naive way to do this is to march from left to right and compute the sum:
+
+  \pause
+  \vspace{-15pt}
+
+  \begin{align*}
+    & 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 \\
+    &= 3 + 3 + 4 + 5 + 6 + 7 + 8 \\
+    &= 6 + 4 + 5 + 6 + 7 + 8 \\
+    &= 10 + 5 + 6 + 7 + 8 \\
+    &= 15 + 6 + 7 + 8 \\
+    &= 21 + 7 + 8 \\
+    &= 28 + 8 \\
+    &= 36
+  \end{align*}
+
+  \pause
+  \vspace{\fill}
+
+  How exhausting.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Additive Example}
+
+  \ptmt
+
+  But, let's give the perspective a switch. What if, instead, we computed the
+  sum of the following:
+  \pause
+
+  $$((1 + 2) + (3 + 4)) + ((5 + 6) + (7 + 8))$$
+
+  \pause
+  \vspace{\fill}
+
+  It's the same, but now \textit{everything} is different. The different
+  components of the addition can be done in parallel.
+
+  \begin{align*}
+    & ((1 + 2) + (3 + 4)) + ((5 + 6) + (7 + 8)) \\
+    &= (3 + 7) + (11 + 15) \\
+    &= 10 + 26 \\
+    &= 36
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Additive Example}
+
+  Now three steps, when previously it took seven. All because of a simple
+  reparenthesization.
+
+  \pause
+  \vspace{\fill}
+
+  What gives? The key distinction is that, for lists, the trace on the previous
+  slide is \textit{still} the best you can do, in parallel, because lists are
+  sequential. With sequences, we are going to exploit its parallel properties to
+  have the freedom to "reparenthesize" in this manner.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Subtractive Example}
+
+  Is this always possible, though? Consider if we were simply folding from
+  left to right with the subtraction operator, on a smaller list of \code{[1, 2, 3, 4]}.
+
+  \pause
+  \vspace{\fill}
+
+  Then, \code{foldl} should produce:
+  \pause
+  \begin{align*}
+    & \code{foldl (op-) 0 [1, 2, 3, 4]} \\
+    &\eeq\code{foldl (op-) (0 - 1) [2, 3, 4]} \\
+    &\eeq\code{foldl (op-) (\~1) [2, 3, 4]} \\
+    &\eeq\code{foldl (op-) (\~1 - 2) [3, 4]} \\
+    &\eeq\code{foldl (op-) (\~3) [3, 4]} \\
+    &\eeq\code{foldl (op-) (\~3 - 3) [4]} \\
+    &\eeq\code{foldl (op-) (\~6) [4]} \\
+    &\eeq\code{foldl (op-) (\~6 - 4) []} \\
+    &\eeq\code{foldl (op-) (\~10) []} \\
+    &\eeq\code{\~10}
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Subtractive Example}
+
+  Let's try the same trick:
+  \pause
+  \begin{align*}
+    & (1 - 2) - (3 - 4) \\
+    &= (-1) - (-1) \\
+    &= 0
+  \end{align*}
+  \pause
+  ...What just happened?
+
+  \pause
+  \vspace{\fill}
+
+  \keyBox{}{Addition is not the same as subtraction.}
+
+  \pause
+  \vspace{\fill}
+
+  More particularly, addition is different than subtraction via a mathematical
+  property that allows it to employ this "reparenthesization" and still be
+  equivalent. This property is \term{associativity}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Associativity}
+
+  \defBox{}{We say a binary operation $\odot$ of type \code{t * t -> t} is
+  \term{associative} if, for all \code{x, y, z} of type \code{t}, we have
+  that \code{x} $\odot$ (\code{y} $\odot$ \code{z}) is equivalent to
+  (\code{x} $\odot$ \code{y}) $\odot$ \code{z}.
+  }
+
+  \pause
+  \vspace{\fill}
+
+  You can also think of it as, in a long chain of binary operations, if it
+  is associative, then you can place parentheses wherever you want, and
+  \textit{reassociate} the operations, and still get the same thing out.
+  They must remain in the same order, however.
+
+  \pause
+  \vspace{\fill}
+
+  Addition is thus associative, since it doesn't matter which side of the
+  addition you do first. For subtraction, it does, so we can't use this
+  tactic.
+
+  \pause
+  \vspace{\fill}
+
+  We will thus restrict our attention solely to those operations which
+  are associative, for the purpose of our folding function. Since it's
+  not really a "fold" in the same sense as we saw for lists, we will call
+  it another name: \term{reduce}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{reduce}}
+
+  Here's our spec for \code{reduce}:
+
+  \pause
+  \spec
+    {reduce}
+    {('a * 'a -> 'a) -> 'a -> 'a seq -> 'a}
+    {\code{g} is both total and associative}
+    {\code{reduce g z S} is equivalent to \code{foldr g z L}, where \code{L}
+    is the corresponding list to the sequence \code{S}}
+
+  \pause
+  It's implemented spiritually in the same way as the algoritm we just described,
+  for fast computation of the sum of a list. We pair up the elements if we can,
+  and apply the binary operation to them in parallel. The base case of \code{z}
+  is also placed at the very end, at the right of the sequence.
+
+  \pause
+  \vspace{\fill}
+
+  We then repeat this process until we get a final value.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{reduce}: Cost}
+
+  \rprs
+
+  What's our cost graph look like? It actually looks similar to the computation
+  trace:
+  \pause
+
+  \begin{center}
+    \begin{tikzpicture}
+      \node[dot] (N1) {};
+      \node[dot, right of=N1, node distance=0.7in] (N2) {};
+      \node[dot, right of=N2, node distance=0.7in] (N3) {};
+      \node[dot, right of=N3, node distance=0.7in] (N4) {};
+
+      \node[dot, right of=N4, node distance=1in] (N5) {};
+      \node[dot, right of=N5, node distance=0.7in] (N6) {};
+      \node[dot, right of=N6, node distance=0.7in] (N7) {};
+      \node[dot, right of=N7, node distance=0.7in] (N8) {};
+
+      \fhex[between=N1 and N2, yshift=-0.4in] {M1} {\code{g}};
+      \fhex[between=N3 and N4, yshift=-0.4in] {M2} {\code{g}};
+      \fhex[between=N5 and N6, yshift=-0.4in] {M3} {\code{g}};
+      \fhex[between=N7 and N8, yshift=-0.4in] {M4} {\code{g}};
+
+      \fhex[between=M1 and M2, yshift=-0.2in] {L1} {\code{g}};
+      \fhex[between=M3 and M4, yshift=-0.2in] {L2} {\code{g}};
+      \node[below of=L1, xshift=0.4in] (A1) {$\cdots$};
+      \node[below of=L2, xshift=-0.4in] (A2) {$\cdots$};
+
+      \node[dot, between=N4 and N5, yshift=0.4in] (J1) {};
+      \node[between=N4 and N5] (J2) {$\cdots$};
+      \node[between=N4 and N5, yshift=-0.5in] (J3) {$\cdots$};
+
+      \fhex[below of=M2, yshift=-0.8in, xshift=0.4in] {LL1} {\code{g}};
+      \fhex[below of=M3, yshift=-0.8in, xshift=-0.4in] {LL2} {\code{g}};
+      \fhex[between=LL1 and LL2, yshift=-0.4in] {B} {\code{g}};
+
+      \node[between=A1 and A2] (C) {(lots of stuff here)};
+
+      \draw[shorten >= 5pt, shorten <= 5pt] (N1.north) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N2.north) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N3.north) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N4.north) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N5.north) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N6.north) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N7.north) -- (J1);
+      \draw[shorten >= 5pt, shorten <= 5pt] (N8.north) -- (J1);
+
+      \draw[shorten <= 5pt] (N1) -- (M1);
+      \draw[shorten <= 5pt] (N2) -- (M1);
+      \draw[shorten <= 5pt] (N3) -- (M2);
+      \draw[shorten <= 5pt] (N4) -- (M2);
+      \draw[shorten <= 5pt] (N5) -- (M3);
+      \draw[shorten <= 5pt] (N6) -- (M3);
+      \draw[shorten <= 5pt] (N7) -- (M4);
+      \draw[shorten <= 5pt] (N8) -- (M4);
+
+      \draw (M1) -- (L1);
+      \draw (M2) -- (L1);
+      \draw (M3) -- (L2);
+      \draw (M4) -- (L2);
+
+      \draw (LL1) -- (B);
+      \draw (LL2) -- (B);
+
+      \draw (L1) -- (A1);
+      \draw (L2) -- (A2);
+      \draw (LL1) -- (A1);
+      \draw (LL2) -- (A2);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{reduce}: Cost}
+
+  The cost graph might look scary, but it's really just the same idea as the
+  divide-and-conquer algorithm we saw for addition! All we do is divide into
+  our pairs, and then recursively continue doing that until completion.
+
+  \pause
+  \vspace{\fill}
+
+  This means that the height of the cost graph is $O(\log n)$, in the length
+  of the sequence, and the number of nodes is linear. Beware that the actual
+  work and span of the \code{reduce} call might be worse, though, depending
+  on if \code{g} is constant time or not.
+
+  \pause
+  \vspace{\fill}
+
+  For a constant function \code{g} (like addition), however, we have that
+  \code{reduce g z S} is $O(n)$ work and $O(\log n)$ span. Not bad!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{filter}}
+
+  We love filtering, so we wanted one for sequences, too:
+  \pause
+  \spec
+    {filter}
+    {('a -> bool) -> 'a seq -> 'a seq}
+    {\code{p} is total}
+    {\code{filter p S} is equivalent to the same sequence as \code{S}, but
+    with all the elements that do not satisfy \code{p} removed}
+
+  \pause
+  How is it implemented, though? Naively, we might think that we could just
+  apply the function \code{p} to each element, and then fold over the sequence
+  to collect the results.
+
+  \pause
+  \vspace{\fill}
+
+  Folding is a sequential concept, though! This would incur an $O(n)$ span
+  bound, because we couldn't do it in parallel. We can do better than that.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sequence \code{filter}: Cost}
+
+  We actually can't draw a cost graph here, because the implementation of
+  \code{filter} is kind of subtle. The cost of filter is, given a constant-time
+  predicate \code{p}, $O(n)$ work and $O(\log n)$ span.
+
+  \pause
+  \vspace{\fill}
+
+  You can think of it as being something like the following pseudocode:
+
+  \pause
+  \begin{itemize}
+    \item map each element to \code{NONE} or \code{SOME} depending on if it
+    satisfies \code{p}
+    \item \code{reduce} the sequence by combining the remaining elements into
+    sub-sequences, joining them with \code{Seq.append}
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  This won't have the right work bound, but it's the right intuition for
+  why the span is logarithmic. Further treatment is reserved for 15-210.
+
+  % The cost graph for \code{filter} will end up looking like this:
+
+  % \begin{center}
+  %   \begin{tikzpicture}
+  %     \fhex{N1}{\code{f 0}};
+  %     \fhex[right of=N1, node distance=1in] {N2} {\code{f 1}};
+  %     \node[between=N2 and N3] (C) {$\cdots$};
+  %     \fhex[right of=N2, node distance=2in] {N3} {\code{f (n-2)}};
+  %     \fhex[right of=N3, node distance=1in] {N4} {\code{f (n-1)}};
+
+  %     \node[between=N1 and N4, yshift=0.4in] (J1) {$\circ$};
+  %     \node[between=N1 and N4, yshift=-0.4in] (J2) {$\circ$};
+
+  %     \draw (N1) -- (J1);
+  %     \draw (N2) -- (J1);
+  %     \draw (N3) -- (J1);
+  %     \draw (N4) -- (J1);
+  %   \end{tikzpicture}
+  % \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More Sequence Functions}
+
+  There are many more sequence functions, but we will not give a rigorous
+  treatment of them here. Their descriptions and cost bounds can be found
+  at the
+  {\color{blue}\href{http://www.cs.cmu.edu/~15150/resources/libraries/sequence.pdf}{150 sequences reference}}.
+
+  \pause
+  \vspace{\fill}
+
+  These are the fundamental ones that will get us going with programming with
+  sequences. We will find that many problems having to do with dealing with
+  bulk data become much more performant due to our use of sequences.
+\end{frame}
+
+\sectionSlide{4}{And Then Sum}
+
+\begin{frame}[fragile]
+  \frametitle{Sum Kind of Problem}
+
+  For a simple example on sequences, see the problem of summing all
+  the entries in a 2D matrix, modelled by two sequences.
+
+  \pause
+  \vspace{\fill}
+
+  \spec
+    {sumMatrix}
+    {int seq seq -> int}
+    {\code{true}}
+    {\code{sumMatrix S} evaluates to the sum of all the elements in
+    the 2D matrix \code{S}}
+
+  \pause
+  \vspace{\fill}
+
+  We can write some terse code as follows:
+
+  \begin{codeblock}
+    fun sum S = Seq.reduce (op+) 0 S
+
+    fun sumMatrix S =
+      Seq.map sum S
+      |> sum
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sum Kind of Problem}
+
+  This comprises of the logic to take a 2D matrix and sum across its rows using
+  the faster \code{reduce}:
+
+  \begin{center}
+  \pause
+  \begin{minipage}{0.2\textwidth}
+    \centering
+    $\begin{bmatrix}
+      0 & 1 & 2 & 3\\
+      4 & 5 & 6 & 7 \\
+      8 & 9 & 10 & 11
+    \end{bmatrix}$
+  \end{minipage}
+  \pause
+  \begin{minipage}{0.12\textwidth}
+    \centering
+    $\longmapsto^*$
+  \end{minipage}
+  \begin{minipage}{0.3\textwidth}
+    \centering
+    $\begin{bmatrix}
+      (0 + 1) + (2 + 3) \\
+      (4 + 5) + (6 + 7) \\
+      (8 + 9) + (10 + 11)
+    \end{bmatrix}$
+  \end{minipage}
+  \pause
+  \begin{minipage}{0.12\textwidth}
+    \centering
+    $\longmapsto^*$
+  \end{minipage}
+  \begin{minipage}{0.12\textwidth}
+    \centering
+    $\begin{bmatrix}
+      6 \\
+      12 \\
+      28
+    \end{bmatrix}$
+  \end{minipage}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  ...and then to sum across each row's sum, using the same method:
+
+  \vspace{\fill}
+
+  $$(6 + 12) + 28$$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sum Kind of Cost Graph}
+
+  The cost graph looks like so:
+
+  \begin{center}
+    \begin{tikzpicture}
+      \fhex {N1} {$\code{sum R}_1$};
+      \fhex[right of=N1, node distance=1in] {N2} {$\code{sum R}_2$};
+      \fhex[right of=N2, node distance=1.5in] {N3} {$\code{sum R}_{m - 2}$};
+      \fhex[right of=N3, node distance=1in] {N4} {$\code{sum R}_{m - 1}$};
+
+      \node[dot, between=N1 and N4, yshift=0.5in] (J1) {};
+      \fhex[between=N1 and N4, yshift=-0.5in] {J2} {\code{sum}};
+      \node[dot, between=N1 and N4, yshift=-1in] (J3) {};
+      \node[between=N2 and N3] (M) {\textellipsis};
+
+      \draw[shorten >= 5pt] (N1.north) -- (J1);
+      \draw[shorten >= 5pt] (N2.north) -- (J1);
+      \draw[shorten >= 5pt] (N3.north) -- (J1);
+      \draw[shorten >= 5pt] (N4.north) -- (J1);
+
+      \draw (N1.south) -- (J2);
+      \draw (N2.south) -- (J2);
+      \draw (N3.south) -- (J2);
+      \draw (N4.south) -- (J2);
+
+      \draw[shorten <= 5pt] (J3) -- (J2);
+      \draw[shorten <= 5pt] (J3) -- (J2);
+      \draw[shorten <= 5pt] (J3) -- (J2);
+      \draw[shorten <= 5pt] (J3) -- (J2);
+    \end{tikzpicture}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  Here, we have $m$ calls in the middle, for an $m \times n$ matrix.
+
+  \vspace{\fill}
+
+  What's the cost?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sum Kind of Cost Analysis}
+
+  Well, not all of the \code{sum}s in this graph are made equal. In particular,
+  each of the inner calls to $\code{sum R}_i$ are on the $i$th row, which is
+  a sequence $n$ elements long, so that is a cost of $O(n)$ work and
+  $O(\log n)$ span.
+
+  \pause
+  \vspace{\fill}
+
+  Then, we know that the sequence passed to the final \code{sum} must be of
+  the same length, which is the number of rows $m$. So that is a cost of $O(m)$ work
+  and $O(\log m)$ span.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sum Kind of Cost Graph, Again}
+
+  So now we can get our cost graph, but with cost nodes instead of
+  computation nodes:
+
+  \pause
+  \begin{center}
+    \begin{tikzpicture}
+      \hex {N1} {$O(n)$} {$O(\log n)$};
+      \hex[right of=N1, node distance=1.25in] {N2} {$O(n)$} {$O(\log n)$};
+      \hex[right of=N2, node distance=1.75in] {N3} {$O(n)$} {$O(\log n)$};
+      \hex[right of=N3, node distance=1.25in] {N4} {$O(n)$} {$O(\log n)$};
+
+      \node[dot, between=N1 and N4, yshift=0.5in] (J1) {};
+      \hex[between=N1 and N4, yshift=-0.75in] {J2} {$O(m)$} {$O(\log m)$};
+      \node[dot, between=N1 and N4, yshift=-1.25in] (J3) {};
+      \node[between=N2 and N3] (M) {\textellipsis};
+
+      \draw[shorten >= 5pt] (N1.north) -- (J1);
+      \draw[shorten >= 5pt] (N2.north) -- (J1);
+      \draw[shorten >= 5pt] (N3.north) -- (J1);
+      \draw[shorten >= 5pt] (N4.north) -- (J1);
+
+      \draw (N1.south) -- (J2);
+      \draw (N2.south) -- (J2);
+      \draw (N3.south) -- (J2);
+      \draw (N4.south) -- (J2);
+
+      \draw[shorten <= 5pt] (J3) -- (J2);
+      \draw[shorten <= 5pt] (J3) -- (J2);
+      \draw[shorten <= 5pt] (J3) -- (J2);
+      \draw[shorten <= 5pt] (J3) -- (J2);
+    \end{tikzpicture}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  From this, it should be clear that the work (area) of the graph is
+  $m * O(n) + O(m)$, or $O(nm)$, and the span (longest path) is
+  $O(\log n + \log m)$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sum Kind of Cost Graph, Again}
+
+  So we finally simplify, and obtain the cost node which is simply our
+  final result.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \begin{tikzpicture}
+      \hex {N1} {$O(nm)$} {$O(\log n + \log m)$};
+    \end{tikzpicture}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  That's all there is to it! We could then iterate this process, and substitute
+  this cost node somewhere else as well, if this \code{sumMatrix} function were
+  to be involved in another computation somewhere.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Conclusions}
+
+  Sequences are useful for a couple of reasons. They:
+  \begin{itemize}
+    \item are an excellent use of abstraction to not think of lower-level
+    details of a given implementation
+    \item allow us to solve problems that would normally be solved by arrays,
+    without needing to compromise our immutability
+    \item allow us to think about span in a more nuanced way, with parallel-friendly
+    operations
+  \end{itemize}
+
+  \vspace{\fill}
+
+  They aren't as nice to work with as lists, which are the bread and butter of
+  a functional programmer's toolkit, but they are still quite usable and quite
+  convenient.
+\end{frame}
+
+
+
+
+
+
+
+
+
+% \begin{frame}[fragile]
+%   \frametitle{More Sequence Functions}
+
+%   \begin{minipage}{0.45\textwidth}
+%   \begin{tikzpicture}
+%     \fhex {N1} {\code{+}};
+%     \fhex[right of=N1, node distance=1in] {N2} {\code{+}};
+%     \fhex[right of=N2, node distance=1in] {N3} {\code{+}};
+%     \node[dot, between=N1 and N3, yshift=0.6in] (J1) {};
+%     \node[dot, between=N2 and N3, yshift=0.4in] (J2) {};
+%     \fhex[between=N2 and N3, yshift=-0.4in] {J3} {\code{*}};
+%     \fhex[between=N1 and N3, yshift=-0.8in] {J4} {\code{*}};
+
+%     \draw[shorten >= 5pt] (N1.north) -- (J1);
+%     \draw[shorten >= 5pt] (N2.north) -- (J2);
+%     \draw[shorten >= 5pt] (N3.north) -- (J2);
+%     \draw (N1.south) -- (J4);
+%     \draw (N2.south) -- (J3);
+%     \draw (N3.south) -- (J3);
+
+%     \draw[shorten >= 5pt, shorten <= 5pt] (J1) -- (J2);
+%     \draw (J3.south) -- (J4);
+%   \end{tikzpicture}
+%   \end{minipage}
+%   \begin{minipage}{0.45\textwidth}
+%   \begin{tikzpicture}
+%     \fhex {N1} {\code{+}};
+%     \fhex[right of=N1, node distance=1in] {N2} {\code{+}};
+%     \fhex[right of=N2, node distance=1in] {N3} {\code{+}};
+%     \node[dot, between=N1 and N3, yshift=0.6in] (J1) {};
+%     \fhex[between=N2 and N3, yshift=-0.4in] {J3} {\code{*}};
+%     \fhex[between=N1 and N3, yshift=-0.8in] {J4} {\code{*}};
+
+%     \draw[shorten >= 5pt] (N1.north) -- (J1);
+%     \draw[shorten >= 5pt] (N2.north) -- (J1);
+%     \draw[shorten >= 5pt] (N3.north) -- (J1);
+%     \draw (N1.south) -- (J4);
+%     \draw (N2.south) -- (J3);
+%     \draw (N3.south) -- (J3);
+
+%     \draw (J3.south) -- (J4);
+%   \end{tikzpicture}
+%   \end{minipage}
+
+% \end{frame}
+
+
+% \begin{frame}[fragile]
+%   \frametitle{More Sequence Functions}
+
+%   \begin{minipage}{0.45\textwidth}
+%   \begin{tikzpicture}
+%     \fhex {N1} {\code{+}};
+%     \fhex[right of=N1, node distance=1in, yshift=0.4in] {N2} {\code{+}};
+%     \fhex[right of=N1, node distance=1in] {N3} {\code{+}};
+%     \fhex[right of=N1, node distance=1in, yshift=-0.4in] {N4} {\code{*}};
+%     \node[dot, between=N1 and N3, yshift=0.8in] (J1) {};
+%     \fhex[between=N1 and N3, yshift=-0.8in] {J2} {\code{*}};
+
+%     \draw[shorten >= 5pt] (N1.north) -- (J1);
+%     \draw[shorten >= 5pt] (N2.north) -- (J1);
+%     \draw (N3.north) -- (N2.south);
+%     \draw (N4.north) -- (N3.south);
+%     \draw (N1.south) -- (J2);
+%     \draw (N4.south) -- (J2);
+%   \end{tikzpicture}
+%   \end{minipage}
+%   \begin{minipage}{0.45\textwidth}
+%       \begin{tikzpicture}
+%         \fhex {N1} {\code{+}};
+%         \fhex[right of=N1, node distance=1in] {N2} {\code{+}};
+%         \fhex[right of=N2, node distance=1in] {N3} {\code{+}};
+%         \node[dot, between=N1 and N3, yshift=0.5in] (J1) {};
+%         \fhex[between=N1 and N3, yshift=-0.5in] {J4} {\code{*}};
+
+%         \draw[shorten >= 5pt] (N1.north) -- (J1);
+%         \draw[shorten >= 5pt] (N2.north) -- (J1);
+%         \draw[shorten >= 5pt] (N3.north) -- (J1);
+%         \draw (N1.south) -- (J4);
+%         \draw (N2.south) -- (J4);
+%         \draw (N3.south) -- (J4);
+%       \end{tikzpicture}
+%   \end{minipage}
+% \end{frame}
+
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+
+	\begin{center}
+    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSd-hUtmsPshw7PxEBf4mZFiNHEromtgmIa85bsHu232yEpdXA/viewform?usp=sf_link}{Post-lecture survey:}} \\
+    \vspace{5pt}
+    \includegraphics[scale=0.035]{qr_july20} \\
+    \vspace{5pt}
+    And the House Quiz winner is...
+  \end{center}
+\end{frame}
+
+\end{document}

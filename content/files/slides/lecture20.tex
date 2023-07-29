@@ -1,0 +1,1784 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169]{beamer}
+
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+
+    % Color settings
+    \useauxtrue
+
+    \newcommand{\auxColor}{0AA0F4}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{2DC5A9} % the primary color of the slide borders
+    \newcommand{\bgColor}{e6fffa}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Compilers} % TODO
+    \subtitle{Making programming languages real} % TODO
+    \date{01 August 2023} % TODO
+    \author{Brandon Wu} % TODO
+
+    \graphicspath{ {./img/} }
+
+    \colorlet{bgBlue}{hlBlue!130}
+    \colorlet{bgOrange}{hlOrange}
+    \colorlet{fgBlue}{fgCodeBlue}
+    \colorlet{fgGreen}{fgCodeGreen}
+    \colorlet{fgRed}{fgCodeRed}
+    \colorlet{fgOrange}{fgCodeOrange}
+
+    \definecolor{bgPurple}{HTML}{dbc7ff}
+    \definecolor{bgRed}{HTML}{fcaea9}
+    \definecolor{bgYellow}{HTML}{fffeb5}
+    \definecolor{bgGreen}{HTML}{b4ffb3}
+
+    \definecolor{fgOrange}{HTML}{fcae4e}
+
+    \usetikzlibrary{positioning}
+    \usetikzlibrary{decorations.pathreplacing,calligraphy}
+
+    \tikzset{
+      every path/.style={line width=0.25mm},
+      tok/.style={
+        font=\large,
+        align=center,
+        minimum height=3cm,
+      },
+      belowtok/.style={
+        font=\large,
+        align=center,
+        minimum height=3cm,
+      },
+      astNode/.style={
+        draw,
+        inner sep=0.5pt,
+        line width=0.4mm,
+        minimum size=0.6cm,
+        font=\large,
+        align=center,
+      },
+      hex/.style={
+        astNode,
+        signal,
+        signal to=east and west,
+        signal pointer angle=130,
+        fill=bgPurple,
+      },
+      box/.style={
+        astNode,
+        rectangle,
+        fill=green!20!white,
+      },
+      bbox/.style={
+        astNode,
+        rectangle,
+        fill=bgBlue,
+      },
+      circ/.style={
+        astNode,
+        circle,
+        minimum size=0.7cm,
+        fill=bgYellow
+      },
+    }
+
+    \newcommand{\kwdToken}[4][]{
+      \node[tok, text centered, #1] (#2) {{\color{fgBlue}\code{#3}}};
+      \node[belowtok, text centered, below=-2.4cm of #2] {{\color{fgBlue}\code{#4}}};
+    }
+    \newcommand{\idToken}[3][]{
+      \node[tok, text centered, #1] (#2) {{\color{fgGreen}\code{#3}}};
+      \node[belowtok, text centered, below=-2.4cm of #2] {{\color{fgGreen}\code{ID}}};
+    }
+    \newcommand{\numToken}[3][]{
+      \node[tok, text centered, #1] (#2) {{\color{fgRed}\code{#3}}};
+      \node[belowtok, text centered, below=-2.4cm of #2] {{\color{fgRed}\code{NUM}}};
+    }
+    \newcommand{\opToken}[4][]{
+      \node[tok, text centered, #1] (#2) {{\color{fgOrange}\code{#3}}};
+      \node[belowtok, text centered, below=-2.4cm of #2] {{\color{fgOrange}\code{#4}}};
+    }
+    \newcommand{\eqToken}[3][]{
+      \node[tok, text centered, #1] (#2) {{\color{fgOrange}\code{#3}}};
+      \node[belowtok, text centered, below=-2.38cm of #2] {{\color{fgOrange}\code{EQ}}};
+    }
+
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\sectionSlide{1}{The History of Programming Languages}
+
+\begin{frame}[fragile]
+  \frametitle{Prologue}
+
+  Let me tell you a story.
+
+  \vspace{\fill}
+
+  Once upon a time, programming languages weren't real.
+
+  \vspace{\fill}
+
+  They were an idea in someone's head, of something that might be, but
+  which had never been done yet.
+
+  \pause
+  \vspace{\fill}
+
+  There weren't IDEs, there weren't VS Code extensions, there weren't
+  syntax highlighters, and there was no Standard ML.\footnote<2->{A true horror story.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Early Computer Hardware}
+
+  Actually, once upon a time, computers weren't real either.\footnote<2->{I'm less bothered about that one.}
+
+  \vspace{\fill}
+
+  People did everything by hand or by simple machine. There were no calculators,
+  and there was no Twitter\footnote<3->{Soon, there might not be again.}.
+
+  \vspace{\fill}
+
+  An early invention in the 1800s led to a loom which could weave a certain pattern
+  based upon usage of punched cards, literally cards with holes in them. This was
+  one of the first examples of what could be considered programming, albeit
+  strictly for loom-weaving.
+
+  \vspace{\fill}
+
+  A little later on in the 1800s, Ada Lovelace and Charles Babbage worked on a
+  theoretical proposal of a machine called the \term{Analytical Engine}, that
+  could execute arbitrary computations. This was the first advent of the general
+  purpose computer.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Early Computer Hardware}
+
+  By the beginning of the 1900s, Herman Hollerith had the idea of being able to
+  feed data into a machine via use of punch card, for the purposes of data
+  processing, record-keeping, and basic arithmetic operations.
+
+  \vspace{\fill}
+
+  He would found the Tabulating Machine Company on this premise, primarily
+  using punched cards for the purpose of data storage. He then would realize
+  this was a stupid name, and rename it to International Business Machines
+  Corporation, now known as IBM.
+
+  \vspace{\fill}
+
+  Fast forward a couple of decades, and Konrad Zuse comes out with the Z3, a
+  working, programmable electrical computer. Punched cards were used both to
+  submit program code to the machine, as well as to store the data that it
+  kept and output.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Punch Card Computing}
+
+  Some people have expressed that programming in SML/NJ can be an unpleasant
+  experience, due to a lack of ecosystem and documentation, and rather
+  interesting error messages.
+
+  \vspace{\fill}
+
+  I want to put this scenario into your head.
+
+  \vspace{\fill}
+
+  You are an engineer in the mid 1900s, and you are one of the first programmers
+  in the world. You painstakingly punch characters, hole by hole, into punch cards,
+  and then gather your cards that comprise your program and then walk across the
+  hall to the other room, where you can wait in line to submit a request to
+  run your program.
+
+  \vspace{\fill}
+
+  If you make a mistake while punching a card, you have to start over. If you
+  drop your deck of cards, the program is gone.
+
+  \vspace{\fill}
+
+  And still, programming languages are not real.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Assembly Programming}
+
+  In the 1940s, programs were now being written in assembly language, the lowest
+  form of language understandable by computers. These are essentially just blocks
+  of bits that have some particular meaning to the computer, bijected with
+  English words so that we can remember what they do.
+
+  \vspace{\fill}
+
+  For instance, the following might be an assembly-like syntax:
+  \begin{codeblock}
+    ADD r1 r2
+    CMP r1 r2
+    GOTO 0x00067AB3EF
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  I quote Wikipedia here on the topic, as follows:
+  \begin{quote}
+    It was eventually realized that programming in assembly language required a
+    great deal of intellectual effort. [{\color{blue} \textit{citation needed}}]
+  \end{quote}
+
+  \vspace{\fill}
+
+  Wikipedia claims that a citation is needed. I think that citation is only needed
+  for people who have never had to write assembly language before.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Assembly Programming}
+
+  So programmers spend hours, days, weeks poring over these very basic symbols,
+  having to reconstruct every single operation that the computer is doing in their
+  heads, and needing to remember the exact state of the computer at each step,
+  at the risk of making an incorrect assumption and writing a bug.
+
+  \vspace{\fill}
+
+  There is no recovery from a typo. There is no such thing as a type error.
+
+  \vspace{\fill}
+
+  And still, programming languages are not real.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Language for Computing}
+
+  Then, one day, someone has an idea. Maybe multiple people have an idea.
+
+  \vspace{\fill}
+
+  One such person was John W. Backus, in the 1950s, whose idea was that
+  maybe we don't need to write assembly by hand. Maybe we can write instructions
+  that could then be converted into the assembly itself.
+
+  \vspace{\fill}
+
+  John Backus called the idea in his head FORTRAN, and by the end of the decade,
+  a program was implemented to do exactly that.
+
+  \vspace{\fill}
+
+  This was the first FORTRAN compiler,
+
+  \vspace{\fill}
+
+  And then, programming languages were real.
+\end{frame}
+
+\sectionSlide{2}{Compiler Theory}
+
+\begin{frame}[fragile]
+  \frametitle{What is a Compiler?}
+
+  What on earth really is a compiler?
+
+  \vspace{\fill}
+
+  \defBox{}{A \term{compiler} can be put in very broad terms as a \textbf{program
+  that translates data from one form to another}. Usually, we refer to a compiler
+  for programming languages, which turns text in some language into some other form.}
+
+  \vspace{\fill}
+
+  For instance, SML/NJ is a compiler which takes in SML programs, and turns it into
+  native machine code for your computer, for a variety of computer architectures.
+
+  \vspace{\fill}
+
+  A sister idea is also that of:
+  \defBox{}{An \term{interpreter} is a program which reads in a program, and executes
+  it on the computer directly, without necessarily explicitly translating it to a
+  different form.}
+
+  \vspace{\fill}
+
+  The SML/NJ REPL is an interpreter.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compilers and Interpreters}
+
+  Put in SML terms, we can come up with a type signature for compilers and
+  interpreters:
+  \begin{codeblock}
+    (* SML text -> assembly language text *)
+    val compile : string -> string
+    (* a function which executes some assembly code directly.
+     * all computers come with this prepackaged. *)
+    val run : string -> unit
+
+    (* execute SML text directly *)
+    val interpret : string -> unit
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  In a broad sense, we should have that \code{interpret} $\eeq$ \code{run o compile}.
+  Put simply, interpreting a program is the same as compiling it first, and then
+  running it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compilers and Interpreters}
+
+  A way to understand interpreters and compilers comes from natural language. For
+  instance, I am both a compiler and an interpreter.
+
+  \vspace{\fill}
+
+  I am a compiler, because I have a rudimentary understanding of Mandarin
+  Chinese. This means that when I hear Mandarin, I can translate it into English
+  first, and then understand the resulting English.
+
+  \vspace{\fill}
+
+  I am also an interpreter, because I natively speak English. When I hear English,
+  I immediately understand its meaning, without needing to mentally translate it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Bootstrapping Compilers}
+
+  One idea that always is hard to accept is the fact that a programming language
+  can be implemented in itself.
+
+  \vspace{\fill}
+
+  For instance, \code{pypy} is a Python implementation written in Python. Similarly,
+  the SML/NJ compiler is written in SML, and the Rust compiler is written in Rust.
+
+  \vspace{\fill}
+
+  Why can this happen?
+
+  \vspace{\fill}
+
+  Let's use the shorthand of $\code{compile}_{\text{\textlangle lang\textrangle}}$
+  to denote a function of type \code{string -> string}, which takes in code written
+  in the language \textlangle lang\textrangle, and outputs assembly instructions.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Programming Languages as Ideas}
+
+  Understand that a programming language originates as just an \textit{idea}.
+
+  \vspace{\fill}
+
+  Before John Backus actually implemented FORTRAN, he had the idea in his head that
+  there should be some high-level language that he could program in. He possibly
+  had the syntax in his head, and called it FORTRAN, but a program written in
+  FORTRAN couldn't do anything, because no computer could understand FORTRAN at
+  the time.
+
+  \vspace{\fill}
+
+  But, luckily enough, we had assembly and punch cards. This meant that it was
+  already possible to compute -- in particular, it was possible to tell a
+  computer how to do \textit{anything}, how to compute any computable function.
+
+  \vspace{\fill}
+
+  One such function of interest is the $\code{compile}_{\text{FORTRAN}}$ function,
+  or in other words, a FORTRAN compiler. This happens to be a concrete instance of
+  a function which is computable, so it is \textit{possible} to use assembly and
+  punch cards to write it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Bootstrapping Compilers}
+
+  But, once we now have $\code{compile}_{\text{FORTRAN}}$, it is possible to write
+  FORTRAN code and actually turn it into machine instructions, and run it.
+
+  \vspace{\fill}
+
+  Therefore, it is possible to write FORTRAN code which computes anything.
+
+  \vspace{\fill}
+
+  In particular, it is still possible to write a function $\code{compile}_{\text{FORTRAN}}$,
+  except now instead of being written in assembly language, it is written in FORTRAN
+  itself, and given meaning by the existing FORTRAN compiler.
+
+  \vspace{\fill}
+
+  This is an example of what is called \term{bootstrapping} in compiler theory. We
+  can implement a language in itself, but only so long as there already exists a
+  compiler which can understand that language.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Bootstrapping Compilers}
+
+  So, pypy and SML/NJ and the Rust compiler all work the same way.
+
+  \vspace{\fill}
+
+  Guido van Rossum started with an idea in his head of a language called Python,
+  with a particular syntax and a particular kind of evaluation model. It didn't
+  exist yet, but it was an idea in his head.
+
+  \vspace{\fill}
+
+  Then, he took his language of choice, and then implemented a function
+  $\code{compile}_{\text{Python}}$ in it. This was the first Python compiler, and
+  made it possible to write and run Python code.
+
+  \vspace{\fill}
+
+  Once that was done, now we could write any function, including
+  \textit{rewriting} $\code{compile}_{\text{Python}}$, but this time in Python.
+  This was then called \code{pypy}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compilers from 5000 Feet}
+
+  Now that we've set the stage for what compilers are, and for what they do,
+  we can talk about the actual implementation of a compiler.
+
+  \vspace{\fill}
+
+  Recall that a compiler, such as $\code{compile}_{\text{SML}}$, is written
+  in some language, and has type \code{string -> string}, where it takes in
+  the text of an SML program and returns an executable.
+
+  \vspace{\fill}
+
+  A compiler achieves this goal by translating the input program through a
+  series of intermediate forms, simplifying and optimizing along the way,
+  until finally producing an assembly program.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compilers and Functional Programming}
+
+  A meta question comes to mind, which is -- why are we studying compilers in
+  a course on functional programming?
+
+  \vspace{\fill}
+
+  \textbf{Even the most dogged, determined hater of functional programming cannot deny
+  that functional programming is incredibly suited towards writing compilers.
+  }
+
+  \vspace{\fill}
+
+  The killer application for functional programming is in writing compilers, because
+  compilers are just transformations on data. Functional programming mediates that
+  relationship by enforcing typed guarantees on that data, as well as offering
+  fundamental constructs (pattern matching, datatype declarations) that make
+  the entire process an absolute joy.
+
+  \vspace{\fill}
+
+  For the rest of this presentation, we will assume we are trying to implement
+  a toy SML compiler in SML.
+\end{frame}
+
+\sectionSlide{3}{Implementing Compilers}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  Most all compilers follow the same structure:
+  \begin{itemize}
+    \item \term{lexing}, which takes in a \code{string} program, and outputs a
+    \code{token list}, which simply groups together fundamental units of the program
+    \item \term{parsing}, which takes in a \code{token list}, and outputs an
+    \term{abstract syntax tree} of type \code{ast}, which is a tree representing
+    the program's structure
+    \item \term{intermediate representation}, which turns the abstract
+    syntax tree into \term{abstract assembly}, that breaks apart the high-level
+    constructs into assembly-like primitives
+    \item \term{optimization}, which tries to fine-tune the abstract assembly to
+    be as performant as possible
+    \item \term{code generation}, which involves turning the abstract assembly
+    into real assembly
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+    \hspace{0.8cm}
+    \begin{tikzpicture}
+      [primary/.style={rectangle, draw, node distance=0.6in}]
+      % \node[text width=0.6in] (A) {lexing};
+      % \node[right of=A, text width=0.6in, node distance=0.8in] (B) {parsing};
+      % \node[right of=B] (C) {\small intermediate \\ representation};
+      % \node[right of=C] (D) {optimization};
+      % \node[right of=D] (E) {code \\ generation};
+      \node[primary, fill=bgBlue] (A) {program text};
+      \node[primary, below of=A, fill=bgGreen] (B) {token list};
+      \node[primary, below of=B, fill=bgPurple] (C) {abstract syntax tree};
+      \node[primary, below of=C, fill=bgRed] (D) {abstract assembly / control-flow graph};
+      \node[primary, below of=D, fill=bgYellow] (E) {real assembly};
+      \node[left of=A, node distance=1.5in] (S) {start};
+      \node[right of=E, node distance=1.5in] (P) {profit!};
+      \draw[-stealth] (A) -- node [right] {\small lexing} (B);
+      \draw[-stealth] (B) -- node [right] {\small parsing} (C);
+      \draw[-stealth] (C) -- node [right] {\small IR generation} (D);
+      \draw[-stealth] (D) -- node [right] {\small codegen} (E);
+
+      \draw[-stealth] (D.south west) to [out=225, in=135, looseness=4] node [left] {optimization} (D.north west);
+      \draw[-stealth] (S) -- (A);
+      \draw[-stealth] (E) -- (P);
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+    \hspace{0.8cm}
+    \begin{tikzpicture}
+      [primary/.style={rectangle, draw, node distance=0.6in}]
+      % \node[text width=0.6in] (A) {lexing};
+      % \node[right of=A, text width=0.6in, node distance=0.8in] (B) {parsing};
+      % \node[right of=B] (C) {\small intermediate \\ representation};
+      % \node[right of=C] (D) {optimization};
+      % \node[right of=D] (E) {code \\ generation};
+      \node[primary, fill=bgBlue!130] (A) {program text};
+      \node[primary, below of=A, fill=bgGreen!130] (B) {token list};
+      \node[primary, below of=B, fill=bgPurple!50, text=black!45] (C) {abstract syntax tree};
+      \node[primary, below of=C, fill=bgRed!50, text=black!45] (D) {abstract assembly / control-flow graph};
+      \node[primary, below of=D, fill=bgYellow!50, text=black!45] (E) {real assembly};
+      \node[left of=A, node distance=1.5in] (S) {start};
+      \node[right of=E, node distance=1.5in] (P) {profit!};
+      \draw[-stealth] (A) -- node [right] {\small \textbf{lexing}} (B);
+      \draw[-stealth] (B) -- node [right, text=black!45] {\small parsing} (C);
+      \draw[-stealth] (C) -- node [right, text=black!45] {\small IR generation} (D);
+      \draw[-stealth] (D) -- node [right, text=black!45] {\small codegen} (E);
+
+      \draw[-stealth] (D.south west) to [out=225, in=135, looseness=4] node [left, text=black!45] {optimization} (D.north west);
+      \draw[-stealth] (S) -- (A);
+      \draw[-stealth] (E) -- (P);
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  Let's visually see how we can think about a compiler. We'll start with an
+  example SML program, of type \code{string}.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    val x = 2 - 1
+
+    fun foo (y : int) = 5 + x
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  We then \term{tokenize} the input program, so that instead of thinking of it
+  as a list of characters, we group together all characters that are part of
+  the same semantic unit.
+
+  \vspace{\fill}
+
+  Linguistically, this is similar to reading sentences as words, instead of as
+  a list of letters. Let's highlight all the "words" of this program.
+
+  \vspace{\fill}
+
+  % need to fix coloring here...
+  \begin{codeblock}
+    <bvalb> <gxg> <p=p> <r2r> <p-p> <r1r>
+
+    <bfunb> <gfoog> <p(p><gyg> <p:p> <gintg><p)p> = <r5r> <p+p> <gxg>
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  SML is a whitespace-agnostic language, so we don't actually care about
+  the whitespace here. It just serves to separate distinct tokens.
+
+  \vspace{\fill}
+
+  Now, let's turn it into a list of tokens, annotated with each token's meaning.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  In SML, we could define a type \code{token} which simply denotes each
+  "word" of a program. It might look something like this:
+
+  \begin{codeblock}
+    datatype token =
+      (* data *)
+        ID of string | NUM of int
+
+      (* keywords *)
+      | VAL | FUN | TYPE (* ... *)
+
+      (* syntax *)
+      | LPAREN | RPAREN | COLON | EQ | PLUS | MINUS
+      (* ... *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  So after tokenization into the \code{token} type we just defined, we might
+  get something like this:
+
+  \begin{center}
+    \vspace{-1.5cm}
+    \begin{tikzpicture}
+      [ node distance=1.35cm,
+        ]
+      \kwdToken{N1}{val}{VAL};
+      \idToken[right of=N1]{N2}{x};
+      \eqToken[right of=N2]{N3}{=};
+      \numToken[right of=N3]{N4}{2};
+      \opToken[right of=N4]{N5}{-}{MINUS};
+      \numToken[right of=N5]{N6}{1};
+    \end{tikzpicture}
+
+    \vspace{-2cm}
+    \begin{tikzpicture}
+      [ node distance = 1.4cm,
+        ]
+      \kwdToken{N1}{fun}{FUN};
+      \idToken[right of=N1]{N2}{foo};
+      \opToken[right of=N2]{N3}{(}{LPAREN};
+      \idToken[right of=N3]{N4}{y};
+      \opToken[right of=N4]{N5}{:}{COLON};
+      \idToken[right of=N5]{N6}{int};
+      \opToken[right of=N6]{N7}{)}{RPAREN};
+      \eqToken[right of=N7]{N8}{=};
+      \numToken[right of=N8]{N9}{5};
+      \opToken[right of=N9]{N10}{+}{PLUS};
+      \idToken[right of=N10]{N11}{x};
+    \end{tikzpicture}
+  \end{center}
+
+  \vspace{-1.3cm}
+  Or, written as actual SML code:
+
+  \begin{codeblock}
+    [ VAL, ID "x", EQ, NUM 2, MINUS, NUM 1]
+    @ [ FUN, ID "foo", LPAREN, ID "y", COLON, ID "int", RPAREN ]
+    @ [ EQ, NUM 5, PLUS, ID "x"]
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+    \hspace{0.8cm}
+    \begin{tikzpicture}
+      [primary/.style={rectangle, draw, node distance=0.6in}]
+      % \node[text width=0.6in] (A) {lexing};
+      % \node[right of=A, text width=0.6in, node distance=0.8in] (B) {parsing};
+      % \node[right of=B] (C) {\small intermediate \\ representation};
+      % \node[right of=C] (D) {optimization};
+      % \node[right of=D] (E) {code \\ generation};
+      \node[primary, fill=bgBlue!50, text=black!45] (A) {program text};
+      \node[primary, below of=A, fill=bgGreen!130] (B) {token list};
+      \node[primary, below of=B, fill=bgPurple!130] (C) {abstract syntax tree};
+      \node[primary, below of=C, fill=bgRed!50, text=black!45] (D) {abstract assembly / control-flow graph};
+      \node[primary, below of=D, fill=bgYellow!50, text=black!45] (E) {real assembly};
+      \node[left of=A, node distance=1.5in] (S) {start};
+      \node[right of=E, node distance=1.5in] (P) {profit!};
+      \draw[-stealth] (A) -- node [right, text=black!45] {\small lexing} (B);
+      \draw[-stealth] (B) -- node [right] {\small \textbf{parsing}} (C);
+      \draw[-stealth] (C) -- node [right, text=black!45] {\small IR generation} (D);
+      \draw[-stealth] (D) -- node [right, text=black!45] {\small codegen} (E);
+
+      \draw[-stealth] (D.south west) to [out=225, in=135, looseness=4] node [left, text=black!45] {optimization} (D.north west);
+      \draw[-stealth] (S) -- (A);
+      \draw[-stealth] (E) -- (P);
+    \end{tikzpicture}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Recursive Problems, Recursive Programs}
+
+  One thing we note before proceeding is the fact that programs are naturally
+  recursively defined. We can witness this by the fact that all the following
+  are programs:
+  \begin{codeblock}
+    if true then big else ()
+  \end{codeblock}
+
+  \begin{codeblock}
+    if true then if true then big else () else ()
+  \end{codeblock}
+
+  \begin{codeblock}
+    if true then if true then if true then big else () else () else ()
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Towards Abstract Syntax}
+
+  It turns out this makes programs a prime candidate for a recursive \code{datatype}
+  declaration!
+
+  \vspace{\fill}
+
+  By analogy, if you are familiar with the idea of \term{op trees}, recall that we can
+  have a tree corresponding to some arithmetic expression:
+
+  \begin{center}
+    \begin{tikzpicture}
+      \node[circ] {\code{+}}
+        child{node[circ] {\code{-}}
+          child{node[hex] {\code{1}}}
+          child{node[hex] {\code{2}}}
+        }
+        child{node[hex] {\code{3}}}
+      ;
+
+    \end{tikzpicture}
+  \end{center}
+
+  \vspace{\fill}
+
+  This tree happens to denote the expression \code{(1 - 2) + 3}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Abstract Syntax is Abstract}
+
+  This is just \term{abstract syntax}, though, since it elides some of the
+  specific syntactic details, like the fact that there is a left and right paren
+  around the subtraction.
+
+  \vspace{\fill}
+
+  In the end, this doesn't matter, because the tree structure serves as a
+  proxy for what the parentheses were trying to tell us. We thus can get away
+  from the precise coding details, while preserving the meaning, by using an
+  \term{abstract syntax tree}, or AST for short.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Programs are Trees}
+
+  Well, we can do something very similar to op trees with programs. We will
+  instead have an \term{abstract syntax tree} which denotes the structure
+  of the program.
+
+  \vspace{\fill}
+
+  \begin{center}
+    \begin{minipage}{0.6\textwidth}
+      \raggedright
+      This tree denotes the program
+      \begin{codeblock}
+        val x = (1 - 2) + 3
+      \end{codeblock}
+
+      Note how it has no mention of parens or the \code{=} sign, because they don't
+      actually matter in terms of what the program \textit{means}!
+
+      Generally, we can get rid of things like colons, equals signs, keywords,
+      and parentheses in abstract syntax. These syntactic details only existed
+      to let us know what the actual underlying tree looked like.
+    \end{minipage}
+    \begin{minipage}{0.38\textwidth}
+      \centering
+      \begin{tikzpicture}[level distance=12mm]
+        \node[box] {\code{ValDec}}
+          child{node[box, fill=bgBlue] {\code{x}}}
+          child{node[circ] {\code{+}}
+            child{node[circ] {\code{-}}
+              child{node[hex] {\code{1}}}
+              child{node[hex] {\code{2}}}
+            }
+            child{node[hex] {\code{3}}}
+          }
+          ;
+      \end{tikzpicture}
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  So, for our running example program, we could obtain
+  the following abstract syntax tree:
+  \begin{center}
+    \begin{tikzpicture}
+      [
+      ]
+      \node[box] (T) {\code{TopDecs}\strut}
+        child{node[box, xshift=-1in] (M1) {\code{ValDec}}
+          child{node[bbox] (L1) {\code{"x"}}}
+          child{node[circ, minimum size=0.8cm] (L2) {\code{-}}
+            child{node[hex, xshift=-0.3cm] (L3) {\code{Int 2}}}
+            child{node[hex, xshift=0.3cm] (L4) {\code{Int 1}}}
+          }
+        }
+        child{node[box, xshift=1in] (M2) {\code{FunDec}}
+          child{node[bbox, xshift=-1cm] (R1) {\code{"foo"}}}
+          child{node[box, fill=bgRed] (R2) {\code{TypedPat}\strut}
+            child{node[bbox] (RU1) {\code{"x"}}}
+            child{node[box, fill=bgOrange] (RU2) {\code{int}}}
+          }
+          child{node[circ, xshift=2cm, minimum size=0.8cm] (R3) {\code{+}}
+            child{node[hex, xshift=-0.3cm] (RU3) {\code{Int 5}}}
+            child{node[hex, xshift=0.3cm] (RU3) {\code{Id "x"}}}
+          }
+        };
+      % \node[box, below of=L2, node distance=1.5cm] (LU2) {\code{Int 2}};
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  The SML code for how we might represent an abstract syntax tree looks
+  similarly to the $C_{not}$ problem from your homework. We could write:
+
+  \small
+  \begin{codeblock}
+    datatype exp =
+        Int of int
+      | Id of string
+      | Plus of exp * exp               (* e1 + e2 *)
+    and declaration =
+        ValDec of pat * exp             (* val <pat> = <exp> *)
+      | FunDec of string * pat list * exp
+          (* fun <id> <p1> ... <pn> = <e> *)
+      | (* ... *)
+    and pattern =
+        IdPat of string
+      | TuplePat of pattern list        (* (p1, p2, ..., pn) *)
+      | (* ... *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  Usually, an abstract syntax tree can be obtained from a list of tokens via a
+  straightforward \term{recursive-descent parser}.
+
+  \vspace{\fill}
+
+  \defBox{}{A \term{recursive-descent parser} is one comprised of many mutually
+  recursive functions, each of which simply is responsible for parsing a single
+  construct (such as expressions, patterns, declarations) from a list of tokens.}
+
+  \vspace{\fill}
+
+  So for instance, we might have a bunch of functions, such as:
+  \begin{codeblock}
+    val parsePat : token list -> pat * token list
+    val parseExp : token list -> exp * token list
+    val parseDec : token list -> dec * token list
+  \end{codeblock}
+
+  which parse a tree corresponding to a pattern, expression, or declaration from
+  the front of a \code{token list}, and then return the rest of the \code{token list}.
+  This should feel like the regex matcher!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  The SML code for that might look like:
+
+  \small
+  \begin{codeblock}
+    fun parseDec (ts : token list) : dec * token list =
+      case ts of
+        (* val <pat> = <exp> *)
+        VAL::ts2 =>
+          let
+            val (pat, ts2) = parsePat ts
+            val ts3 = expect EQ ts2
+            val (exp, ts4) = parseExp ts3
+          in
+            (ValDec (pat, exp), ts4)
+          end
+      | FUN::ts2 => (* ... *)
+      | TYPE::ts2 => (* ... *)
+      | (* ... *)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+  We can see how it works by going back to our \code{token list} from earlier.
+
+  \vspace{\fill}
+
+  Using the \code{parseDec} function, we essentially split the token list into
+  regions based on whether they correspond to patterns or expressions or
+  related:
+
+  \begin{center}
+    \begin{tikzpicture}
+      [node distance=1.5cm]
+      \kwdToken{N1}{val}{VAL};
+      \idToken[right of=N1]{N2}{x};
+      \eqToken[right of=N2]{N3}{=};
+      \numToken[right of=N3]{N4}{2};
+      \eqToken[right of=N4]{N5}{-};
+      \numToken[right of=N5]{N6}{1};
+      \kwdToken[right of=N6]{N7}{fun};
+      \idToken[right of=N7]{N8}{foo};
+
+      \node[above of=N1, xshift=-0.6cm, yshift=-1cm] (D1) {};
+      \node[above of=N6, xshift=0.6cm, yshift=-1cm] (D2) {};
+      \draw [decorate,
+             decoration={calligraphic brace, raise=-5pt, amplitude=5pt},
+             line width=0.5mm] (D1) -- (D2)
+        node[pos=0.5,above=2pt,black]{\code{parseDec}}
+      ;
+
+
+      \node[above of=N7, xshift=-0.6cm, yshift=-1cm] (R1) {};
+      \node[above of=N8, xshift=0.6cm, yshift=-1cm] (R2) {};
+      \draw [decorate,
+             decoration={calligraphic brace, raise=-5pt, amplitude=5pt},
+             line width=0.5mm] (R1) -- (R2)
+        node[pos=0.5,above=2pt,black]{(rest of token list)}
+      ;
+
+      \node[below of=N2, xshift=-0.6cm, yshift=0.1cm] (P1) {};
+      \node[below of=N2, xshift=0.6cm, yshift=0.1cm] (P2) {};
+      \draw [decorate, decoration={calligraphic brace, mirror, raise=-10pt, amplitude=5pt}, line width=0.5mm, yshift=-0.5cm] (P1) -- (P2)
+        node[pos=0.5,below=-2pt,black]{\code{parsePat}}
+      ;
+
+      \node[below of=N4, xshift=-0.6cm, yshift=0.1cm] (E1) {};
+      \node[below of=N6, xshift=0.6cm, yshift=0.1cm] (E2) {};
+      \draw [decorate, decoration={calligraphic brace, mirror, raise=-10pt, amplitude=5pt}, line width=0.5mm, yshift=-0.5cm] (E1) -- (E2)
+        node[pos=0.5,below=-2pt,black]{\code{parseExp}}
+      ;
+    \end{tikzpicture}
+  \end{center}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Implementing Parsing and Lexing}
+
+    The highlighted regions then return to us subtrees of certain types,
+    as the return values of \code{parsePat} and \code{parseExp}.
+
+    \vspace{\fill}
+
+    Then, \code{parseDec} just needs to string them together, and place
+    them under the constructor \code{ValDec}, corresponding to a node of the
+    syntax tree representing a \code{val} declaration.
+
+    \vspace{\fill}
+
+    \begin{minipage}{0.45\textwidth}
+      \code{parsePat} $\longmapsto$ \tikz[baseline] \node[anchor=base, bbox]{\code{"x"}}; \\
+
+      \vspace{15pt}
+
+      \code{parseExp} $\longmapsto$ \tikz[baseline]
+        \node[circ, minimum size=0.8cm] (L2) {\code{-}}
+            child{node[hex, xshift=-0.3cm] (L3) {\code{Int 2}}}
+            child{node[hex, xshift=0.3cm] (L4) {\code{Int 1}}}
+        ;
+    \end{minipage}
+    \begin{minipage}{0.45\textwidth}
+      \code{parseDec} $\longmapsto$ \tikz[baseline]
+      \node[box, xshift=-1in] (M1) {\code{ValDec}}
+          child{node[bbox] (L1) {\code{"x"}}}
+          child{node[circ, minimum size=0.8cm] (L2) {\code{-}}
+            child{node[hex, xshift=-0.3cm] (L3) {\code{Int 2}}}
+            child{node[hex, xshift=0.3cm] (L4) {\code{Int 1}}}
+          }
+      ;
+    \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Implementing Parsing and Lexing}
+
+  I have so far been brief on how you implement lexers and parsers.
+
+  \vspace{\fill}
+
+  If you look at the code above for the \code{parseDec} function, it is
+  reasonably boring-looking. The code mostly follows the structure of
+  the program.
+
+  \vspace{\fill}
+
+  Lexing and parsing are generally considered to be "solved" problems, in the
+  field of computer science, due to decades of advances in lexing and parsing
+  theory. It turns out that lexers and parsers are so straightforward that most
+  lexers and parser nowadays are no longer written by humans, but actually
+  autogenerated from a specification.
+
+  \vspace{\fill}
+
+  So they are generally not super important. I enjoy writing parsers, though.
+  \footnote{Such generators are called \term{lexer and parser generators}.
+  You could also call them \term{lexer compilers} and \term{parser compilers},
+  confusingly.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Playing with Program Trees}
+
+  Once you have ASTs, everything interesting can happen.
+
+  \vspace{\fill}
+
+  ASTs essentially encode all the essential syntactic structure of a program,
+  while getting rid of all of the fat that is not strictly necessary to understand
+  what a program \textit{means}.
+
+  \vspace{\fill}
+
+  It is at this point we can write transformations and analyses on those ASTs,
+  to imbue the tree with actual meaning.
+
+  \vspace{\fill}
+
+  \keyBox{}{Seen in this way, compilation is nothing more than transformation
+  and operations on trees.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Playing with Program Trees}
+
+  For instance, something very pivotal that occurs soon after you obtain
+  a syntax tree is that you can type-check a program. The code for that
+  might look like:
+
+  {\small
+  \begin{codeblock}
+    datatype ty = IntTy | StringTy | RealTy | (* ... *)
+
+    fun typecheck (e : exp) : ty =
+      case e of
+        Int _ => IntTy
+      | Plus (e1, e2) =>
+          (case typecheck (e1, e2) of
+            (IntTy, IntTy) => IntTy
+          | (RealTy, RealTy) => RealTy
+          | _ => raise Fail "expected pair of ints or reals"
+          )
+      | (* ... *)
+  \end{codeblock}
+  }
+
+  \vspace{\fill}
+
+  We see it's just a straightforward recursive function on a tree.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compiler Optimizations}
+
+  Type-checking is just one operation you can perform on an AST.
+
+  \vspace{\fill}
+
+  Another critical part of compilers is \term{compiler optimizations},
+  which is the problem of turning an AST into a \textit{semantically equivalent}
+  AST that is simpler in some form.
+
+  \vspace{\fill}
+
+  \begin{center}
+  \begin{minipage}[t]{0.45\textwidth}
+    \raggedright
+
+    For instance, consider the sub-tree of our running program, corresponding
+    to the declaration of \code{x}:
+    \begin{center}
+    \begin{tikzpicture}[level distance=12mm]
+      \node[box, xshift=-1in] (M1) {\code{ValDec}}
+        child{node[bbox] (L1) {\code{"x"}}}
+        child{node[circ, minimum size=0.8cm] (L2) {\code{-}}
+          child{node[hex, xshift=-0.3cm] (L3) {\code{Int 2}}}
+          child{node[hex, xshift=0.3cm] (L4) {\code{Int 1}}}
+        };
+    \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+  \hspace{10pt}
+  \begin{minipage}[t]{0.45\textwidth}
+    \raggedright
+
+    However, on inspection, it might as well be:
+
+    \begin{center}
+    \begin{tikzpicture}[level distance=12mm]
+      \node[box, xshift=-1in] (M1) {\code{ValDec}}
+        child{node[bbox] (L1) {\code{"x"}}}
+        child{node[hex] (L2) {\code{Int 1}}
+        };
+    \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  This is a classic compiler optimization called \term{constant folding}.
+
+  \vspace{\fill}
+
+  \defBox{}{\term{Constant folding} is a compiler optimization where the AST
+  is simplified to evaluate any constant arithmetic expressions at compile time,
+  simplifying the AST.}
+
+  \vspace{\fill}
+
+  It may seem fairly trivial to simplify expressions like \code{2 - 1}. After
+  all, this takes a fairly miniscule amount of time at runtime! Just remember:
+  \begin{itemize}
+    \item \textbf{Optimizations add up}. Being able to simplify an expression
+    might lead to further simplifications, especially nearer to
+    assembly, when pretty much everything just becomes arithmetic operations.
+    \item \textbf{Computers repeat themselves}. Computers often run the same routine many, many times, so small
+    things like less addition operations can lead to a huge difference, when
+    it's happening billions of times.
+    \item \textbf{Less operations, less bloat}. Less operations lead to smaller file
+    sizes. If I compile the expression \code{2 - 1}, I need to issue multiple
+    instructions, versus if I just have \code{1}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  It can be implemented simply via the following recursive function:
+
+  {\small
+  \begin{codeblock}
+    fun cfold (e : exp) : exp =
+      case e of
+        Plus  (Int i1, Int i2) => Int (i1 + i2)
+      | Minus (Int i1, Int i2) => Int (i1 - i2)
+      | Div   (Int i1, Int i2) => Int (i1 div i2)
+      | _ => e
+  \end{codeblock}
+  }
+
+  \vspace{\fill}
+
+  At least, it would be, if this wasn't incredibly wrong.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  This code seems reasonable. If we are trying to fold the constant integer
+  or an identifier, we can't do anything, so we return just that expression.
+
+  \vspace{\fill}
+
+  Otherwise, if we are folding an arithmetic operation of some literal integer
+  arguments, we simplify the tree to that operation's result. However:
+
+  \vspace{\fill}
+
+  Error 1: \textit{This program can crash}.
+
+  \vspace{\fill}
+
+  {\small
+  \begin{codeblock}
+    fun cfold (e : exp) : exp =
+      case e of
+        Plus  (Int i1, Int i2) => Int (i1 + i2)
+      | Minus (Int i1, Int i2) => Int (i1 - i2)
+      `| Div   (Int i1, Int i2) => Int (i1 div i2)`
+      | _ => e
+  \end{codeblock}
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  Our program will crash upon trying to compile \code{val x = 1 div 0}!
+
+  \vspace{\fill}
+
+  Compiling is just a staged version of interpreting code -- it is meant to
+  produce something which can \textit{then} be run, but a compiler definitely
+  cannot crash or loop depending on its input program's behavior. So this is
+  a big no-no in compilers.
+
+  \vspace{\fill}
+
+  We need to fix it like so:
+
+  {\small
+  \begin{codeblock}
+    fun cfold (e : exp) : exp =
+      case e of
+        Plus  (Int i1, Int i2) => Int (i1 + i2)
+      | Minus (Int i1, Int i2) => Int (i1 - i2)
+      `| Div   (Int i1, Int 0) => e`
+      | Div   (Int i1, Int i2) => Int (i1 div i2)
+      | _ => e
+  \end{codeblock}
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  A further problem: our constant folding function doesn't recurse!
+
+  \vspace{\fill}
+
+  This means if the expression to be folded is not literally at the top
+  of the expression, it won't happen, for instance for the following tree:
+
+  \begin{center}
+  \begin{tikzpicture}[level distance=12mm]
+    \centering
+    \node[circ, minimum size=0.8cm] {\code{-}}
+      child{node[circ, minimum size=0.8cm, xshift=-0.2cm] {\code{+}}
+        child{node[hex, xshift=-0.3cm] (L3) {\code{Int 1}}}
+        child{node[hex, xshift=0.3cm] (L4) {\code{Int 2}}}
+      }
+      child{node[hex, xshift=0.2cm] (L3) {\code{Int 3}}}
+    ;
+  \end{tikzpicture}
+  \end{center}
+
+  \vspace{\fill}
+
+  So, let's fix our code again:
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  {\small
+  \begin{codeblock}
+    fun cfold (e : exp) : exp =
+      case e of
+        Plus  (Int i1, Int i2) => Int (i1 + i2)
+      | Minus (Int i1, Int i2) => Int (i1 - i2)
+      | Div   (Int i1, Int 0)  => e
+      | Div   (Int i1, Int i2) => Int (i1 div i2)
+      `| Plus  (e1, e2) => Plus  (cfold e1, cfold e2)`
+      `| Minus (e1, e2) => Minus (cfold e1, cfold e2)`
+      `| Div   (e1, e2) => Div   (cfold e1, cfold e2)`
+      `(* ... many more cases ... *)`
+  \end{codeblock}
+  }
+
+  \vspace{\fill}
+
+  Unfortunately, this means we will need a case for every single
+  constructor in the \code{exp} type.\footnote{There are techniques in
+  functional programming that mean this can actually be written much more
+  tersely than this, without all the boilerplate.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  Constant folding is nice, but in practice usually there's not a whole lot of
+  compile-time evaluatable expressions in the actual source of the code.
+
+  \vspace{\fill}
+
+  This would require someone to write something like
+  \begin{codeblock}
+    val x = 1 + 2
+  \end{codeblock}
+  in their source code.\footnote{Which happens, and sometimes by some of you,
+  but not often.}
+
+  \vspace{\fill}
+
+  For things like pattern matching, function calls, loops, and complex
+  data structures, it's difficult to optimize, because these structures are
+  too high-level. For most optimizations, we need to descend closer to assembly
+  language.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+    \hspace{0.8cm}
+    \begin{tikzpicture}
+      [primary/.style={rectangle, draw, node distance=0.6in}]
+      % \node[text width=0.6in] (A) {lexing};
+      % \node[right of=A, text width=0.6in, node distance=0.8in] (B) {parsing};
+      % \node[right of=B] (C) {\small intermediate \\ representation};
+      % \node[right of=C] (D) {optimization};
+      % \node[right of=D] (E) {code \\ generation};
+      \node[primary, fill=bgBlue!50, text=black!45] (A) {program text};
+      \node[primary, below of=A, fill=bgGreen!50, text=black!45] (B) {token list};
+      \node[primary, below of=B, fill=bgPurple!130] (C) {abstract syntax tree};
+      \node[primary, below of=C, fill=bgRed!130] (D) {abstract assembly / control-flow graph};
+      \node[primary, below of=D, fill=bgYellow!50, text=black!45] (E) {real assembly};
+      \node[left of=A, node distance=1.5in] (S) {start};
+      \node[right of=E, node distance=1.5in] (P) {profit!};
+      \draw[-stealth] (A) -- node [right, text=black!45] {\small lexing} (B);
+      \draw[-stealth] (B) -- node [right, text=black!45] {\small parsing} (C);
+      \draw[-stealth] (C) -- node [right] {\small \textbf{IR generation}} (D);
+      \draw[-stealth] (D) -- node [right, text=black!45] {\small codegen} (E);
+
+      \draw[-stealth] (D.south west) to [out=225, in=135, looseness=4] node [left] {\textbf{optimization}} (D.north west);
+      \draw[-stealth] (S) -- (A);
+      \draw[-stealth] (E) -- (P);
+    \end{tikzpicture}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  For this purpose, we have \term{abstract assembly}, which is a representation
+  of primitive code that looks like assembly language, but doesn't need to
+  touch things like registers.
+
+  \vspace{\fill}
+
+  Such instructions break apart the nested structure of programs to achieve
+  a very simple layout. For instance, we might translate the body of this function as:
+  \begin{codeblock}
+    fun f x y z =
+      x + (y + z)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    t1 <- y + z   (* a temp variable *)
+    t2 <- x + t1  (* another temp *)
+    ret t2        (* return the result *)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Here, binary operations only take in variables or temps, so we can't
+  nest expressions!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  This is fine for some examples, such
+  This is fine for what is known as \term{straight-line code}, which is code
+  that doesn't perform any branches of control flow, or jumps in program logic.
+
+  \vspace{\fill}
+
+  Unfortunately, both of these things are quite common in programming languages.
+  To that end, we translate abstract syntax into a \term{control-flow graph},
+  or CFGs, which links blocks of straight-line code by pointers which denote
+  which blocks can reach each other.
+
+  \vspace{\fill}
+
+  So for instance, in the following code:
+  \begin{codeblock}
+    fun f x =
+      if x then f x
+      else f (not x)
+
+    val y = f 0
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  \begin{center}
+    \begin{minipage}{0.35\textwidth}
+      \begin{codeblock}
+        fun f x =
+          ?if x? then &f x&
+          else `f (not x)`
+
+        /val y = f 0/
+      \end{codeblock}
+    \end{minipage}
+    \begin{minipage}{0.6\textwidth}
+      \begin{center}
+      \begin{tikzpicture}
+          [every node/.style={rectangle, draw}]
+        \node[fill=bgBlue] (A) {
+          \code{y <- call f true}\strut
+        };
+        \node[below of=A, node distance=1.5in, xshift=0.2in, fill=bgOrange] (B) {
+          \code{cmp arg1}\strut
+        };
+        \node[right of=B, node distance=1in, yshift=0.5in, fill=red!45] (C) {
+          \code{ret (call f arg1)}\strut
+        };
+        \node[right of=B, node distance=1in, yshift=-0.5in, text width=1.5in, fill=yellow!45] (D) {
+          \code{t1 <- not arg1} \\
+          \code{ret call f t1}
+        };
+        \draw[-stealth] (A) to [out=270, in=180] (B);
+        \draw[-stealth] (B) to [out=0, in=270] (C);
+        \draw[-stealth] (B) to [out=270, in=180] (D);
+        \draw[-stealth] (C.west) to [out=160, in=90] (B);
+      \end{tikzpicture}
+      \end{center}
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  But, what's something that we notice about this CFG?
+
+  \vspace{\fill}
+
+  \textbf{No matter which way we go, we always end up at a call to \code{f}!}
+
+  \vspace{\fill}
+
+  \begin{center}
+  \begin{tikzpicture}
+      [every node/.style={rectangle, draw}]
+    \node[] (A) {
+      \code{y <- call f true}\strut
+    };
+    \node[below of=A, node distance=1in, xshift=0.2in] (B) {
+      \code{cmp arg1}\strut
+    };
+    \node[right of=B, node distance=1in, yshift=0.5in] (C) {
+      {\color{red}\code{ret (call f arg1)}\strut}
+    };
+    \node[right of=B, node distance=1in, yshift=-0.5in, text width=1.5in] (D) {
+      \code{t1 <- not arg1} \\
+      {\color{red}\code{ret call f t1}}
+    };
+    \draw[-stealth] (A) to [out=270, in=180] (B);
+    \draw[-stealth] (B) to [out=0, in=270] (C);
+    \draw[-stealth] (B) to [out=270, in=180] (D);
+    \draw[-stealth] (C.west) to [out=160, in=90] (B);
+  \end{tikzpicture}
+  \end{center}
+
+  \vspace{\fill}
+
+  In other words, a surefire infinite loop.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  With CFGs, you can do easy optimizations, because the flow of the program
+  is very apparent. This leads us to a whole host of possible optimizations,
+  the list of which is far too comprehensive to go over here.
+
+  \vspace{\fill}
+
+  The basic idea is that these are two main kinds of optimizations:
+
+  \vspace{\fill}
+
+  \defBox{}{\term{Local optimizations} are optimizations which run
+  purely within a single basic block of straight-line code.}
+
+  Some examples of these include constant folding and copy propagation.
+
+  \vspace{\fill}
+
+  \defBox{}{\term{Global optimizations} are optimizations which run interprocedurally,
+  that is, by considering the flow of data through multiple basic blocks or functions.}
+
+  Some examples of these include dead code elimination, unused variables,
+  and function inlining.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  Consider the following analogy.
+
+  \vspace{\fill}
+
+  I am really popular. I have lots of friends.
+
+  \vspace{\fill}
+
+  Unfortunately most of them hate each other and I only have 8 seats at
+  my birthday party, which is happening at Chuck E. Cheese's.\footnote{Where a kid can be a kid.}
+
+  \vspace{\fill}
+
+  I want as many of them to come, but they are \code{all} only \code{available}
+  at certain times, and they'll be cranky if they can't be there for the full time
+  they're available.
+
+  \vspace{\fill}
+
+  How can I plan a precise schedule with the time that each friend is allowed to
+  come, to maximize their (and my) happiness?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Steps of a Compiler}
+
+    \hspace{0.8cm}
+    \begin{tikzpicture}
+      [primary/.style={rectangle, draw, node distance=0.6in}]
+      % \node[text width=0.6in] (A) {lexing};
+      % \node[right of=A, text width=0.6in, node distance=0.8in] (B) {parsing};
+      % \node[right of=B] (C) {\small intermediate \\ representation};
+      % \node[right of=C] (D) {optimization};
+      % \node[right of=D] (E) {code \\ generation};
+      \node[primary, fill=bgBlue!50, text=black!45] (A) {program text};
+      \node[primary, below of=A, fill=bgGreen!50, text=black!45] (B) {token list};
+      \node[primary, below of=B, fill=bgPurple!50, text=black!45] (C) {abstract syntax tree};
+      \node[primary, below of=C, fill=bgRed!130] (D) {abstract assembly / control-flow graph};
+      \node[primary, below of=D, fill=bgYellow!130] (E) {real assembly};
+      \node[left of=A, node distance=1.5in] (S) {start};
+      \node[right of=E, node distance=1.5in] (P) {profit!};
+      \draw[-stealth] (A) -- node [right, text=black!45] {\small lexing} (B);
+      \draw[-stealth] (B) -- node [right, text=black!45] {\small parsing} (C);
+      \draw[-stealth] (C) -- node [right, text=black!45] {\small IR generation} (D);
+      \draw[-stealth] (D) -- node [right] {\small \textbf{codegen}} (E);
+
+      \draw[-stealth] (D.south west) to [out=225, in=135, looseness=4] node [left, text=black!45] {optimization} (D.north west);
+      \draw[-stealth] (S) -- (A);
+      \draw[-stealth] (E) -- (P);
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  Once the control flow graph has been simplified to satisfaction, we can
+  then move on to the step of generating actual assembly instructions from
+  the abstract assembly.
+
+  \vspace{\fill}
+
+  The primary difference is that the abstract assembly assumes that you can
+  move values to and from an infinite array of temporary variables.
+
+  \vspace{\fill}
+
+  Unfortunately, actual computers exist in the real world, and do not have
+  an infinite amount of places you can put data. This isn't a big deal always,
+  though, because we don't need to keep all data around forever.
+
+  \vspace{\fill}
+
+  This means that essentially, a compiler must have future sight, and perfectly
+  plan out everywhere that it puts its data during the program's run. This
+  problem is called \term{register allocation}, and is far beyond the
+  scope of this course, and my ability to explain right now.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+  Then, finally, real assembly is generated from the abstract assembly, and
+  the executable is fit to run. The story is over.
+
+  \vspace{\fill}
+
+  This is the bird's eye view of a compiler. There are many facets to each
+  phase that were not elaborated upon, but in terms of the intuition behind
+  what a compiler is and does, this should suffice.
+
+  \vspace{\fill}
+
+  The key thing to realize here is that at the end of the day, compilers are
+  not magic!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functional Programming and Compilers}
+
+  Functional programming ultimately fits compilers well for a few reasons:
+  \begin{itemize}
+    \item \textbf{Compilers are fancy tree transformations.} Functional languages
+    are very good at dealing with recursively defined structures which look like
+    trees.
+    \item \textbf{Compilers cannot be wrong}. If you compile your code, and the
+    resulting code does not do what it should, this is the doomsday scenario. If
+    we cannot trust the compilers we use, then there is no hope for programming.
+    Functional programming is safer in general, leading to less silly mistakes and
+    unsafe behavior.
+    \item \textbf{Compilers are pure}. When translating a compiler from one
+    stage to another, we generally expect deterministic results. Thus, no
+    mutability needed.
+  \end{itemize}
+\end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Constant Folding}
+
+%   So, what happens if we run constant folding on the tree we got earlier?
+%   \begin{center}
+%     \begin{minipage}{0.4\textwidth}
+%     \centering
+%     \begin{tikzpicture}[level distance=12mm]
+%       \node[circ, fill=bgPurple, minimum size=0.8cm] {\code{-}}
+%         child{node[circ, fill=bgPurple, minimum size=0.8cm, xshift=-0.2cm] {\code{+}}
+%           child{node[hex, xshift=-0.3cm] (L3) {\code{Int 1}}}
+%           child{node[hex, xshift=0.3cm] (L4) {\code{Int 2}}}
+%         }
+%         child{node[hex, xshift=0.2cm] (L3) {\code{Int 3}}}
+%       ;
+%     \end{tikzpicture}
+%     \end{minipage}
+%     \begin{minipage}{0.1\textwidth}
+%       \centering
+%       $\longmapsto$
+%     \end{minipage}
+%     \begin{minipage}{0.4\textwidth}
+%     \centering
+%     \begin{tikzpicture}[level distance=12mm]
+%       \node[circ, fill=bgPurple, minimum size=0.8cm] {\code{-}}
+%         child{node[hex, xshift=-0.2cm] {\code{Int 3}}
+%         }
+%         child{node[hex, xshift=0.2cm] (L3) {\code{Int 3}}}
+%       ;
+%     \end{tikzpicture}
+%     \end{minipage}
+%   \end{center}
+
+%   We then enter this case:
+%   \begin{codeblock}
+%     | Plus  (e1, e2) => Plus  (cfold e1, cfold e2)
+%   \end{codeblock}
+
+%   But, this only simplifies the arguments to the \code{Plus}, and just then
+%   returns the \code{Plus} of those things, naively.
+
+%   This means we don't simplify, considering our new arguments!
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Constant Folding}
+
+%   So, we need one final optimization:
+
+%   {\small
+%   \begin{codeblock}
+%     fun cfold (e : exp) : exp =
+%       case e of
+%         Plus  (Int i1, Int i2) => Int (i1 + i2)
+%       | Minus (Int i1, Int i2) => Int (i1 - i2)
+%       | Div   (Int i1, Int 0) => e
+%       | Div   (Int i1, Int i2) => Int (i1 div i2)
+%       | Plus  (e1, e2) => Plus  (cfold e1, cfold e2)
+%       | Minus (e1, e2) => Minus (cfold e1, cfold e2)
+%       | Div   (e1, e2) => Div   (cfold e1, cfold e2)
+%       (* ... many more cases ... *)
+%     and cfold' (e : exp) : exp =
+%       cfold e
+%   \end{codeblock}
+%   }
+% \end{frame}
+
+
+\subsection{foo}
+
+\begin{frame}[fragile]
+  \frametitle{Constant Folding}
+
+\end{frame}
+
+
+\begin{frame}[plain]
+	\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}

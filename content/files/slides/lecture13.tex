@@ -2,24 +2,24 @@
 
 % DOCUMENT CLASS AND PACKAGE USE
     \documentclass[aspectratio=169]{beamer}
- 
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{B109CC}     % the color of note boxes and stuff
     \newcommand{\presentColor}{FF3364} % the primary color of the slide borders
     \newcommand{\bgColor}{fff0f4}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -28,9 +28,9 @@
     \usepackage{makecell}
 
     \usepackage{tikz} % Import the tikz package
-    \usetikzlibrary{automata} 
-    \usetikzlibrary{positioning} 
-    \usetikzlibrary{arrows} 
+    \usetikzlibrary{automata}
+    \usetikzlibrary{positioning}
+    \usetikzlibrary{arrows}
     \usetikzlibrary{decorations.pathreplacing,calligraphy}
 
     \tikzset{node distance=2.5cm, % Minimum distance between two nodes. Change if necessary.
@@ -69,7 +69,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -123,7 +123,7 @@
     {validateEmail}
     {string -> bool}
     {\code{true}}
-    {\code{validateEmail s} $\stepsTo^*$ \code{true} iff \code{s} is a valid 
+    {\code{validateEmail s} $\stepsTo^*$ \code{true} iff \code{s} is a valid
     email address}
 \end{frame}
 
@@ -182,10 +182,10 @@
   \pause
   \small
   \begin{codeblock}
-    fun consumeName [] = [] 
+    fun consumeName [] = []
       | consumeName (c::cs) =
           if Char.isAlphaNum c then
-            consumeName cs 
+            consumeName cs
           else
             case c of
               #"." => consumeName cs
@@ -194,10 +194,10 @@
   \end{codeblock}
 
   \begin{codeblock}
-    fun consumeWebsite [] = [] 
+    fun consumeWebsite [] = []
       | consumeWebsite (c::cs) =
           if Char.isAlphaNum c then
-            consumeWebsite cs 
+            consumeWebsite cs
           else
             c::cs
   \end{codeblock}
@@ -208,7 +208,7 @@
 
   \pause
   \begin{codeblock}
-    fun validateEmail s = 
+    fun validateEmail s =
       case consumeName (String.explode s) of
         #"@"::cs =>
           (case consumeWebsite cs of
@@ -216,7 +216,7 @@
           | #"."::#"c"::#"o"::#"m"::_ => true
           | _ => false
           )
-      | _ => false 
+      | _ => false
   \end{codeblock}
 
   \pause
@@ -228,11 +228,11 @@
 \begin{frame}[fragile]
   \frametitle{Validating Emails}
 
-  No, actually. There's a bug with our code: 
+  No, actually. There's a bug with our code:
 
   \pause
   \begin{codeblock}
-    fun validateEmail s = 
+    fun validateEmail s =
       case validateName (String.explode s) of
         #"@"::cs =>
           (case validateWebsite cs of
@@ -240,7 +240,7 @@
           | `[#".", #"c", #"o", #"m"]` => true
           | _ => false
           )
-      | _ => false 
+      | _ => false
   \end{codeblock}
   %'
 
@@ -267,7 +267,7 @@
   This is because it's manually constructed, tedious, and as we will
   see, more easily solvable in a way that doesn't involve coding a solution
   from scratch. Hand-rolling is usually undesirable, because more handwritten
-  code means more possibility of errors. 
+  code means more possibility of errors.
 
   \pause
   \vspace{\fill}
@@ -345,7 +345,7 @@
   \vspace{\fill}
 
   At the end of this lecture, you will not know how to actually use regular
-  expressions in the real world, but you will know how they work. 
+  expressions in the real world, but you will know how they work.
   That's the important part.
 \end{frame}
 
@@ -358,7 +358,7 @@
 
   What are the essential elements that make up a "validator"? Recall the email
   example we were just looking at. There's a few important things that we should
-  be able to do: 
+  be able to do:
 
   \pause
   \begin{itemize}
@@ -368,7 +368,7 @@
     could match \textit{either} \code{org} or \code{com} at the end. \pause
     \item Iteration - Match one pattern, as much as you can. For instance,
     to match a website, we needed to be able to match an alphanumeric character any
-    number of times. 
+    number of times.
   \end{itemize}
 
   \pause
@@ -414,15 +414,15 @@
   \frametitle{More Mathematical Notation}
 
   \defBox{}{\, We say that a \term{language} $L$ is a subset of $\Sigma^*$. In
-  other words, a language is a particular set of strings composed from the 
+  other words, a language is a particular set of strings composed from the
   alphabet $\Sigma$.}
 
   \pause
   \vspace{\fill}
 
   So we might say that some examples of languages over $\Sigma = \{a, b\}$ are
-  the empty set, $\{a, aa, aaa, ...\}$, $\{b, bb, bbb, ...\}$, 
-  and $\{a, bb\}$. 
+  the empty set, $\{a, aa, aaa, ...\}$, $\{b, bb, bbb, ...\}$,
+  and $\{a, bb\}$.
 
   \pause
   \vspace{\fill}
@@ -448,20 +448,20 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We call a function \code{f : string -> bool} a \term{validator} 
+  \defBox{}{\, We call a function \code{f : string -> bool} a \term{validator}
   for language $L$, if \\ \code{f s} $\stepsTo^*$ \code{true} iff $s \in L$.\footnotemark}
 
   \pause
   \vspace{\fill}
-  
+
   We will find that \term{regular expressions} allow us to implement
   validators for a class of languages called \term{regular languages}. These
   have limitations on their complexity, but in practice a large amount
-  of string validation problems fall into them. 
+  of string validation problems fall into them.
 
   \footnotetext[2]{
    As an aside, this idea of languages and validators over them is very closely tied to
-  the idea of computability! In particular, it is \textbf{not} possible, 
+  the idea of computability! In particular, it is \textbf{not} possible,
   for every language $L$, to implement a validator for it. A more thorough treatment of this is reserved for a class on
   computability theory, such as 15-251.}
 \end{frame}
@@ -496,7 +496,7 @@
 
   \pause
   \begin{center}
-    \begin{tabular}{c || c} 
+    \begin{tabular}{c || c}
       \hline & \\[-1.5ex]
       Construct & Language matched \\ [2pt]
       \hline & \\[-2ex]
@@ -521,7 +521,7 @@
   \frametitle{The Language of a Regular Expression, In English}
 
   \begin{center}
-    \begin{tabular}{c || c} 
+    \begin{tabular}{c || c}
       \hline & \\[-1.5ex]
       Construct & Matches \\ [2pt]
       \hline & \\[-2ex]
@@ -555,7 +555,7 @@
   \vspace{\fill}
 
   \begin{center}
-    \begin{tabular}{c || c} 
+    \begin{tabular}{c || c}
       \hline & \\[-1.5ex]
       Regular Expression & Language matched \\ [2pt]
       \hline & \\[-2ex]
@@ -597,7 +597,7 @@
   previously. We can express our website validator by the following
   regular expression:
   $${(r_{an} + . + \_ )}^* @ ({r_{an}}^*) . (org + com)\footnotemark$$
-  where $r_{an}$ is the regular expression of all alphanumeric 
+  where $r_{an}$ is the regular expression of all alphanumeric
   characters, which could be specified as $a + b + ... + z + 1 + 2 + ... + 9 + 0$.
 
   \footnotetext[3]{This is actually not quite it, because this regular expression
@@ -610,8 +610,8 @@
   \frametitle{Regular Expressions and Automata}
 
   It is a very interesting fact that regular expressions can be viewed as
-  \term{finite-state machines}, which are graph-like constructs with \term{states}, 
-  which change upon receiving characters as input. In particular, we can 
+  \term{finite-state machines}, which are graph-like constructs with \term{states},
+  which change upon receiving characters as input. In particular, we can
   characterize them by \term{deterministic finite-state automata}.\footnotemark
 
   \pause
@@ -660,14 +660,14 @@
   \pause
   \vspace{\fill}
 
-  Here, we denote the \term{starting state} by the state with an unlabeled 
-  in-arrow. 
-  
+  Here, we denote the \term{starting state} by the state with an unlabeled
+  in-arrow.
+
   \pause
   \vspace{\fill}
 
-  From a given state, transitions to other states upon reading a 
-  particular character are denoted by arrows labeled with characters. If there 
+  From a given state, transitions to other states upon reading a
+  particular character are denoted by arrows labeled with characters. If there
   is no arrow corresponding to the input character, then the entire string is rejected.
 
   \pause
@@ -747,10 +747,10 @@
     \end{tikzpicture}
   }
 
-  No remaining input, so we end up in state $q_4$, which is accepting. 
+  No remaining input, so we end up in state $q_4$, which is accepting.
 
   \vspace{\fill}
-  
+
   So the string $ab$ is accepted by this DFA.
 \end{frame}
 
@@ -795,7 +795,7 @@
   \vspace{\fill}
 
   This process is an extremely beautiful intersection where theory and
-  practice coincide, and is how many production regular expression engines\footnotemark 
+  practice coincide, and is how many production regular expression engines\footnotemark
   \, work today. However, the process of producing such an automaton from
   a regular expression is rather involved. We will take another track
   for how to produce a validator from a regular expression.
@@ -816,10 +816,10 @@
   We can define the type of regular expressions as follows:
 
   \begin{codeblock}
-    datatype regexp = 
+    datatype regexp =
         Zero
       | One
-      | Char of char  
+      | Char of char
       | Plus of regexp * regexp
       | Times of regexp * regexp
       | Star of regexp
@@ -839,7 +839,7 @@
   \pause
   \vspace{\fill}
 
-  We will find that this is a good application of CPS. We will implement a 
+  We will find that this is a good application of CPS. We will implement a
   function:
   \spec
     {match}
@@ -849,7 +849,7 @@
       \code{match r s k} $\eeq$
     $\left\{
       \begin{array}{lr}
-          \code{true}, & \text{if } \code{cs} \eeq \code{p @ s} \text{ where } 
+          \code{true}, & \text{if } \code{cs} \eeq \code{p @ s} \text{ where }
           \code{p} \in L(r) \text{ and } \code{k s} \eeq \code{true} \\
           \code{false}, & \text{otherwise}
       \end{array}
@@ -866,12 +866,12 @@
   \pause
   \vspace{\fill}
 
-  We will find that this type makes our implementation a lot simpler. 
-  We use a continuation, specific to return type \code{bool}, to denote 
+  We will find that this type makes our implementation a lot simpler.
+  We use a continuation, specific to return type \code{bool}, to denote
   a \textit{future condition} we are placing upon the rest of the character
-  list. This is useful for branching possibilities, because it lets us enforce a 
+  list. This is useful for branching possibilities, because it lets us enforce a
   future condition on potentially many suffixes that we might choose to
-  consume input to obtain. 
+  consume input to obtain.
 
   \pause
   \vspace{\fill}
@@ -883,8 +883,8 @@
   \vspace{\fill}
 
   This essentially is a nondeterministic search over \textit{all possible prefixes}
-  that can be taken by \code{match}, by the regex \code{r}, \textit{provided} that 
-  the suffix to that prefix is of length 3. We change the continuation in order 
+  that can be taken by \code{match}, by the regex \code{r}, \textit{provided} that
+  the suffix to that prefix is of length 3. We change the continuation in order
   to enforce a condition on all of the possibilities we might pick.
 \end{frame}
 
@@ -934,11 +934,11 @@
   \begin{codeblock}
     fun match (r : regexp) (cs : char list) (k : char list -> bool) : bool =
       case r of
-        Zero => (* ... *) 
-      | One => (* ... *) 
-      | Char c => (* ... *) 
-      | Plus (r1,r2) => (* ... *) 
-      | Times (r1, r2) => (* ... *) 
+        Zero => (* ... *)
+      | One => (* ... *)
+      | Char c => (* ... *)
+      | Plus (r1,r2) => (* ... *)
+      | Times (r1, r2) => (* ... *)
       | Star r => (*... *)
   \end{codeblock}
 \end{frame}
@@ -1092,7 +1092,7 @@
 \begin{frame}[fragile]
   \frametitle{\code{match}: Repetition}
 
-  For the \code{Star r} case, we need to somehow be able to take 0 or more 
+  For the \code{Star r} case, we need to somehow be able to take 0 or more
   prefixes, all of which match the \code{r} regexp.
 
   \pause
@@ -1111,11 +1111,11 @@
 
   \pause
   \vspace{\fill}
-  
+
   Essentially, we are saying that $L(r^*) = L(1 + rr^*)$.
-  
+
   \begin{codeblock}
-    | Star r => 
+    | Star r =>
         k cs orelse match r cs (fn cs' => match (Star r) cs' k)
   \end{codeblock}
 
@@ -1129,7 +1129,7 @@
   \frametitle{\code{match}: Repetition}
 
   \begin{codeblock}
-    | Star r => 
+    | Star r =>
         k cs orelse match r cs (fn cs' => `match (Star r) cs' k`)
   \end{codeblock}
 
@@ -1157,14 +1157,14 @@
   \frametitle{Repetition Repeatedly}
 
   We see that the case of $\code{r}$, where $\epsilon \in L(\code{r})$,
-  can cause a problem with this implementation. For example, the 
+  can cause a problem with this implementation. For example, the
   input \code{match (Star One) [#"a"] List.null} will loop forever. How can we
   solve this problem?
 
   \pause
   \vspace{\fill}
 
-  There are two ways. We can either \term{weaken the specification} or 
+  There are two ways. We can either \term{weaken the specification} or
   \term{strengthen the implementation}.
 \end{frame}
 
@@ -1201,7 +1201,7 @@
   this, we can:
 
   \begin{itemize}
-    \item \textit{strengthen the implementation} by making it return an 
+    \item \textit{strengthen the implementation} by making it return an
     \code{option} on a negative input, or \pause
     \item \textit{weaken the specification} by merely adding a precondition that
     negative inputs are not permitted.
@@ -1209,14 +1209,14 @@
 
   \pause
   \vspace{\fill}
-  
-  Both are valid ways, depending on how the function is used. 
+
+  Both are valid ways, depending on how the function is used.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{On Weakness and Strength}
 
-  So how could we weaken the specification for our regular expression matcher? We 
+  So how could we weaken the specification for our regular expression matcher? We
   could require that the regular expression be passed in in a form such that there
   are no occurrences of \code{Star r}, where $\epsilon \in L(\code{r})$. This would
   be a cheap way of escaping, by pushing the burden onto the caller.\footnotemark
@@ -1242,7 +1242,7 @@
   \frametitle{\code{match}: Repetition}
 
   \begin{codeblock}
-    | Star r => 
+    | Star r =>
         k cs orelse match r cs (fn cs' => cs' <> cs andalso match (Star r) cs' k)
   \end{codeblock}
 
@@ -1255,10 +1255,10 @@
   \pause
   \vspace{\fill}
 
-  Now, we check that our new suffix \code{cs'} is not the same as the entire 
+  Now, we check that our new suffix \code{cs'} is not the same as the entire
   \code{char list}! This way, we ensure that we always make progress, and because
   of short-circuiting \code{andalso}, we ensure we never proceed to the recursive
-  call on \code{match}. 
+  call on \code{match}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1324,7 +1324,7 @@
       \code{match r s k} $\eeq$
     $\left\{
       \begin{array}{lr}
-          \code{true}, & \text{if } \code{cs} \eeq \code{p @ s} \text{ where } 
+          \code{true}, & \text{if } \code{cs} \eeq \code{p @ s} \text{ where }
           \code{p} \in L(r) \text{ and } \code{k s} \eeq \code{true} \\
           \code{false}, & \text{otherwise}
       \end{array}
@@ -1388,7 +1388,7 @@
   In this world, then we only need to show the following theorem:
 
   \vspace{5pt}
-  \thmBox{}{\, For total \code{k}, \code{match r cs k}, returns \code{true} iff 
+  \thmBox{}{\, For total \code{k}, \code{match r cs k}, returns \code{true} iff
   \code{cs} $\eeq$ \code{p @ s} where \code{p} $\in L(r)$, and \code{k s} $\eeq$
   \code{true}}
 
@@ -1403,7 +1403,7 @@
   \frametitle{Soundness and Completeness}
 
   Recall that we prove a bi-implication by proving each of the implications
-  separately. Thus, proving our theorem reduces to proving soundness and 
+  separately. Thus, proving our theorem reduces to proving soundness and
   completeness separately.
 
   \pause
@@ -1441,34 +1441,34 @@
 \begin{frame}[fragile]
   \frametitle{Soundness Proof}
 
-  We would like to show the forward direction of $P(\code{Plus (r1, r2)})$, which is: 
+  We would like to show the forward direction of $P(\code{Plus (r1, r2)})$, which is:
   \pause
   \begin{center}
-    If \colorbox{cyan!20!white}{\code{match (Plus (r1, r2)) cs k} $\hookrightarrow$ 
-    \code{true}}, then \\ 
-    \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where 
-    \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus (r1, r2)})$}, 
+    If \colorbox{cyan!20!white}{\code{match (Plus (r1, r2)) cs k} $\hookrightarrow$
+    \code{true}}, then \\
+    \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where
+    \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus (r1, r2)})$},
     and \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}.
   \end{center}
 
   \pause
   \vspace{\fill}
-  
+
   Let us assume that \colorbox{cyan!20!white}{$\code{match (Plus (r1, r2) cs k)} \eeq \code{true}$}.
 
   \pause
   \vspace{\fill}
 
-  Assume for our induction hypotheses the forward directions of $P(\code{r1})$ 
+  Assume for our induction hypotheses the forward directions of $P(\code{r1})$
   and $P(\code{r2})$.
 
   \pause
   In particular, $P(\code{r1})$ reads:
   \begin{center}
     If \colorbox{pink}{\code{match r1 cs k} $\eeq$ \code{true}}, then
-    \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
+    \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where
     \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$}, and
-    \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}. 
+    \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}.
   \end{center}
 
   \pause
@@ -1476,8 +1476,8 @@
 
   Then:
   \begin{align*}
-    & \code{true} \eeq \code{match (Plus (r1, r2)) cs k}  \tag{\colorbox{cyan!20!white}{our assumption}} \\ 
-    & \eeq \code{match r1 cs k orelse match r2 cs k} \tag{def of \code{match}} 
+    & \code{true} \eeq \code{match (Plus (r1, r2)) cs k}  \tag{\colorbox{cyan!20!white}{our assumption}} \\
+    & \eeq \code{match r1 cs k orelse match r2 cs k} \tag{def of \code{match}}
   \end{align*}
 \end{frame}
 
@@ -1491,24 +1491,24 @@
   \vspace{\fill}
 
   Without loss of generality\footnotemark, assume that \colorbox{pink}
-  {\code{match r1 cs k} $\eeq$ \code{true}}. Then, we can apply 
-  our induction hypothesis $P(\code{r1})$, and obtain that 
-  \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
-  \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$} and 
+  {\code{match r1 cs k} $\eeq$ \code{true}}. Then, we can apply
+  our induction hypothesis $P(\code{r1})$, and obtain that
+  \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where
+  \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$} and
   \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}.
 
   \pause
   \vspace{\fill}
 
-  By the definition of $L(\code{Plus(r1, r2)})$, 
-  \colorbox{violet!30!white}{this} means that 
+  By the definition of $L(\code{Plus(r1, r2)})$,
+  \colorbox{violet!30!white}{this} means that
   \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus(r1, r2)})$}.
 
   \pause
   \vspace{\fill}
 
-  With both \colorbox{yellow!30!white}{the previous} and 
-  \colorbox{green!25!white}{our inductive conclusion}, then this is exactly what we 
+  With both \colorbox{yellow!30!white}{the previous} and
+  \colorbox{green!25!white}{our inductive conclusion}, then this is exactly what we
   wanted to show, so we have proven \colorbox{orange!30!white}{the theorem}.
 
   \footnotetext[7]{This is a fancy CMU way of saying that the proof is similar
@@ -1519,31 +1519,31 @@
 \begin{frame}[fragile]
   \frametitle{Completeness Proof}
 
-  We would like to show the backwards direction of $P(\code{Plus (r1, r2)})$, which is: 
+  We would like to show the backwards direction of $P(\code{Plus (r1, r2)})$, which is:
   \pause
   \begin{center}
-    If \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where \code{p} 
-    $\in L(\code{Plus(r1, r2)})$, and \code{k s} $\eeq$ \code{true}}, then 
+    If \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where \code{p}
+    $\in L(\code{Plus(r1, r2)})$, and \code{k s} $\eeq$ \code{true}}, then
     \colorbox{cyan!20!white}{\code{match (Plus (r1, r2)) cs k} $\eeq$ \code{true}}
   \end{center}
-  
+
   \pause
   Let us assume that
-  \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where 
-  \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus (r1, r2)})$}, and 
+  \colorbox{orange!30!white}{\code{cs} $\eeq$ \code{p @ s} where
+  \colorbox{yellow!30!white}{\code{p} $\in L(\code{Plus (r1, r2)})$}, and
   \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}.
 
   \vspace{\fill}
 
-  Assume for our induction hypotheses the reverse directions of $P(\code{r1})$ 
+  Assume for our induction hypotheses the reverse directions of $P(\code{r1})$
   and $P(\code{r2})$.
 
   \pause
   In particular, $P(\code{r1})$ reads:
   \begin{center}
-    If \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
-    \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$}, and 
-    \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}, then \\ 
+    If \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where
+    \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$}, and
+    \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}, then \\
     \colorbox{pink}{\code{match r1 cs k} $\hookrightarrow$ \code{true}}.
   \end{center}
 
@@ -1553,39 +1553,39 @@
   \frametitle{Completeness Proof}
 
   By the definition of $L(\code{Plus (r1, r2)})$, \colorbox{yellow!30!white}
-  {this assumption} means that either \\ \code{p} $\in L(\code{r1})$ or \code{p} 
-  $\in L(\code{r2})$. Without loss of generality, assume that 
+  {this assumption} means that either \\ \code{p} $\in L(\code{r1})$ or \code{p}
+  $\in L(\code{r2})$. Without loss of generality, assume that
   \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$}.
 
   \pause
   \vspace{\fill}
 
-  Then, we can apply our induction hypothesis $P(\code{r1})$, 
-  since we know that \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where 
+  Then, we can apply our induction hypothesis $P(\code{r1})$,
+  since we know that \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where
   \colorbox{violet!30!white}{\code{p} $\in L(\code{r1})$},
   and \colorbox{green!25!white}{\code{k s} $\eeq$ \code{true}}}. So
   \colorbox{pink}{\code{match r1 cs k} $\hookrightarrow$ \code{true}}.
-  
+
   \pause
   \vspace{\fill}
 
   Then:
   \begin{align*}
-    & \code{match (Plus (r1, r2)) cs k} \\ 
-    & \eeq \code{match r1 cs k orelse match r2 cs k} \tag{def of \code{match}} \\ 
+    & \code{match (Plus (r1, r2)) cs k} \\
+    & \eeq \code{match r1 cs k orelse match r2 cs k} \tag{def of \code{match}} \\
     & \eeq \code{true} \tag{\colorbox{pink}{our previous conclusion}}
   \end{align*}
 
   \pause
   \vspace{\fill}
 
-  So we have proven \colorbox{cyan!20!white}{the theorem}. 
+  So we have proven \colorbox{cyan!20!white}{the theorem}.
 \end{frame}
 
 \begin{frame}[plain]
 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
+	\begin{center}
     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSfEi-IbFfU51lsWJGQuxjEmEtDggdxlZ3LvN4iVziYapC_PdQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
     \vspace{5pt}
     \includegraphics[scale=0.035]{qr_july3} \\
@@ -1595,4 +1595,3 @@
 \end{frame}
 
 \end{document}
-
