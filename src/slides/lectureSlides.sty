@@ -1,5 +1,5 @@
 
-    
+
     \usetheme{Madrid}
     \useinnertheme{rectangles}
 
@@ -76,7 +76,7 @@
 \usefonttheme[onlymath]{serif}
 
 % TITLE PAGE STYLE (SOLID COLOR)
-    
+
     % Load tikz packages
     \usepackage{tikz}
     \usepackage{pdfrender}
@@ -110,6 +110,19 @@
     }
     }
 
+    \newcommand{\customtitle}[1]{
+      \begin{frame}[plain]
+        \makebox[\textwidth][c]{\begin{tikzpicture}[remember picture,overlay]
+
+          % This sets the title page to be the pre-generated image!
+          % The image needs to be 16:9 resolution, and preferably at high quality.
+          \node at (0, -0.9) {\resizebox{\paperwidth}{!}{\includegraphics{#1.png}}};
+
+        \end{tikzpicture}%
+        }
+      \end{frame}
+    }
+
 
 % PICTURE TITLE
     % Establish \pictureTitle command
@@ -123,7 +136,7 @@
             \node[anchor=south]
                 at ([yshift=-12pt]current page.south) (bg)
                 {\includegraphics[width=400pt]{#2}};
-            
+
             % White background (northeast)
             \fill[white]
                 ([xshift=72pt]current page.north west) rectangle ([yshift=15pt]current page.east);
@@ -167,6 +180,3 @@
                 {\parbox[t]{.6\paperwidth}{\raggedright\usebeamerfont{subtitle}\textcolor{white}{\insertsubtitle}}};
         \end{tikzpicture}
         }
-
-
-
