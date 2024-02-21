@@ -1,25 +1,25 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
- 
+    \documentclass[aspectratio=169, handout]{beamer}
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{6e3b0d}     % the color of note boxes and stuff
     \newcommand{\presentColor}{FFABE1} % the primary color of the slide borders
     \newcommand{\bgColor}{fef7ff}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -51,7 +51,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -134,7 +134,7 @@
           child {node {5}}
         }
         child {node {3}
-          child[missing] 
+          child[missing]
           child {node {6}}
         };
       \end{tikzpicture}
@@ -168,11 +168,11 @@
   \begin{codeblock}
     datatype tree = Empty | Node of tree * int * tree
   \end{codeblock}
-  
+
   \vspace{\fill}
 
   This datatype declaration does two things. Firstly, it declares a new type, named \code{tree}.
-  Secondly, it provides that type with two \term{constructors}, in the same way as the constructors 
+  Secondly, it provides that type with two \term{constructors}, in the same way as the constructors
   that we saw earlier for lists.
 
   \pause
@@ -194,7 +194,12 @@
 \begin{frame}[fragile]
   \frametitle{Tree Examples}
 
-  Let's see some examples of trees, and how they would be pictured visually\footnotemark:
+  Let's see some examples of trees, and how they would be pictured visually\footnote{
+    It can be confusing to type out a tree in text, so
+    if you need help, you can refer to {\color{blue}\href{https://leesue630.github.io/tree-to-sml-converter/}{this excellent
+    SML tree converter}}, which lets you generate SML text for trees from pictures and
+    pictures from SML text, made by previous head TA Sue Lee.
+  }:
 
   \pause
   \vspace{\fill}
@@ -218,15 +223,10 @@
       level 2/.style={sibling distance=10mm},
       ]
       \node {150}
-        child[missing] 
+        child[missing]
         child[missing];
       \end{tikzpicture}
   \end{center}
-
-  \footnotetext[1]{It can be confusing to type out a tree in text, so 
-  if you need help, you can refer to {\color{blue}\href{https://leesue630.github.io/tree-to-sml-converter/}{this excellent
-  SML tree converter}}, which lets you generate SML text for trees from pictures and
-  pictures from SML text, made by previous head TA Sue Lee.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -328,7 +328,7 @@
       if x < y then x else y
 
     fun depth (Empty : tree) : int = 0
-      | depth (Node (L, x, R)) = 1 + max (depth L, depth R) 
+      | depth (Node (L, x, R)) = 1 + max (depth L, depth R)
   \end{codeblock}
 
   \vspace{\fill}
@@ -358,7 +358,7 @@
 
   \pause
   \begin{codeblock}
-    fun count (Empty : tree) : int = 0 
+    fun count (Empty : tree) : int = 0
       | count (Node (L, x, R)) = count L + 1 + count R
   \end{codeblock}
 
@@ -366,7 +366,7 @@
   \vspace{\fill}
 
   But this is kind of boilerplate code, and we might want to avoid having to
-  write this!  
+  write this!
 \end{frame}
 
 \begin{frame}[fragile]
@@ -378,7 +378,7 @@
   \pause
   \vspace{\fill}
 
-  What if we could turn a tree into a list? We need a function of type 
+  What if we could turn a tree into a list? We need a function of type
   \code{tree -> int list}, which defines a kind of \term{traversal}.
 
   \pause
@@ -479,7 +479,7 @@
             child {node {7}}
           };
         \end{tikzpicture}
-        
+
         \vspace{5pt}
 
         Inorder
@@ -549,7 +549,7 @@
   \vspace{\fill}
 
   There are three primary kinds of tree traversals, which are characterized by the
-  order in which they choose to visit the left subtree, right subtree, and root. 
+  order in which they choose to visit the left subtree, right subtree, and root.
   We will usually be concerned with the first two kinds.
 
   \vspace{\fill}
@@ -604,11 +604,11 @@
 
   \pause
   \vspace{\fill}
-  
+
   In the same way that natural numbers are built
-  from other natural numbers, and lists are made of other lists, trees 
+  from other natural numbers, and lists are made of other lists, trees
   are made from other trees! This means that they admit a principle of
-  structural induction. 
+  structural induction.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -637,7 +637,7 @@
   \pause
   \vspace{\fill}
 
-  \customBox{Key Fact}{\, This means that, when proving a theorem on trees, you 
+  \customBox{Key Fact}{\, This means that, when proving a theorem on trees, you
   get two inductive hypotheses!}
 
 \end{frame}
@@ -657,7 +657,7 @@
 
     fun listSum ([] : int list) : int = 0
       | listSum (x::xs) = x + listSum xs
-  \end{codeblock} 
+  \end{codeblock}
 
   We want to show that both functions \code{treeSum} and \code{listSum} do
   essentially the same thing, when using \code{inord} to convert between lists
@@ -676,11 +676,11 @@
 
   \vspace{\fill}
 
-  \lemmaBox{1}{\, For all values \code{L1, L2 : int list}, 
+  \lemmaBox{1}{\, For all values \code{L1, L2 : int list},
 
   \code{listSum (L1 @ L2)} $\eeq$ \code{listSum L1 + listSum L2}}
 
-  \lemmaBox{2}{\, \code{inord} is total} 
+  \lemmaBox{2}{\, \code{inord} is total}
 
   \pause
   \vspace{\fill}
@@ -716,7 +716,7 @@
   \pause
   \vspace{\fill}
 
-  \isBox{}{\, Case: \code{T = Node(L, x, R)}, for some \code{x : int}. Let's show that 
+  \isBox{}{\, Case: \code{T = Node(L, x, R)}, for some \code{x : int}. Let's show that
   \code{treeSum (Node (L, x, R))}  $\eeq$ \code{listSum (inord (Node (L, x, R)))}.}
 
   \vspace{\fill}
@@ -736,7 +736,7 @@
   RHS:
   \begin{align*}
     & \code{listSum (inord (Node (L, x, R)))} \\
-    &\eeq \code{listSum ((inord L) @ (x :: inord R))} 
+    &\eeq \code{listSum ((inord L) @ (x :: inord R))}
     & \tag{clause 2 of \code{inord}} \\
   \end{align*}
   \pause
@@ -746,7 +746,7 @@
   \pause
   \vspace{\fill}
 
-  \lemmaBox{1}{\, For all values \code{L1, L2 : int list}, 
+  \lemmaBox{1}{\, For all values \code{L1, L2 : int list},
 
   \code{listSum (L1 @ L2)} $\eeq$ \code{listSum L1 + listSum L2}}
 
@@ -783,7 +783,7 @@
   \frametitle{Stepping through Theorem Values}
 
   This is a general phenomenon I will term \term{stepping through theorem values}.
-  
+
   \pause
   \vspace{\fill}
 
@@ -791,14 +791,20 @@
 
   \vspace{\fill}
 
-  For instance, it might be that for all values \code{v : int}, \code{id v} $\eeq$ 
+  For instance, it might be that for all values \code{v : int}, \code{id v} $\eeq$
   \code{v}.
 
   \pause
   \vspace{\fill}
 
   You have to be very careful! \textbf{This is not the same thing as saying that
-  \code{id e} $\eeq$ \code{e}, for an arbitrary expression \code{e}!}\footnotemark
+  \code{id e} $\eeq$ \code{e}, for an arbitrary expression \code{e}!}\footnote{
+    Of course, this is not to say that that is a \textit{false} statement.
+    The difference is that when you are making a step, you have to have the \textbf{correct}
+    justification. Although you can think about it and conclude that \code{id e} $\eeq$ \code{e}
+    for an arbitrary expression, \textbf{you would have to prove it here}, since it doesn't
+    follow directly from the theorem.
+  }
 
   \pause
   \vspace{\fill}
@@ -811,26 +817,20 @@
 
   The easiest way to do this is to show that \code{length} is total. \textbf{We use totality as
   a tool to get at valuability}, so that we can apply theorems that step through values.
-
-  \footnotetext[2]{Of course, this is not to say that that is a \textit{false} statement.
-  The difference is that when you are making a step, you have to have the \textbf{correct}
-  justification. Although you can think about it and conclude that \code{id e} $\eeq$ \code{e}
-  for an arbitrary expression, \textbf{you would have to prove it here}, since it doesn't
-  follow directly from the theorem.}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Totality Citations}
 
   This begins a chapter in your life known as \term{totality citations}, which are
-  justifications you make in a proof when stepping through theorem values, where you 
+  justifications you make in a proof when stepping through theorem values, where you
   cite a function's totality to get at an expression's valuability.
 
   \pause
   \vspace{\fill}
 
-  It is very important to remember the reasoning behind this! If you mindlessly 
-  cite totality, you will lose points. The ultimate goal is to use totality 
+  It is very important to remember the reasoning behind this! If you mindlessly
+  cite totality, you will lose points. The ultimate goal is to use totality
   citations to conclude an expression's valuability, to use a theorem which relies
   on a particular expression being valuable.
 
@@ -860,7 +860,7 @@
   RHS:
   \begin{align*}
     & \code{listSum (inord (Node (L, x, R)))} \\
-    &\eeq \code{listSum ((inord L) @ (x :: inord R))} 
+    &\eeq \code{listSum ((inord L) @ (x :: inord R))}
     & \tag{clause 2 of \code{inord}} \\
     &\eeq \code{listSum (inord L) + listSum (x :: inord R)}
     & \tag{lemma 1, lemma 2} \\
@@ -876,7 +876,7 @@
   \vspace{\fill}
 
   So by the principal of structural induction on trees, we have proven
-  that for all values \code{T : tree}, 
+  that for all values \code{T : tree},
   \code{treeSum T} $\eeq$ \code{listSum (inord T)}.
 \end{frame}
 
@@ -939,7 +939,7 @@
   \pause
   \vspace{\fill}
 
-  We've seen this with the \code{div} and \code{fact} functions, where \code{0} and 
+  We've seen this with the \code{div} and \code{fact} functions, where \code{0} and
   negative numbers cause an exception to be raised, and infinite looping, respectively.
 
   \pause
@@ -951,13 +951,13 @@
   \pause
   \vspace{\fill}
 
-  To facilitate this, we have the \code{option} \term{type constructor}. 
+  To facilitate this, we have the \code{option} \term{type constructor}.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Type Constructors}
 
-  A \term{type constructor} is something which makes a type out of other types. 
+  A \term{type constructor} is something which makes a type out of other types.
 
   \pause
   \vspace{\fill}
@@ -980,7 +980,7 @@
 
   \defBox{}{\, For any type \code{t}, there is a type \code{t option}, which describes
   a value that is \textit{possibly} a value of type \code{t}}.
-  
+
   \pause
   \vspace{\fill}
 
@@ -1015,7 +1015,7 @@
   \begin{codeblock}
     fun last ([] : int list) : int option = NONE
       | last [x] = SOME x
-      | last (x::xs) = last xs 
+      | last (x::xs) = last xs
   \end{codeblock}
 
   \pause
@@ -1042,13 +1042,13 @@
   \pause
   \vspace{\fill}
 
-  These are all known as \term{variant types}, or \term{sum types}, and can be 
+  These are all known as \term{variant types}, or \term{sum types}, and can be
   defined using the \code{datatype} keyword! They define all the forms that
   values of a type can take, and \textit{no more}.
 
   \pause
   \vspace{\fill}
-  
+
   \begin{codeblock}
     datatype int_option = NONE | SOME of int
 
@@ -1060,13 +1060,13 @@
   \frametitle{Framing the Problem}
 
   Defining types that fit the shape of the problem is one of the strongest
-  aspects of a functional programming language. These types are known as 
+  aspects of a functional programming language. These types are known as
   \term{algebraic datatypes}.
 
   \pause
   \vspace{\fill}
 
-  For instance, suppose we are interested in an ordering function on integers, 
+  For instance, suppose we are interested in an ordering function on integers,
   which has type \code{int * int -> order}. What should we define the type of
   \code{order} to be?
 
@@ -1093,15 +1093,15 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    type order = string 
+    type order = string
 
-    fun compare (x : int, y : int) : order = 
+    fun compare (x : int, y : int) : order =
       if x < y then
         "less"
       else if x = y then
-        "equal" 
+        "equal"
       else
-        "greater" 
+        "greater"
   \end{codeblock}
 \end{frame}
 
@@ -1117,7 +1117,7 @@
   \begin{codeblock}
     case compare (x, y) of
       "LESS" => (* code for the less case *)
-    | "EQUAL" => (* code for the equal case *) 
+    | "EQUAL" => (* code for the equal case *)
     | "GREATER" => (* code for the greater case *)
     | _ => (* shouldn't be possible??? *)
   \end{codeblock}
@@ -1128,7 +1128,7 @@
   When casing on the result of \code{compare}, the compiler doesn't know that
   any case other than \code{"LESS"}, \code{"EQUAL"}, and \code{"GREATER"} is
   impossible! This necessitates a redundant extra case.
-  
+
   \pause
   \vspace{\fill}
 
@@ -1171,13 +1171,13 @@
   \begin{codeblock}
     datatype order = LESS | EQUAL | GREATER
 
-    fun compare (x : int, y : int) : order = 
+    fun compare (x : int, y : int) : order =
       if x < y then
         LESS
       else if x = y then
-        EQUAL 
+        EQUAL
       else
-        GREATER 
+        GREATER
   \end{codeblock}
 \end{frame}
 
@@ -1194,7 +1194,7 @@
   \begin{codeblock}
     case compare (x, y) of
       LESS => (* code for the less case *)
-    | EQUAL => (* code for the equal case *) 
+    | EQUAL => (* code for the equal case *)
     | GREATER => (* code for the greater case *)
   \end{codeblock}
 
@@ -1224,7 +1224,7 @@
   \vspace{\fill}
 
   For instance, suppose we have a class of people. Some people are employed, some
-  people are students, and some people are unemployed.  
+  people are students, and some people are unemployed.
 
   \pause
   \vspace{\fill}
@@ -1233,7 +1233,7 @@
   \begin{itemize}
     \item the person's name
     \item the person's paycheck, if employed, and tuition, if a student
-    \item the company an employed person works for 
+    \item the company an employed person works for
     \item the amount of courses a student is taking
     \item days since last employed, if unemployed (if ever)
     \item title of last job, if unemployed (if ever)
@@ -1253,7 +1253,7 @@
   \begin{codeblock}
     type person_info =
       string (* name *)
-      * real (* positive paycheck, if employed. negative 
+      * real (* positive paycheck, if employed. negative
                 tuition, if a student, and 0 if unemployed *)
       * string option (* company name, if employed, o.w. NONE *)
       * int option    (* # of courses, if student, o.w. NONE *)
@@ -1270,13 +1270,13 @@
   \pause
   \vspace{\fill}
 
-  This is very clearly disgusting. There are floating invariants everywhere! 
+  This is very clearly disgusting. There are floating invariants everywhere!
 
   \pause
   \vspace{\fill}
 
   We have to make sure that people who are employed don't have a number of
-  courses, or a number of days unemployed, or a negative paycheck!  
+  courses, or a number of days unemployed, or a negative paycheck!
 
   \pause
   \vspace{\fill}
@@ -1312,9 +1312,9 @@
 
   \begin{codeblock}
     type class =
-        Employed of real * string  
+        Employed of real * string
           (* paycheck and company name *)
-      | Student of real * int 
+      | Student of real * int
           (* tuition and # of courses *)
       | Unemployed of (int * string) option
           (* days unemployed and last employer *)
@@ -1326,7 +1326,7 @@
 \begin{frame}[fragile]
   \frametitle{A Better Class System}
 
-  We see that every person has a name, so \code{string} can be factored out. We 
+  We see that every person has a name, so \code{string} can be factored out. We
   can isolate things like company name and number of courses to specific cases,
   and eliminate the \code{real} from unemployed people entirely.
 
@@ -1334,7 +1334,7 @@
   \vspace{\fill}
 
   For unemployed people who have had previous jobs, we notice that days unemployed and
-  last employer should only be set if both are set, so we fold them both into a 
+  last employer should only be set if both are set, so we fold them both into a
   single tuple, and make it an \code{option}, if the person was never employed.
 \end{frame}
 
@@ -1343,8 +1343,8 @@
 
   \tgs
 
-  This is a phenomenon I call \term{type casting}. This is not anything to do 
-  with the typical definition of type-casting, involving free conversion of 
+  This is a phenomenon I call \term{type casting}. This is not anything to do
+  with the typical definition of type-casting, involving free conversion of
   values of one type to another, which does not exist in SML.
 
   \pause
@@ -1357,19 +1357,20 @@
   \pause
   \vspace{\fill}
 
-  An imperative programmer tries to fit square pegs into round holes. A 
+  An imperative programmer tries to fit square pegs into round holes. A
   functional programmer can \textit{make} a peg to fit any hole that they need.
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    Post-lecture survey: \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_may25}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     Post-lecture survey: \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_may25}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}
-

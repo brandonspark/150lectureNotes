@@ -2,24 +2,24 @@
 
 % DOCUMENT CLASS AND PACKAGE USE
     \documentclass[aspectratio=169, handout]{beamer}
- 
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{FF4F4F}     % the color of note boxes and stuff
     \newcommand{\presentColor}{FFAB73} % the primary color of the slide borders
     \newcommand{\bgColor}{fff3e6}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -51,7 +51,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -90,8 +90,8 @@
 
   \vspace{\fill}
 
-  We saw how we could represent trees via the \code{Empty} and \code{Node} 
-  constructors, as well as how to do proof by structural induction on a tree. 
+  We saw how we could represent trees via the \code{Empty} and \code{Node}
+  constructors, as well as how to do proof by structural induction on a tree.
 
   \vspace{\fill}
 
@@ -111,14 +111,14 @@
   \pause
   \vspace{\fill}
 
-  We've learned how we can use fundamental language concepts like 
+  We've learned how we can use fundamental language concepts like
   pattern matching, datatype declarations, and recursion
   to both state and solve various problems in computer science.
 
   \pause
   \vspace{\fill}
 
-  On the first day, functional programming was first explained as a kind of 
+  On the first day, functional programming was first explained as a kind of
   better way of communicating, as programmers. This is not the only thing we
   care about, however! We also care about how well our code performs.
 \end{frame}
@@ -134,13 +134,13 @@
   \vspace{\fill}
 
   Even worse is that even on the same computer, performance can vary from run to
-  run, due to factors in the computer such as its current CPU load, the amount of 
+  run, due to factors in the computer such as its current CPU load, the amount of
   power it has, and other low-level factors.
 
   \pause
   \vspace{\fill}
 
-  We want to be able to analyze performance mathematically, in a way that is 
+  We want to be able to analyze performance mathematically, in a way that is
   agnostic to these silly details.
 \end{frame}
 
@@ -163,7 +163,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We use \term{Big-O notation} to describe the behavior of a 
+  \defBox{}{\, We use \term{Big-O notation} to describe the behavior of a
   function, in the limit of the size of its input. This function usually
   denotes the computational cost of a program.}
 \end{frame}
@@ -172,13 +172,13 @@
   \frametitle{Big-O, Formally}
 
   Formally, we take a function $f : \mathbb{N}^+ \to \mathbb{N}^+$, which in
-  our case describes the abstract cost of running some program. 
+  our case describes the abstract cost of running some program.
 
   \pause
   \vspace{\fill}
-  
-  The input is some metric of the data input (the length of a list, the 
-  size of a number) and the output is the number of abstract units that it 
+
+  The input is some metric of the data input (the length of a list, the
+  size of a number) and the output is the number of abstract units that it
   costs to run on that input.
 
   \pause
@@ -198,7 +198,7 @@
   \vspace{\fill}
 
   All this is describing is that a function
-  $f$ (the run-time function) is in $O(g)$, such as $O(n^2)$ or $O(n)$ (the 
+  $f$ (the run-time function) is in $O(g)$, such as $O(n^2)$ or $O(n)$ (the
   complexity class), if there exists a a point beyond which the
   run-time function is \textit{always} less than the complexity class function (scaled by
   a constant factor).
@@ -209,7 +209,7 @@
   We need the constant factor for cases such as $f(n) = 2n$ and $g(n) = n$, where
   there is no value such that $f(n) \leq g(n)$. Despite that, however, the former
   function is still a linear function, so we should be able to scale $g$
-  by a constant factor (say, $2.5$) and conclude $f \in O(g)$. 
+  by a constant factor (say, $2.5$) and conclude $f \in O(g)$.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -219,7 +219,7 @@
   \vspace{\fill}
   \centerline{
   \begin{minipage}{0.4\textwidth}
-    \includegraphics[scale=0.4]{graph1} \\ 
+    \includegraphics[scale=0.4]{graph1} \\
     $f$ is always less than $g$.
   \end{minipage}
   \begin{minipage}{0.4\textwidth}
@@ -252,7 +252,7 @@
 
   In general, in this class, time complexity will fall into a few common buckets,
   and not really venture outside of them.
-  
+
   \pause
   \vspace{\fill}
 
@@ -268,7 +268,7 @@
   \vspace{\fill}
 
   It is worth noting that the $\in$ relation for asymptotic complexity is more
-  permissive than we need! If we have $f \in O(n)$, then it is also true that 
+  permissive than we need! If we have $f \in O(n)$, then it is also true that
   $f \in O(n \log n)$, and $f \in O(n^2)$, and so on.
 
   \pause
@@ -287,11 +287,11 @@
   \vspace{\fill}
 
   \begin{itemize}
-    \item $O(1)$ - Consing an element onto a list, multiplying two numbers, 
+    \item $O(1)$ - Consing an element onto a list, multiplying two numbers,
     stepping an expression once \pause
     \item $O(\log n)$ - Binary searching an interval $n$ wide, finding an
     element in a binary search tree \pause
-    \item $O(n)$ - Computing the length of a list, finding the last element 
+    \item $O(n)$ - Computing the length of a list, finding the last element
     of a list, summing the nodes of a tree \pause
     \item $O(n \log n)$ - Mergesort and quicksort \pause
     \item $O(n^2)$ - Insertion sort, selection sort
@@ -316,12 +316,12 @@
   In the case of something like "computing the length of the list", this is the
   length of the list. In the case of trees, this could be the number of nodes in
   the tree.
-  
+
   \pause
   \vspace{\fill}
 
-  It's important to realize that, although we usually arecasual and don't specify 
-  things explicitly, these underlying size metrics are still there! We will be 
+  It's important to realize that, although we usually arecasual and don't specify
+  things explicitly, these underlying size metrics are still there! We will be
   explicit about it going forward.
 \end{frame}
 
@@ -370,7 +370,7 @@
 
   \pause
   \vspace{\fill}
-  
+
   \defBox{}{\, A \term{recurrence relation} is a series of mathematical equations
   that specifies the run-time cost of a recursive function, defined in terms of
   itself.}
@@ -379,7 +379,7 @@
   \vspace{\fill}
 
   We then solve the recurrence relation to obtain a function that describes the
-  \term{work} of the function, in some size metric, and then place it in a 
+  \term{work} of the function, in some size metric, and then place it in a
   complexity class.
 
   \pause
@@ -391,7 +391,7 @@
 \begin{frame}[fragile]
   \frametitle{Formulating the Recurrence}
 
-  Let's take the \code{fact} function, as a starter. 
+  Let's take the \code{fact} function, as a starter.
 
   \vspace{\fill}
 
@@ -409,10 +409,11 @@
   \pause
   \vspace{\fill}
 
-  $$W_{\code{fact}}(0)\footnotemark = c_0$$
+  $$W_{\code{fact}}(0)\footnote{
+    $W_{\code{fact}}(0)$, for "work of \code{fact} on input size 0"
+  } = c_0$$
   $$W_{\code{fact}}(n) = c_1 + W_{\code{fact}}(n - 1)$$
 
-  \footnotetext[1]{$W_{\code{fact}}(0)$, for "work of \code{fact} on input size 0"}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -425,10 +426,10 @@
   \vspace{\fill}
 
   In the first case, we return an unspecified constant $c_0$. Work is measured
-  in arbitrary abstract units, and we don't necessarily know how many of those 
+  in arbitrary abstract units, and we don't necessarily know how many of those
   are taken up by returning $1$. It's nonzero, because there is some
-  amount of work that needs to be done, but it's otherwise unknown, so we use a 
-  placeholder constant $c_0$. 
+  amount of work that needs to be done, but it's otherwise unknown, so we use a
+  placeholder constant $c_0$.
 
   \pause
   \vspace{\fill}
@@ -457,8 +458,8 @@
   So we obtain, when $n$ is the size of the number \code{n} in the expression \code{fact n}:
   \begin{align*}
     W_{\code{fact}}(n) &= W_{\code{fact}}(n - 1) + c_1 \\
-                       &= W_{\code{fact}}(n - 2) + c_1 + c_1 \\ 
-                       &= ...  \\ 
+                       &= W_{\code{fact}}(n - 2) + c_1 + c_1 \\
+                       &= ...  \\
                        &= \sum_{i = 0}^{n} c_1 + c_0 \\
                        &= n \cdot c_1 + c_0
   \end{align*}
@@ -511,7 +512,7 @@
           if x mod 2 = 0 then
             SOME x
           else
-            findEven xs 
+            findEven xs
   \end{codeblock}
 
   This function, \code{findFirstEven}, seeks to find the first even number in an SML
@@ -568,7 +569,7 @@
   \pause
   \vspace{\fill}
 
-  When $n$ is the length of \code{L} in the expression \code{findFirstEven L}: 
+  When $n$ is the length of \code{L} in the expression \code{findFirstEven L}:
   $$W_{\code{findFirstEven}}(n) = W_{\code{findFirstEven}}(n - 1) + c_1$$
   because we call the function again on a list of length one smaller, and do a constant amount of work.
 \end{frame}
@@ -576,7 +577,7 @@
 \begin{frame}[fragile]
   \frametitle{The Recurrence Formula}
 
-  Now that we've done a few examples, we're ready to identify the general formula for 
+  Now that we've done a few examples, we're ready to identify the general formula for
   analyzing the asymptotic complexity of a function:
 
   \pause
@@ -589,8 +590,8 @@
     \item Identify the size parameter, $n$, that the recurrence is in terms of. This could be something like
     the length of a list, the size of the number, etc. \pause
     \item Write a recurrence for the function. This entails writing an equation for every case it takes, in the
-    \textit{worst case}. \pause 
-    \item Simplify the recurrence into a closed form in $n$. \pause 
+    \textit{worst case}. \pause
+    \item Simplify the recurrence into a closed form in $n$. \pause
     \item Estimate a complexity class from the recurrence
   \end{itemize}
 \end{frame}
@@ -608,7 +609,7 @@
   \end{codeblock}
 
   \pause
-  Well, this is them now:\footnotemark
+  Well, this is them now:\footnote{Feel old yet?}
 
   \pause
   \begin{codeblock}
@@ -625,7 +626,6 @@
 
   Not only does that matter for how much space it takes, but how much time as well! Let's write the recurrence.
 
-  \footnotetext[2]{Feel old yet?}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -633,7 +633,7 @@
 
   \begin{codeblock}
     fun @ ([] : int list, ys : int list) : int list = ys
-      | @ (x::xs, ys) = x :: (xs @ ys) 
+      | @ (x::xs, ys) = x :: (xs @ ys)
 
     fun rev ([] : int list) : int list = []
       | rev (x::xs) = rev xs @ [x]
@@ -667,7 +667,7 @@
 
   Where $n$ is the length of \code{L}, when calling \code{L @ R}:
   $$W_{\code{@}}(0) = c_0$$
-  $$W_{\code{@}}(n) = W_{\code{@}}(n) + c_1$$  
+  $$W_{\code{@}}(n) = W_{\code{@}}(n) + c_1$$
 
   \pause
   \vspace{\fill}
@@ -699,16 +699,16 @@
   \vspace{\fill}
 
   Fortunately, we know that the length of \code{rev xs} is the same as the length of \code{xs}, so we can write:
-  $$W_{\code{rev}}(n) = W_{\code{rev}}(n - 1) + W_{\code{@}}(n - 1) + c_1\footnotemark$$
-
-  \footnotetext[2]{Don't forget this $c_1$. There is still a constant amount of work being done here.}
+  $$W_{\code{rev}}(n) = W_{\code{rev}}(n - 1) + W_{\code{@}}(n - 1) + c_1\footnote{
+    Don't forget this $c_1$. There is still a constant amount of work being done here.
+  }$$
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Solving \code{rev}}
 
   $$W_{\code{rev}}(0) = c_0$$
-  $$W_{\code{rev}}(n) = W_{\code{rev}}(n - 1) + W_{\code{@}}(n - 1) + c_1\footnotemark$$
+  $$W_{\code{rev}}(n) = W_{\code{rev}}(n - 1) + W_{\code{@}}(n - 1) + c_1$$
 
   Now to solve the recurrence, we get:
 
@@ -729,7 +729,7 @@
   \begin{align*}
     &= W_{\code{rev}}(n - 2) + c_2 \cdot (n - 2) + c_1 + c_2 \cdot (n - 1) + c_1 \\
     &= ... \\
-    &= \sum_{i = 0}^n c_2 \cdot (n - i) + n \cdot c_1 + c_0 
+    &= \sum_{i = 0}^n c_2 \cdot (n - i) + n \cdot c_1 + c_0
   \end{align*}
 
   \pause
@@ -763,13 +763,13 @@
 \begin{frame}[fragile]
   \frametitle{A \code{rev}-trospection}
 
-  In hindsight, we could have predicted this. The recursive case of \code{rev} essentially appends the prefix of the list 
-  over and over again, recursively. 
+  In hindsight, we could have predicted this. The recursive case of \code{rev} essentially appends the prefix of the list
+  over and over again, recursively.
 
   \pause
   \vspace{\fill}
 
-  But with a recurrence, we now have a mathematical justification for our asymptotic analysis. We know for sure that the 
+  But with a recurrence, we now have a mathematical justification for our asymptotic analysis. We know for sure that the
   \code{rev} function is quadratic time. What will we do about it?
 
   \pause
@@ -810,9 +810,9 @@
 
   \ptmt
 
-  We just demonstrated how we can use math and \term{recurrences} to formally reason about the run-time of 
+  We just demonstrated how we can use math and \term{recurrences} to formally reason about the run-time of
   functional programs.
-  
+
   \pause
   \vspace{\fill}
 
@@ -842,19 +842,19 @@
   \frametitle{My Heart is in the Work}
 
   Earlier this lecture, we explored the idea of \term{work}, which is the run-time cost of a particular function,
-  varied over the size of its input. We saw that we could measure work in terms of \textit{abstract units}, related 
+  varied over the size of its input. We saw that we could measure work in terms of \textit{abstract units}, related
   to the number of steps that we took to evaluate an expression, in our model of SML. For instance:
 
   \pause
   \vspace{5pt}
 
-  \code{(1 + 2) + (3 + 4)} $\stepsTo$ \code{3 + (3 + 4)} $\stepsTo$ \code{3 + 7} $\stepsTo$ \code{10} 
+  \code{(1 + 2) + (3 + 4)} $\stepsTo$ \code{3 + (3 + 4)} $\stepsTo$ \code{3 + 7} $\stepsTo$ \code{10}
 
   \pause
   \vspace{\fill}
 
   We don't know how much cost a single step is, but we might say that it takes 3 steps to evaluate,
-  by the above trace. 
+  by the above trace.
 
   \pause
   \vspace{\fill}
@@ -865,7 +865,7 @@
 \begin{frame}[fragile]
   \frametitle{Real World Computation}
 
-  Let's have a race! 
+  Let's have a race!
 
   \pause
   \vspace{\fill}
@@ -901,16 +901,16 @@
 
   Usually, this happens at the hardware level on a multicore machine, by the processor being
   able to delegate distinct instructions to be performed on different "cores", which can
-  communicate answers with each other. 
+  communicate answers with each other.
 
   \pause
   \vspace{\fill}
-  
+
   We will safely ignore most of that, and just assume that multicore machines exist, though.
 
   \pause
   \vspace{\fill}
-  
+
   It's hard to pick a number for how many, however. So let's just assume we have infinitely many.
 \end{frame}
 
@@ -942,7 +942,7 @@
   But, I can't just instantly make a sandwich, even if I had more hands available. I have to toast the bread,
   which means I need to wait for the pan to heat up, and I can't toast the bread, because I need to slice it from the
   loaf, and I can't slice it from the loaf, because there's only two sides and maybe another version of me wants to
-  slice it first. 
+  slice it first.
 
   \pause
   \vspace{\fill}
@@ -961,7 +961,7 @@
   other tasks are finished.}
 \end{frame}
 
-  
+
 \begin{frame}[fragile]
   \frametitle{ Sandwich Dependency Graph }
 
@@ -1039,7 +1039,7 @@
   \pause
   \vspace{\fill}
 
-  We said earlier that in SML, tuples are evaluated left to right. In a world with infinitely many processors, we 
+  We said earlier that in SML, tuples are evaluated left to right. In a world with infinitely many processors, we
   will assume that elements of a tuple can be computed \textit{at the same time}.
 
   % TODO: ONLY tuples
@@ -1051,10 +1051,10 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{ A Span Recurrence } 
+  \frametitle{ A Span Recurrence }
 
   Let's compute the span of the \code{length} function. The process will look very similar, but we will assume that any
-  tuples are evaluated in parallel. 
+  tuples are evaluated in parallel.
 
   \pause
   \vspace{\fill}
@@ -1074,11 +1074,11 @@
 
   Where $n$ is the length of the list \code{L} in the expression \code{length L}:
   $$S_{\code{length}}(0) = c_0$$
-  $$S_{\code{length}}(n) = \max(c_1, S_{\code{length}}(n - 1)) + c_2$$ 
+  $$S_{\code{length}}(n) = \max(c_1, S_{\code{length}}(n - 1)) + c_2$$
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{ A Span Recurrence } 
+  \frametitle{ A Span Recurrence }
 
   Then we have:
   \pause
@@ -1103,7 +1103,7 @@
   \pause
   \vspace{\fill}
 
-  This is because lists are inherently a sequential structure. Even if you had many 
+  This is because lists are inherently a sequential structure. Even if you had many
   processors, you can't touch the second list element until you look at the first.
   In essence, every list has a single "child", if we view \code{xs} as the child to
   \code{x::xs}.
@@ -1117,8 +1117,8 @@
 \begin{frame}[fragile]
   \frametitle{ Span and Trees }
 
-  Let's analyze the span of a function on trees! 
-  
+  Let's analyze the span of a function on trees!
+
   \pause
   \vspace{\fill}
 
@@ -1130,14 +1130,14 @@
   \pause
   \vspace{\fill}
 
-  We need a metric for the size of the tree, though. There's actually two options -- 
+  We need a metric for the size of the tree, though. There's actually two options --
   the number of nodes in the tree, or the height of the tree.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{ Tree Recurrence: Nodes }
 
-  Both are valid ways to go about it. Let's try it first by using $n$, the 
+  Both are valid ways to go about it. Let's try it first by using $n$, the
   number of nodes in the tree.
 
   \vspace{\fill}
@@ -1159,7 +1159,7 @@
   \vspace{\fill}
 
   What should we put for the recursive case? Because of infinite processors,
-  we can consider the calls to \code{treesum L} and  \code{treesum R} to all be 
+  we can consider the calls to \code{treesum L} and  \code{treesum R} to all be
   executed in parallel. But what is the number of nodes in each?
 \end{frame}
 
@@ -1196,9 +1196,9 @@
 
   $$S_{\code{treesum}}(0) = c_0$$
   $$S_{\code{treesum}}(n) = S_{\code{treesum}}(n - 1) + c_1$$
-  
+
   \vspace{\fill}
-  
+
   Wait a second, we've seen this before. If we swap the $S$ for $W$, this is the same
   recurrence as we've been getting the whole time!
 
@@ -1217,7 +1217,7 @@
   \pause
   \vspace{\fill}
 
-  This kind of makes sense, because a tree that is just a single line is basically 
+  This kind of makes sense, because a tree that is just a single line is basically
   a list with extra metadata. \code{treesum} isn't doing much more than
   \code{length}, so we get a similar span bound!
 
@@ -1304,7 +1304,7 @@
 
   Let's assume that the tree is balanced.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   The base case is as before.
@@ -1314,7 +1314,7 @@
 
   In this case, we can assume that each call to \code{treesum} is on a tree
   with roughly half the nodes as the input. For simplicity, let's assume we
-  have a tree with $n = 2^k$, for some $k$. 
+  have a tree with $n = 2^k$, for some $k$.
 
   \pause
   \vspace{\fill}
@@ -1328,7 +1328,7 @@
   \frametitle{ Tree Recurrence: Balanced Tree }
 
   \begin{align*}
-    &= S_{\code{treesum}}(n) \\ 
+    &= S_{\code{treesum}}(n) \\
     &= S_{\code{treesum}}(\frac{n}{2}) + c_1 \\
     &= S_{\code{treesum}}(\frac{n}{4}) + c_1 + c_1 \\
     &= S_{\code{treesum}}(\frac{n}{8}) + c_1 + c_1 \\
@@ -1351,25 +1351,25 @@
   Finally, we obtain a better bound! On balanced trees, we can parallelize
   more work, so we are able to run \code{treesum} in only log time, as opposed
   to linear. That's a big difference!
-  
+
   \pause
   \vspace{\fill}
 
   We will see that parallelism is a powerful tool that will help us achieve
   better bounds in a variety of situations. This is only the tip of the
-  iceberg.  
+  iceberg.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{ A Note on Realism }
 
   One point that needs to be said before the end of lecture: yes, having
-  infinite processors is impossible\footnotemark.
+  infinite processors is impossible\footnote{I knew this the whole time!!!!}.
 
   \pause
   \vspace{\fill}
 
-  This doesn't cheapen the findings we discussed. We're dealing with 
+  This doesn't cheapen the findings we discussed. We're dealing with
   mathematical abstractions, and being able to assume as many processors
   as needed is one of them.
 
@@ -1378,18 +1378,18 @@
 
   In reality, performance is somewhere between the work and the span, but
   the span remains a useful mathematical ideal.
-
-  \footnotetext[4]{I knew this the whole time!!!!}
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    Post-lecture survey: \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_june1}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     Post-lecture survey: \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_june1}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}

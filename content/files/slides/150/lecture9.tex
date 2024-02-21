@@ -2,24 +2,24 @@
 
 % DOCUMENT CLASS AND PACKAGE USE
     \documentclass[aspectratio=169, handout]{beamer}
- 
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{b39c09}     % the color of note boxes and stuff
     \newcommand{\presentColor}{32A2A5} % the primary color of the slide borders
     \newcommand{\bgColor}{d1eff0}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -52,7 +52,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -108,7 +108,7 @@
 
   We then experimented with polymorphic sorting, where we could create a sorting function
   on lists which operated \textit{generically} in the type of the list's elements, by providing
-  a comparison function as another input to the sorting function. 
+  a comparison function as another input to the sorting function.
 \end{frame}
 
 \sectionSlide{1}{Higher-Order Functions}
@@ -117,25 +117,24 @@
   \frametitle{Family First}
 
   We saw how, with polymorphic types and polymorphic functions, we have a certain concept
-  of parameterization. A polymorphic type denoted not just a single type, but 
+  of parameterization. A polymorphic type denoted not just a single type, but
   \textit{many} different types. Similarly, a polymorphic function denoted not a single
-  function, but a template for many functions of different types. 
+  function, but a template for many functions of different types.
 
   \pause
   \vspace{\fill}
 
-  Each of these functions essentially did the same thing, however\footnotemark. In this
-  lecture, we'll explore \term{higher-order functions}, which allows us to capture 
-  common design patterns in code to create families of functions which all do different,
-  but related, things. 
-
-  \footnotetext[1]{They had to, in order to be polymorphically generalizable!}
+  Each of these functions essentially did the same thing, however\footnote{They
+  had to, in order to be polymorphically generalizable!}. In this lecture, we'll
+  explore \term{higher-order functions}, which allows us to capture common
+  design patterns in code to create families of functions which all do
+  different, but related, things.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Polymorphic Sorting}
 
-  In the last lecture, we proposed a polymorphic sorting function that took in a 
+  In the last lecture, we proposed a polymorphic sorting function that took in a
   comparison function. It looked like:
 
   \pause
@@ -195,7 +194,7 @@
   We could write code like so:
 
   \begin{codeblock}
-    fun mod12Compare (x, y) = Int.compare (x mod 12, y mod 12) 
+    fun mod12Compare (x, y) = Int.compare (x mod 12, y mod 12)
 
     val sorted = sort (mod12Compare, [4, 3, 1, 2])
   \end{codeblock}
@@ -222,7 +221,7 @@
   \pause
   \begin{codeblock}
     val L = [4, 3, 1, 2]
-    val sorted = 
+    val sorted =
       sort (fn (x, y) => Int.compare (x mod 12,  y mod 12), L)
   \end{codeblock}
 \end{frame}
@@ -230,7 +229,7 @@
 \begin{frame}[fragile]
   \frametitle{Returning Functions}
 
-  We can also return functions, not just take them in. 
+  We can also return functions, not just take them in.
 
   \pause
   \vspace{\fill}
@@ -267,13 +266,13 @@
 \begin{frame}[fragile]
   \frametitle{Syntactic Sugar}
 
-  It's a little bit of a pain to have to explicitly write out the \code{fn y => x + y} 
+  It's a little bit of a pain to have to explicitly write out the \code{fn y => x + y}
   that we return, however.
 
   \pause
   \vspace{\fill}
 
-  SML helps, by having some syntactic sugar for writing curried functions. 
+  SML helps, by having some syntactic sugar for writing curried functions.
 
   \pause
   \vspace{\fill}
@@ -304,13 +303,13 @@
 
   \begin{codeblock}
     val 2 = add (1, 1)
-    val 2 = cadd 2 2 
+    val 2 = cadd 2 2
   \end{codeblock}
 
   \pause
   \vspace{\fill}
-  
-  Note that function application is \textit{left-associative}, meaning that 
+
+  Note that function application is \textit{left-associative}, meaning that
   \code{add 2 2} is the same as \code{(add 2) 2}.
 
   \pause
@@ -322,7 +321,7 @@
 \begin{frame}[fragile]
   \frametitle{Correspondence of \code{add} and \code{cadd}}
 
-  The answer is no! \code{add} and \code{cadd} don't even have the same type. 
+  The answer is no! \code{add} and \code{cadd} don't even have the same type.
   \textbf{Two expressions can only be extensionally equivalent if they have the same type}.
 
   \pause
@@ -347,7 +346,7 @@
   \frametitle{Abstraction}
 
   Abstraction is the name of the game in computer science.
-  
+
   \pause
   \vspace{\fill}
 
@@ -360,13 +359,13 @@
   \vspace{\fill}
 
   With higher-order functions, we can abstract code over code itself. We've seen this
-  once, by writing a \code{sort} function which varies depending on the code of the 
+  once, by writing a \code{sort} function which varies depending on the code of the
   corresponding \code{cmp} function.
 
   \pause
   \vspace{\fill}
 
-  This prevents us from having to rewrite multiple \code{sort} functions with the 
+  This prevents us from having to rewrite multiple \code{sort} functions with the
   same "core logic". Let's see some examples of other HOFs which reduce common logic.
 \end{frame}
 
@@ -382,15 +381,15 @@
     fun incrementAll [] = []
       | incrementAll (x::xs) = (x + 1) :: incrementAll xs
 
-    fun toStringAll [] = [] 
-      | toStringAll (x::xs) = Int.toString x :: toStringAll xs 
+    fun toStringAll [] = []
+      | toStringAll (x::xs) = Int.toString x :: toStringAll xs
   \end{codeblock}
 
   \vspace{\fill}
   \pause
 
   If we take away the operation that we perform to each element \code{x}, the underlying
-  function looks exactly the same! 
+  function looks exactly the same!
 
   \pause
   \vspace{\fill}
@@ -418,7 +417,7 @@
   \pause
   \vspace{\fill}
 
-  Then we obtain that \code{incrementAll} $\eeq$ \code{map (fn x => x + 1)}, 
+  Then we obtain that \code{incrementAll} $\eeq$ \code{map (fn x => x + 1)},
   and \code{toStringAll} $\eeq$ \code{map Int.toString}.
 \end{frame}
 
@@ -445,12 +444,12 @@
 
   In this case, \code{map} is the general design for a family of functions that entail
   transforming elements of a list, and \code{incrementAll} and \code{toStringAll} are
-  concrete instances of this design! So instead, we could write: 
+  concrete instances of this design! So instead, we could write:
 
   \pause
   \begin{codeblock}
     val incrementAll = map (fn x => x + 1)
-    val toStringAll = map Int.toString 
+    val toStringAll = map Int.toString
   \end{codeblock}
 \end{frame}
 
@@ -478,7 +477,7 @@
   \pause
   \vspace{\fill}
 
-  The second declaration, however, is a value which is a function, and can 
+  The second declaration, however, is a value which is a function, and can
   be put next to any argument, such as \code{L}. If we were to write
   \code{incrementAll L}, then by the definition of \code{incrementAll},
   we would have \code{map (fn x => x + 1) L}, which is the same thing!
@@ -492,7 +491,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We say that for any function \code{f : t1 -> t2}, the 
+  \defBox{}{We say that for any function value \code{f : t1 -> t2}, the
   lambda expression \code{fn x => f x} is the \term{eta-expanded} version
   of \code{f}.}
 
@@ -506,7 +505,7 @@
   \vspace{\fill}
 
   Another way of looking at it is that functions don't \textit{need} to
-  name their arguments -- functions already expect their arguments. 
+  name their arguments -- functions already expect their arguments.
 \end{frame}
 
 
@@ -521,9 +520,9 @@
 
   We can do so by defining a new curried sort, like so:
   \begin{codeblock}
-    fun sortCurried cmp L = sort (cmp, L) 
+    fun sortCurried cmp L = sort (cmp, L)
   \end{codeblock}
-  
+
   \pause
   \vspace{\fill}
 
@@ -535,9 +534,9 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    val intSort = sortCurried Int.compare 
-    val stringSort = sortCurried String.compare 
-    val mod12Sort = 
+    val intSort = sortCurried Int.compare
+    val stringSort = sortCurried String.compare
+    val mod12Sort =
       sortCurried (fn (x, y) => x mod 12 < y mod 12)
   \end{codeblock}
 \end{frame}
@@ -552,15 +551,15 @@
   \pause
   \vspace{\fill}
 
-  There is almost a spiritual component to the definition of these 
+  There is almost a spiritual component to the definition of these
   \code{map} and \code{sort} functions, in that they inherently carry the
-  Platonic structure of transforming a list of data, and sorting a list of 
+  Platonic structure of transforming a list of data, and sorting a list of
   data respectively.
 
   \pause
   \vspace{\fill}
 
-  In the large, programming becomes the recognition and manipulation of these 
+  In the large, programming becomes the recognition and manipulation of these
   archetypes, specifying them to fit your given use case. Seen in this way,
   higher-order functions pave the way to, indeed, \textit{every function ever}.
 \end{frame}
@@ -570,7 +569,7 @@
   \frametitle{Filter}
 
   Another common pattern is keeping only the elements of a list that satisfy
-  some predicate. This predicate might vary depending on the use case, but 
+  some predicate. This predicate might vary depending on the use case, but
   the overall pattern remains the same.
 
   \pause
@@ -613,8 +612,8 @@
   \pause
   \begin{codeblock}
     val isEven = fn x => x mod 2 = 0
-    val keepEvens = filter isEven 
-    val [2, 4] = keepEvens [1, 2, 3, 4] 
+    val keepEvens = filter isEven
+    val [2, 4] = keepEvens [1, 2, 3, 4]
     val keepOdds = filter (fn x => not (isEven x))
     val [1, 3] = keepOdds [1, 2, 3, 4]
   \end{codeblock}
@@ -636,7 +635,7 @@
 
   Though we can choose to write something like
   \code{map (fn x => f x) xs}, as opposed to \code{map f xs}, generally
-  it is agreed upon that the former is ugly, and the latter is more "clean". 
+  it is agreed upon that the former is ugly, and the latter is more "clean".
 
   \pause
   \vspace{\fill}
@@ -660,7 +659,7 @@
 
   We want a function which takes in two functions and essentially strings them
   together. We don't know what their types are, so we will simply call the first
-  one \code{'a -> 'b}, and the second \code{'b -> 'c}. Whatever the first one 
+  one \code{'a -> 'b}, and the second \code{'b -> 'c}. Whatever the first one
   returns, the second one needs to take as input.
 \end{frame}
 
@@ -674,7 +673,7 @@
   \vspace{\fill}
 
   Given \code{'a -> 'b} and \code{'b -> 'c}, that function's type must be
-  \code{'a -> 'c}. 
+  \code{'a -> 'c}.
 
   \spec
     {compose}
@@ -707,7 +706,7 @@
   \vspace{\fill}
 
   In SML, we also have \code{o} defined as the infix composition operator. So
-  instead of \code{compose (g, f)}, we could more tersely write \code{g o f}. 
+  instead of \code{compose (g, f)}, we could more tersely write \code{g o f}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -737,7 +736,7 @@
   \pause
   \vspace{\fill}
 
-  Oftentimes, we are interested in "summarizing" the data in a list. We are 
+  Oftentimes, we are interested in "summarizing" the data in a list. We are
   interested in iterating over the elements of a list, producing some value which
   changes for every element that we see.
 
@@ -783,9 +782,9 @@
 
   In a sense, it looks very similar to this common pattern in other programming
   languages:
-  
+
   \begin{lstlisting}[language=Python]
-    acc = default 
+    acc = default
 
     for x in xs:
       acc = f(x)
@@ -816,7 +815,7 @@
   These can be broken down into four parts:
   \pause
   \begin{itemize}
-    \item \code{'a * 'b -> 'b} - the "transforming function", which acts upon the 
+    \item \code{'a * 'b -> 'b} - the "transforming function", which acts upon the
     accumulator and each fresh value of the list \pause
     \item \code{'b} - the "default value" which serves as the initial accumulator \pause
     \item \code{'a list} - the list to be "folded" \pause
@@ -836,7 +835,7 @@
   \pause
   \begin{codeblock}
     fun foldl f z [] = z
-      | foldl f z (x::xs) = foldl f (f (x, z)) xs  
+      | foldl f z (x::xs) = foldl f (f (x, z)) xs
   \end{codeblock}
 
   \pause
@@ -848,7 +847,7 @@
   \pause
   \vspace{\fill}
 
-  Otherwise, we update our accumulator and keep recursing through the list. 
+  Otherwise, we update our accumulator and keep recursing through the list.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -877,7 +876,7 @@
   \frametitle{Hop, Skip, and a Fold}
 
   Let's try using our \code{sum} function.
-  
+
   \pause
   \vspace{\fill}
 
@@ -921,7 +920,7 @@
 \begin{frame}[fragile]
   \frametitle{A Difference in Folds}
 
-  The main way to remember how to implement the two folds is in when we 
+  The main way to remember how to implement the two folds is in when we
   combine with the first element, \code{x}.
 
   \pause
@@ -929,7 +928,7 @@
 
   \begin{codeblock}
     fun foldl f z [] = z
-      | foldl f z (x::xs) = foldl f (f (x, z)) xs  
+      | foldl f z (x::xs) = foldl f (f (x, z)) xs
 
     fun foldr f z [] = z
       | foldr f z (x::xs) = f (x, foldr f z xs)
@@ -958,8 +957,8 @@
 
   \pause
   \vspace{\fill}
-  
-  The simple way is simply to visualize the accumulator changing, by 
+
+  The simple way is simply to visualize the accumulator changing, by
   applying the function to the elements and accumulator, going left to
   right or right to left. Recall that the transform function \code{f}
   always takes the accumulator as its second argument.
@@ -968,9 +967,9 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    val sum = foldl (op+) 0 
+    val sum = foldl (op+) 0
     val concat = foldr (op^) ""
-    val flatten = foldr (op@) [] 
+    val flatten = foldr (op@) []
   \end{codeblock}
 \end{frame}
 
@@ -979,7 +978,7 @@
 
   It is said that \code{foldr} is the "natural" fold\footnotemark. We end up with
   all the elements in order, merely joined by the transformation function.
-  
+
   \pause
   \vspace{\fill}
 
@@ -990,10 +989,10 @@
 
   \begin{align*}
     &= \code{foldr (op^) "" ["I", "LOVE", "150"]} \\
-    &= \code{"I" ^ foldr (op^) "" ["LOVE", "150"]} \\ 
-    &= \code{"I" ^ ("LOVE" ^ foldr (op^) "" ["150"])} \\ 
-    &= \code{"I" ^ ("LOVE" ^ ("150" ^ foldr (op^) "" []))} \\ 
-    &= \code{"I" ^ ("LOVE" ^ ("150" ^ ""))} \\ 
+    &= \code{"I" ^ foldr (op^) "" ["LOVE", "150"]} \\
+    &= \code{"I" ^ ("LOVE" ^ foldr (op^) "" ["150"])} \\
+    &= \code{"I" ^ ("LOVE" ^ ("150" ^ foldr (op^) "" []))} \\
+    &= \code{"I" ^ ("LOVE" ^ ("150" ^ ""))} \\
     &= \code{"ILOVE150"}
   \end{align*}
 
@@ -1007,21 +1006,21 @@
   \pause
   \vspace{\fill}
   \begin{align*}
-    &= \code{foldl (op::) [] [1, 2, 3]} \\ 
-    &= \code{foldl (op::) [1] [2, 3]} \\ 
-    &= \code{foldl (op::) [2, 1] [3]} \\ 
-    &= \code{foldl (op::) [3, 2, 1] []} \\ 
+    &= \code{foldl (op::) [] [1, 2, 3]} \\
+    &= \code{foldl (op::) [1] [2, 3]} \\
+    &= \code{foldl (op::) [2, 1] [3]} \\
+    &= \code{foldl (op::) [3, 2, 1] []} \\
     &= \code{[3, 2, 1]}
   \end{align*}
 
-  We see that we end up with, essentially, \code{3 :: 2 :: 1 :: []}. This 
+  We see that we end up with, essentially, \code{3 :: 2 :: 1 :: []}. This
   applied the transformation function to each element, but in reverse!
 
   \pause
   \vspace{\fill}
-  
+
   If we look at the specification of \code{foldl}, though, this is exactly what it purported
-  to do. We expected to see \code{f (xn, ... f (x2, f (x1, z)) ... )}. 
+  to do. We expected to see \code{f (xn, ... f (x2, f (x1, z)) ... )}.
 
   \pause
   \vspace{\fill}
@@ -1037,32 +1036,32 @@
   At this point, we might be wondering about the implications for mathematical
   analysis of functions when higher-order functions get involved. In particular,
   how does equivalence get affected?
-  
+
   \pause
   \vspace{\fill}
 
   Recall our definition for extensional equivalence on functions, for \code{f : t1 -> t2}
   and \code{g : t1 -> t2}. We require that, for all values \code{x : t1}, that
-  \code{f x} $\eeq$ \code{g x}. 
-  
+  \code{f x} $\eeq$ \code{g x}.
+
   \pause
   \vspace{\fill}
 
-  It turns out, no extra machinery is necessary! We already have a definition for 
+  It turns out, no extra machinery is necessary! We already have a definition for
   when functions should be $\eeq$ (which is exactly the above), meaning that it's
-  no problem if \code{t2} is a function type. 
+  no problem if \code{t2} is a function type.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Equivalence}
 
-  It might seem a little different, however, when dealing with when \code{t1} is 
+  It might seem a little different, however, when dealing with when \code{t1} is
   a function type. How do we reason about if two function values are the "same"?
 
   \pause
   \vspace{\fill}
-  
-  Is \code{fn (x, y) => x + y} the same as \code{fn (y, x) => y + x}? 
+
+  Is \code{fn (x, y) => x + y} the same as \code{fn (y, x) => y + x}?
 
   \pause
   \vspace{\fill}
@@ -1089,7 +1088,7 @@
   \frametitle{Equivalence Examples}
 
   So we know that, for instance, as a consequence of the fact that \code{fn x => 2 * x}
-  and \code{fn x => x + x} are equivalent, then \code{map (fn x => 2 * x)} and 
+  and \code{fn x => x + x} are equivalent, then \code{map (fn x => 2 * x)} and
   \code{map (fn x => x + x)} must be equivalent as well.
 
   \pause
@@ -1103,8 +1102,8 @@
   \vspace{\fill}
 
   A free consequence that comes out of this: easy refactoring. Functions being
-  used in a higher-order context can be updated without fear of breaking a 
-  higher-order codebase, so long as each function individually remains 
+  used in a higher-order context can be updated without fear of breaking a
+  higher-order codebase, so long as each function individually remains
   extensionally equivalent.\footnotemark
 
   \footnotetext[3]{This is \textit{really useful}.}
@@ -1122,7 +1121,7 @@
 
   With functions like \code{map} and \code{foldl}, we can think of them as defining
   a hierarchy of functions, all of which are defined from a common ancestors. Thus, the
-  descendants of \code{map} might be \code{incrementAll} and \code{toStringAll}, 
+  descendants of \code{map} might be \code{incrementAll} and \code{toStringAll},
   and the descendants of \code{foldl} might be \code{sum}, \code{concat}, and \code{flatten}.
 
   \pause
@@ -1132,15 +1131,16 @@
   in code, reducing boilerplate and overall achieving a more holistic understanding.
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSePEQPNEkoVPHE5N8IglA9sEx1RHpOBc-vb0uVgULtRSJw4rQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_june13}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSePEQPNEkoVPHE5N8IglA9sEx1RHpOBc-vb0uVgULtRSJw4rQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_june13}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}
-

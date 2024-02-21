@@ -2,18 +2,18 @@
 
 % DOCUMENT CLASS AND PACKAGE USE
     \documentclass[aspectratio=169, handout]{beamer}
- 
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{5725E4}     % the color of note boxes and stuff
     \newcommand{\presentColor}{FABC60} % the primary color of the slide borders
     \newcommand{\bgColor}{fff8ed}      % the color of the background of the slide
@@ -23,7 +23,7 @@
     \newcommand{\mygreen}[0]{%
       \color{green!55!black}
     }
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -55,7 +55,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -104,14 +104,14 @@
 
   We also learned that, by assuming we had infinitely many processors, we could
   obtain recurrences that measured the \code{span} of the code, or the amount of time
-  using parallelism. We saw that this gave performance benefits for \code{treesum} on 
-  balanced trees. 
+  using parallelism. We saw that this gave performance benefits for \code{treesum} on
+  balanced trees.
 \end{frame}
 
 \sectionSlide{1}{Analyzing a Tree via Depth}
 
 \begin{frame}[fragile]
-  \frametitle{Measuring a Tree (again)} 
+  \frametitle{Measuring a Tree (again)}
 
   Before, we discussed how we could use the number of nodes in a tree as the input
   size, and obtain two span recurrences for \code{treesum} -- $O(n)$ in the imbalanced
@@ -120,7 +120,7 @@
   \pause
   \vspace{\fill}
 
-  That's not the only way to measure a tree, though\footnotemark. The other way is that we could
+  That's not the only way to measure a tree, though.\footnote{You can also use a tape measure.} The other way is that we could
   use the \term{depth} of the tree, which is the longest path through the tree to
   get to the bottom.
 
@@ -135,41 +135,39 @@
   \vspace{\fill}
 
   Let's try it!
-
-  \footnotetext[1]{You can also use a tape measure.}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Tree Recurrence: Depth} 
+  \frametitle{Tree Recurrence: Depth}
 
   Where $d$ is the depth of the tree \code{T}, in the expression \code{treesum T}:
   $$S_{\code{treesum}}(0) = c_0$$
-  $$S_{\code{treesum}}(d) = \max(S_{\code{treesum}}(d_{\code{L}}), c_1, S_{\code{treesum}}(d_{\code{R}})) + c_2\footnotemark$$
+  $$S_{\code{treesum}}(d) = \max(S_{\code{treesum}}(d_{\code{L}}), c_1, S_{\code{treesum}}(d_{\code{R}})) + c_2\footnote{
+    Recall that the $c_1$ term is obtained via the constant amount
+    of work involved in the computation of \code{x}. It's already a value, but
+    there is \textit{some} constant work associated, and we do take the max over it,
+    in case it unexpectedly takes a really long time.\footnotemark
+  }$$
 
   \pause
   \vspace{\fill}
 
   Again, we don't know how deep the tree is in the left and right subtrees --
   our recurrence depends on the quantities $d_{\code{L}}$ and $d_{\code{R}}$,
-  respectively. 
+  respectively.
 
   \pause
   \vspace{\fill}
-  
-  We find ourselves in the same situation as before, and we'll solve it the same 
-  way, by assuming the worst case. In the worst case, the tree is just a spine, 
-  so the depth of the left is $d - 1$, and the depth of the right is $0$.
 
-  \footnotetext[2]{Recall that the $c_1$ term is obtained via the constant amount
-  of work involved in the computation of \code{x}. It's already a value, but
-  there is \textit{some} constant work associated, and we do take the max over it,
-  in case it unexpectedly takes a really long time.\footnotemark}
+  We find ourselves in the same situation as before, and we'll solve it the same
+  way, by assuming the worst case. In the worst case, the tree is just a spine,
+  so the depth of the left is $d - 1$, and the depth of the right is $0$.
 
   \footnotetext[3]{It doesn't.}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Tree Recurrence: Depth (Unbalanced)} 
+  \frametitle{Tree Recurrence: Depth (Unbalanced)}
 
   \customBox{Case}{\, The \textbf{span} of \code{treesum} on an \textbf{unbalanced} tree, in terms of the \textbf{depth} $d$.}
   $$S_{\code{treesum}}(d) = \max(S_{\code{treesum}}(d - 1), c_1, S_{\code{treesum}}(0)) + c_2$$
@@ -183,14 +181,14 @@
     & S_{\code{treesum}}(d) \\
     &= S_{\code{treesum}}(d - 1) + c_2 \\
     &= S_{\code{treesum}}(d - 2) + c_2 + c_2 \\
-    &= ... \\ 
+    &= ... \\
     &= \sum_{i = 1}^d c_2 + c_0 \\
     &= d \cdot c_2 + c_0
   \end{align*}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Tree Recurrence: Depth (Balanced)} 
+  \frametitle{Tree Recurrence: Depth (Balanced)}
 
   \customBox{Case}{\, The \textbf{span} of \code{treesum} on a \textbf{balanced} tree, in terms of the \textbf{depth} $d$.}
 
@@ -225,14 +223,14 @@
 
   In a task dependency graph, the cost of executing some amount of tasks in parallel is
   just the \textit{longest path through the graph}, or tree. The length of the longest
-  path through a tree is just $d$, the depth of the tree, because a tree has the 
+  path through a tree is just $d$, the depth of the tree, because a tree has the
   structure of a dependency graph that is just the same tree!
 
   \pause
   \vspace{\fill}
 
   We can relate it back to our previous bounds, $O(n)$ and $O(\log n)$, for unbalanced and
-  balanced trees, in the number of nodes $n$, however. 
+  balanced trees, in the number of nodes $n$, however.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -240,7 +238,7 @@
 
   \ptmt
 
-  \keyBox{}{\, In an unbalanced tree, the depth $d$ is just the number of nodes $n$.}
+  \keyBox{}{ In an unbalanced tree, the depth $d$ is just the number of nodes $n$.}
 
   \pause
   \vspace{\fill}
@@ -258,7 +256,7 @@
   \pause
   \vspace{\fill}
 
-  \keyBox{}{\, There's a lovely geometric proof that shows that this is in $O(2^d)$.}
+  \keyBox{}{ There's a lovely geometric proof that shows that this is in $O(2^d)$.}
 
   \pause
   \vspace{\fill}
@@ -316,8 +314,11 @@
   \pause
   \vspace{\fill}
 
-  Whichever is "easier" is up to your discretion. Both are valid ways of solving a 
-  recurrence\footnotemark.
+  Whichever is "easier" is up to your discretion. Both are valid ways of solving a
+  recurrence.\footnote{
+    We will usually specify whenever we have a particular way we want to
+    see you solve it, which is often.
+  }
 
   \pause
   \vspace{\fill}
@@ -328,12 +329,10 @@
     \hline & \\[-1.5ex]
      Balanced & $O(\log n)$ & $O(d)$ \\ [0.5ex]
     \hline & \\[-1.5ex]
-     Unbalanced & $O(n)$ & $O(d)$ 
+     Unbalanced & $O(n)$ & $O(d)$
     \end{tabular}
   \end{center}
 
-  \footnotetext[4]{We will usually specify whenever we have a particular way we want to 
-  see you solve it, which is often.}
 \end{frame}
 
 \sectionSlide{2}{The Tree Method}
@@ -351,14 +350,14 @@
 
   We are interested in \textit{inorder} traversal, which traverses a
   tree the same way that someone would traverse it by reading from
-  left-to-right. 
+  left-to-right.
 
   \pause
   \vspace{\fill}
 
   \begin{codeblock}
     fun inord (Empty : tree) : int list = []
-      | inord (Node (L, x, R)) = inord L @ (x :: inord R) 
+      | inord (Node (L, x, R)) = inord L @ (x :: inord R)
   \end{codeblock}
 \end{frame}
 
@@ -366,7 +365,7 @@
   \frametitle{\code{inord}, Naively}
 
   When you see recursive calls being given as arguments to append, you
-  should double-check, because something fishy is probably going on. 
+  should double-check, because something fishy is probably going on.
 
   \pause
   \vspace{\fill}
@@ -383,7 +382,7 @@
   \pause
   \vspace{\fill}
 
-  Where $n$ is the number of nodes in the input tree: 
+  Where $n$ is the number of nodes in the input tree:
   $$W_{\code{inord}}(0) = c_0$$
   $$W_{\code{inord}}(n) = c_1 + W_{\code{@}}\left(\frac{n}{2}\right) + 2 \cdot W_{\code{inord}}\left(\frac{n}{2}\right)$$
 
@@ -394,8 +393,8 @@
   \frametitle{Solving \code{inord}}
 
   So we have:
-  \begin{align*} 
-    & W_{\code{inord}}(n) \\ 
+  \begin{align*}
+    & W_{\code{inord}}(n) \\
     &= c_1 + W_{\code{@}}\left(\frac{n}{2}\right) + 2 \cdot W_{\code{inord}}\left(\frac{n}{2}\right) \\
     &= c_1 + O(n)  + 2 \cdot W_{\code{inord}}\left(\frac{n}{2}\right) \\
     &= c_1 + O(n) + 2 \cdot \left(c_1 + O\left(\frac{n}{4}\right) + 2 \cdot W_{\code{inord}}\left(\frac{n}{4}\right)\right) \\
@@ -404,21 +403,19 @@
   \end{align*}
 
   \pause
-  This is... messy\footnotemark.
-
-  \footnotetext[5]{Life is, sometimes.}
+  This is... messy.\footnote{Life is, sometimes.}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Unrolling in the Deep}
 
   Sometimes, unrolling is messy. Sometimes, like in \code{length}, we only get
-  one extra term per "unrolling", and so it's not hard to solve by just 
+  one extra term per "unrolling", and so it's not hard to solve by just
   finding the pattern.
 
   \pause
   \vspace{\fill}
-  
+
   In the case of functions on trees, this usually isn't the case! We actually
   get \textit{two} terms per unrolling, which quickly becomes four by the
   next unrolling, and so on. This is much harder to eyeball.
@@ -447,8 +444,8 @@
   \pause
   \vspace{\fill}
 
-  So let's draw a tree representing the computation of \code{inord T}, with nodes 
-  annotated with the size of the input at each call, with edges indicating 
+  So let's draw a tree representing the computation of \code{inord T}, with nodes
+  annotated with the size of the input at each call, with edges indicating
   recursive calls:
 
   \pause
@@ -537,7 +534,7 @@
   \pause
   \begin{itemize}
     \item the \textit{nonrecursive work}, ${\color{auxColor} W_{\code{@}}(\frac{n}{2}) + c_1}$ \pause
-    \item the \textit{recursive work}, ${\color{red} 2 \cdot W_{\code{inord}}(\frac{n}{2})}$ \pause 
+    \item the \textit{recursive work}, ${\color{red} 2 \cdot W_{\code{inord}}(\frac{n}{2})}$ \pause
     \item for a given \textit{input size}, which is ${\color{green!55!black}n}$
   \end{itemize}
 
@@ -563,8 +560,8 @@
   \vspace{\fill}
 
   To do this, we'll need to somehow figure out the nonrecursive work
-  done by each node. This is $O(n) + c_1$ for a node with size ${\mygreen n}$, 
-  except each node has a different size!  
+  done by each node. This is $O(n) + c_1$ for a node with size ${\mygreen n}$,
+  except each node has a different size!
 
   \pause
   \vspace{\fill}
@@ -572,7 +569,7 @@
   In addition, there's a differing number of nodes of each size,
   since there's 2 of size ${\mygreen \frac{n}{2}}$, and 4 of size ${\mygreen \frac{n}{4}}$,
   and so on.
-  
+
   \pause
   \vspace{\fill}
 
@@ -589,8 +586,8 @@
   \vspace{\fill}
 
   If the work at each level was the same, then we could just multiply
-  that quantity by the height of the tree, which is $\log n$, the number 
-  of times we can recursively call \code{inord} by halving the input. 
+  that quantity by the height of the tree, which is $\log n$, the number
+  of times we can recursively call \code{inord} by halving the input.
 
   \pause
   \vspace{\fill}
@@ -622,14 +619,14 @@
       \node[shape=rectangle,draw=black] (LL5) at (5.5,-1) { ${\mygreen 0} \, \vert \, {\color{auxColor} c_0}$};
       \node[shape=rectangle,draw=black] (LL6) at (7, -1) { ${\mygreen 0} \, \vert \, {\color{auxColor} c_0}$};
 
-      %\node[] (D1) at (-5, 4) { $= 2^0 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_1 \cdot \frac{n}{2}$ }; 
-      %\node[] (D2) at (-5, 1) { $= 2^1 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_1 \cdot \frac{n}{2}$ }; 
-      %\node[] (D3) at (-5, -1) { $= 2^2 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_1 \cdot \frac{n}{2}$ }; 
+      %\node[] (D1) at (-5, 4) { $= 2^0 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_1 \cdot \frac{n}{2}$ };
+      %\node[] (D2) at (-5, 1) { $= 2^1 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_1 \cdot \frac{n}{2}$ };
+      %\node[] (D3) at (-5, -1) { $= 2^2 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_1 \cdot \frac{n}{2}$ };
 
-      \node[] (S1) at (9.5, 4) { $= 2^0 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_2 \cdot \frac{n}{2}$ }; 
-      \node[] (S2) at (9.5, 2.5) { $= 2^1 \cdot {\color{auxColor} c_2 \cdot \frac{n}{4}} = c_2 \cdot \frac{n}{2}$ }; 
-      \node[] (S3) at (9.5, 1) { $= 2^2 \cdot {\color{auxColor} c_2 \cdot \frac{n}{8}} = c_2 \cdot \frac{n}{2}$ }; 
-      \node[] (S4) at (9.5, -1) { $= \frac{n}{2} \cdot {\color{auxColor} c_0} = c_0 \cdot \frac{n}{2}$ }; 
+      \node[] (S1) at (9.5, 4) { $= 2^0 \cdot {\color{auxColor} c_2 \cdot \frac{n}{2}} = c_2 \cdot \frac{n}{2}$ };
+      \node[] (S2) at (9.5, 2.5) { $= 2^1 \cdot {\color{auxColor} c_2 \cdot \frac{n}{4}} = c_2 \cdot \frac{n}{2}$ };
+      \node[] (S3) at (9.5, 1) { $= 2^2 \cdot {\color{auxColor} c_2 \cdot \frac{n}{8}} = c_2 \cdot \frac{n}{2}$ };
+      \node[] (S4) at (9.5, -1) { $= \frac{n}{2} \cdot {\color{auxColor} c_0} = c_0 \cdot \frac{n}{2}$ };
 
       \node[] (LLM) at (2,-1) { \textellipsis};
 
@@ -667,7 +664,7 @@
   \frametitle{The Tree Method, Concluded}
 
   Let the \textit{level} of a tree denote how far we are from the root.
-  So the root is at level $0$, and there are two nodes at level $1$, and 
+  So the root is at level $0$, and there are two nodes at level $1$, and
   so on.
 
   \pause
@@ -689,16 +686,14 @@
   \pause
   \vspace{\fill}
 
-  So to solve for our cumulative work at level $i$, we multiply the number of nodes and work per node: 
+  So to solve for our cumulative work at level $i$, we multiply the number of nodes and work per node:
   $$2^i \cdot \left(\dfrac{n}{2^{i + 1}}c_2\right) = \frac{n}{2} \cdot c_2$$
 
   \pause
-  So the work at level $i$, cumulatively, is the same! What's more, it's in $O(n)$. 
-  There's $\log n$ levels, so we ultimately come out with a bound of 
-  $O(n \log n)$. \footnotemark
-
-  \footnotetext[6]{There are several things we elided to come to this bound. We decided to 
-  count the nonrecursive work at each node as the work of asymptotically dominating 
+  So the work at level $i$, cumulatively, is the same! What's more, it's in $O(n)$.
+  There's $\log n$ levels, so we ultimately come out with a bound of
+  $O(n \log n)$. \footnote{There are several things we elided to come to this bound. We decided to
+  count the nonrecursive work at each node as the work of asymptotically dominating
   \code{@} and we ignored the $c_0$ leaf terms, because they are ultimately
   dominated by the sum of the other layers. We only care about getting to the right asymptotic
   bound, so we can make things disappear if they aren't relevant. }
@@ -714,7 +709,7 @@
     \hline & \\[-1.5ex]
      Balanced & $O(n \log n)$ & TBD \\ [0.5ex]
     \hline & \\[-1.5ex]
-     Unbalanced & TBD & TBD 
+     Unbalanced & TBD & TBD
     \end{tabular}
   \end{center}
 
@@ -731,7 +726,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{\code{inord}: Work (Unbalanced)} 
+  \frametitle{\code{inord}: Work (Unbalanced)}
 
   \customBox{Case}{\, The \textbf{work} of \code{inord} on an \textbf{unbalanced} tree.}
 
@@ -763,7 +758,7 @@
 
   \begin{codeblock}
     fun inord (Empty : tree) : int list = []
-      | inord (Node (L, x, R)) = inord L @ (x :: inord R) 
+      | inord (Node (L, x, R)) = inord L @ (x :: inord R)
   \end{codeblock}
 
   \pause
@@ -771,14 +766,14 @@
 
   Here, we can do the calls to \code{inord L} and \code{inord R} in parallel,
   so we get the same recurrence as the balanced work case, but with only one
-  recursive call. 
+  recursive call.
 
   \pause
   \vspace{\fill}
 
   Where $n$ is the number of nodes in the input tree:
   $$ S_{\code{inord}}(0) = c_0 $$
-  $$ S_{\code{inord}}(n) = \max\left(S_{\code{inord}}\left(\frac{n}{2}\right), c_1, 
+  $$ S_{\code{inord}}(n) = \max\left(S_{\code{inord}}\left(\frac{n}{2}\right), c_1,
   S_{\code{inord}}\left(\frac{n}{2}\right)\right) + S_{\code{@}}\left(\frac{n}{2}\right) + c_2$$
 
 \end{frame}
@@ -788,18 +783,18 @@
 
   \begin{align*}
     & S_{\code{inord}}(n) \\
-    &= \max\left(S_{\code{inord}}\left(\frac{n}{2}\right), c_1, 
+    &= \max\left(S_{\code{inord}}\left(\frac{n}{2}\right), c_1,
       S_{\code{inord}}\left(\frac{n}{2}\right)\right) + S_{\code{@}}\left(\frac{n}{2}\right) + c_2 \\
-    &= S_{\code{inord}}\left(\frac{n}{2}\right) + \frac{n}{2} c_1 + c_2 \\ 
+    &= S_{\code{inord}}\left(\frac{n}{2}\right) + \frac{n}{2} c_1 + c_2 \\
     &= S_{\code{inord}}\left(\frac{n}{4}\right) + \frac{n}{4} c_1 + c_2 +  \frac{n}{2} c_1 + c_2 \\
-    &= ... \\ 
-    &= \sum_{i = 1}^{\log n} \left(\frac{n}{2^i} c_1\right) + \log n \cdot c_2 + \frac{n}{2} c_0 
+    &= ... \\
+    &= \sum_{i = 1}^{\log n} \left(\frac{n}{2^i} c_1\right) + \log n \cdot c_2 + \frac{n}{2} c_0
   \end{align*}
 
   \pause
   \vspace{\fill}
 
-  The first term dominates, because it's $(1 + 2 + 4 + 8 + ... + \frac{n}{2}) c_1$, so we get 
+  The first term dominates, because it's $(1 + 2 + 4 + 8 + ... + \frac{n}{2}) c_1$, so we get
   $O(n)$.
 \end{frame}
 
@@ -812,14 +807,14 @@
     \hline & \\[-1.5ex]
      Balanced & $O(n \log n)$ & $O(n)$ \\ [0.5ex]
     \hline & \\[-1.5ex]
-     Unbalanced & $O(n^2)$ & $O(n^2)$ 
+     Unbalanced & $O(n^2)$ & $O(n^2)$
     \end{tabular}
   \end{center}
 
   \pause
   \vspace{\fill}
 
-  We leave it as an exercise to the reader that the span of the unbalanced 
+  We leave it as an exercise to the reader that the span of the unbalanced
   \code{inord} case is $O(n^2)$.
 
   \pause
@@ -847,7 +842,7 @@
 
   \begin{codeblock}
     fun inord' (Empty : tree, acc : int list) = acc
-      | inord' (Node (L, x, R), acc) = 
+      | inord' (Node (L, x, R), acc) =
           inord' (L, x :: inord' (R, acc))
   \end{codeblock}
 
@@ -888,19 +883,19 @@
 
   \pause
   \begin{align*}
-    &= W_{\code{inord'}}(n) \\ 
-    &= 2 \cdot W_{\code{inord'}}(\frac{n}{2}) + c_1 \\ 
-    &= 4 \cdot (W_{\code{inord'}}(\frac{n}{4}) + c_1) + c_1 \\ 
+    &= W_{\code{inord'}}(n) \\
+    &= 2 \cdot W_{\code{inord'}}(\frac{n}{2}) + c_1 \\
+    &= 4 \cdot (W_{\code{inord'}}(\frac{n}{4}) + c_1) + c_1 \\
     &= ...
   \end{align*}
 
   \pause
   Same issue as before, now we have two recursive calls at each unrolling. Better to solve this
-  with the tree method!   
+  with the tree method!
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{\code{inord'}: Tree Method} 
+  \frametitle{\code{inord'}: Tree Method}
 
   $$W_{\code{inord'}}(n) = 2 \cdot W_{\code{inord'}}(\frac{n}{2}) + c_1$$
 
@@ -929,7 +924,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{\code{inord'}: Tree Method} 
+  \frametitle{\code{inord'}: Tree Method}
 
   $$\sum_{i = 0}^{\log n} 2^i c_1 = c_1 \sum_{i = 0}^{\log n} 2^i$$
 
@@ -937,7 +932,7 @@
   \vspace{\fill}
 
   This expands to a term like:
-  $$c_1(1 + 2 + 4 + ... + n)$$ 
+  $$c_1(1 + 2 + 4 + ... + n)$$
 
   where we know the inner term to be in $O(n)$. So ultimately, our
   bound is $O(n)$. That's a logarithmic improvement over $\code{inord}$!
@@ -952,7 +947,7 @@
 
   \begin{codeblock}
     fun inord' (Empty : tree, acc : int list) = acc
-      | inord' (Node (L, x, R), acc) = 
+      | inord' (Node (L, x, R), acc) =
           inord' (L, x :: inord' (R, acc))
   \end{codeblock}
 
@@ -964,7 +959,7 @@
   \pause
   \vspace{\fill}
 
-  By analogy, we've seen this recurrence before. This solves to 
+  By analogy, we've seen this recurrence before. This solves to
   $$W_{\code{inord'}}(n) = W_{\code{inord'}}(n - 1) + c_0 + c_1$$
   which is in $O(n)$. So we do the same amount of work.
 \end{frame}
@@ -974,7 +969,7 @@
 
   \begin{codeblock}
     fun inord' (Empty : tree, acc : int list) = acc
-      | inord' (Node (L, x, R), acc) = 
+      | inord' (Node (L, x, R), acc) =
           inord' (L, x :: inord' (R, acc))
   \end{codeblock}
 
@@ -1000,7 +995,7 @@
 
   \begin{codeblock}
     fun inord' (Empty : tree, acc : int list) = acc
-      | inord' (Node (L, x, R), acc) = 
+      | inord' (Node (L, x, R), acc) =
           inord' (L, x :: inord' (R, acc))
   \end{codeblock}
 
@@ -1020,9 +1015,7 @@
   \pause
   \vspace{\fill}
 
-  So our span bound ends up still being $O(n)$. This holds in the unbalanced case too.\footnotemark
-
-  \footnotetext[7]{Exercise, reader, etc etc.}
+  So our span bound ends up still being $O(n)$. This holds in the unbalanced case too.\footnote{Exercise, reader, etc etc.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1034,7 +1027,7 @@
     \hline & \\[-1.5ex]
      Balanced & $O(n \log n)$ & $O(n)$ \\ [0.5ex]
     \hline & \\[-1.5ex]
-     Unbalanced & $O(n^2)$ & $O(n^2)$ 
+     Unbalanced & $O(n^2)$ & $O(n^2)$
     \end{tabular}
   \end{center}
 
@@ -1046,7 +1039,7 @@
     \hline & \\[-1.5ex]
      Balanced & $O(n)$ & $O(n)$ \\ [0.5ex]
     \hline & \\[-1.5ex]
-     Unbalanced & $O(n)$ & $O(n)$ 
+     Unbalanced & $O(n)$ & $O(n)$
     \end{tabular}
   \end{center}
 \end{frame}
@@ -1063,9 +1056,7 @@
   \vspace{\fill}
 
   We will now turn to one of the most classic problems of all in computer science: sorting a
-  list of integers.\footnotemark
-
-  \only<3>{\footnotetext[8]{Second only to fixing your parents' printer.}}
+  list of integers.\footnote<3>{Second only to fixing your parents' printer.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1098,10 +1089,10 @@
   \pause
   \begin{codeblock}
     fun ins (x : int, [] : int list) : int list = [x]
-      | ins (x, y::ys) = 
-          if x < y then 
-            x::y::ys 
-          else 
+      | ins (x, y::ys) =
+          if x < y then
+            x::y::ys
+          else
             y :: ins (x, ys)
   \end{codeblock}
 \end{frame}
@@ -1138,10 +1129,10 @@
   \frametitle{Insertion Sort: Work Analysis}
   \begin{codeblock}
     fun ins (x : int, [] : int list) : int list = [x]
-      | ins (x, y::ys) = 
-          if x < y then 
-            x::y::ys 
-          else 
+      | ins (x, y::ys) =
+          if x < y then
+            x::y::ys
+          else
             y :: ins (x, ys)
   \end{codeblock}
 
@@ -1189,13 +1180,13 @@
   Now we solve:
   \pause
   \begin{align*}
-    &= W_{\code{insort}}(n) \\ 
+    &= W_{\code{insort}}(n) \\
     &= W_{\code{insort}}(n - 1) + W_{\code{ins}}(n - 1) + c_1 \\
     &= W_{\code{insort}}(n - 1) + c_2 \cdot (n - 1) + c_1 \\
     &= W_{\code{insort}}(n - 2) + c_2 \cdot (n - 2) + c_1 + c_2 \cdot (n - 1) + c_1 \\
-    &= ... \\ 
+    &= ... \\
     &= c_2 \cdot (1 + 2 + 3 + ... + (n - 1)) + c_1 \cdot n \\
-    &= O(n^2) 
+    &= O(n^2)
   \end{align*}
 
   \pause
@@ -1220,12 +1211,14 @@
 \begin{frame}[fragile]
   \frametitle{A Parallel Sort}
 
-  Fortunately, someone else invented merge sort\footnotemark.
+  Fortunately, someone else invented merge sort.\footnote{
+    Well, quick sort too. But we will discuss merge sort for today.
+  }
 
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, \term{Merge sort} is a sorting algorithm involving dividing
+  \defBox{}{ \term{Merge sort} is a sorting algorithm involving dividing
   the list to be sorted in half, and recursively sorting each half.}
 
   \pause
@@ -1233,8 +1226,6 @@
 
   Not only does merge sort achieve a better sequential complexity, but we will
   see how its span bound improves as well.
-  
-  \footnotetext[9]{Well, quick sort too. But we will discuss merge sort for today.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1246,16 +1237,16 @@
   \begin{itemize}
     \item Split the list into two halves. It doesn't really matter how. \pause
     \item Recursively sort either half. \pause
-    \item Merge the two sorted halves to make a sorted list. 
+    \item Merge the two sorted halves to make a sorted list.
   \end{itemize}
 
-  \pause 
+  \pause
   \vspace{\fill}
 
-  The main important thing here is that it is pretty easy to split a list in 
+  The main important thing here is that it is pretty easy to split a list in
   half, as well as put two sorted lists together into another sorted list.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   We will implement this, and call those functions \code{split} and \code{merge}.
@@ -1272,13 +1263,13 @@
     permutation of \code{A @ B}, and \code{A} and \code{B} are roughly the
     same length}
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   \begin{codeblock}
     fun split ([] : int list) : int list * int list = []
       | split [x] = [x]
-      | split (x::y::xs) = 
+      | split (x::y::xs) =
           let
             val (A, B) = split xs
           in
@@ -1296,7 +1287,7 @@
     {\code{L} and \code{R} are sorted}
     {\code{merge (L, R)} is a sorted permutation of \code{L @ R}}
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   \begin{codeblock}
@@ -1315,7 +1306,7 @@
 
   Now that we've defined \code{split} and \code{merge}, we're ready to write \code{msort}.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   \spec
@@ -1324,17 +1315,17 @@
     {\code{true}}
     {\code{msort L} evaluates to a sorted permutation of \code{L}}
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   \begin{codeblock}
     fun msort ([] : int list) : int list = []
       | msort [x] = [x]
-      | msort L = 
+      | msort L =
           let
-            val (A, B) = split L 
+            val (A, B) = split L
           in
-            merge (msort A, msort B) 
+            merge (msort A, msort B)
           end
   \end{codeblock}
 \end{frame}
@@ -1349,17 +1340,17 @@
   to do, and take away a great deal of the cognitive effort in understanding
   what the \code{msort} function does.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   \code{msort} does as promised -- splits the list, recursively sorts the
   halves, and then merges them together. There's very little extra fat to the
   logic.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
-  \noteBox{}{\, We need the singleton case for \code{msort}, because otherwise \code{split}
+  \noteBox{}{ We need the singleton case for \code{msort}, because otherwise \code{split}
   will produce another singleton, which we will call \code{msort} on, which is
   an infinite loop.
   }
@@ -1372,7 +1363,7 @@
   \begin{codeblock}
     fun split ([] : int list) : int list * int list = []
       | split [x] = [x]
-      | split (x::y::xs) = 
+      | split (x::y::xs) =
           let
             val (A, B) = split xs
           in
@@ -1389,16 +1380,16 @@
 
     fun msort ([] : int list) : int list = []
       | msort [x] = [x]
-      | msort L = 
+      | msort L =
           let
-            val (A, B) = split L 
+            val (A, B) = split L
           in
-            merge (msort A, msort B) 
+            merge (msort A, msort B)
           end
   \end{codeblock}
   }
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   That's all!
@@ -1410,10 +1401,10 @@
   Now, let's analyze the complexity of \code{msort}. We'll do the work first,
   and then the span.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
-  \noteBox{}{\, We will assume, but not show, that the complexity of
+  \noteBox{}{ We will assume, but not show, that the complexity of
   \code{split} and \code{merge} are linear in the sizes of their inputs.
   }
 
@@ -1425,15 +1416,15 @@
   \begin{codeblock}
     fun msort ([] : int list) : int list = []
       | msort [x] = [x]
-      | msort L = 
+      | msort L =
           let
-            val (A, B) = split L 
+            val (A, B) = split L
           in
-            merge (msort A, msort B) 
+            merge (msort A, msort B)
           end
   \end{codeblock}
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   Where $n$ is the length of the list \code{L} in the expression \code{msort L}:
@@ -1445,28 +1436,28 @@
 \begin{frame}[fragile]
   \frametitle{\code{msort}: Work Recurrence}
 
-  $$W_{\code{msort}}(n) = 2 \cdot W_{\code{msort}}\left(\frac{n}{2}\right) + W_{\code{split}}(n) + W_{\code{merge}}\left(\frac{n}{2}, \frac{n}{2}\right) + c_2\footnotemark$$
+  $$W_{\code{msort}}(n) = 2 \cdot W_{\code{msort}}\left(\frac{n}{2}\right) + W_{\code{split}}(n) + W_{\code{merge}}\left(\frac{n}{2}, \frac{n}{2}\right) + c_2\footnote{
+    Here, we use the notation $W_{\code{merge}}(\frac{n}{2}, \frac{n}{2})$ because
+    the work of \code{merge} actually depends on both of its arguments. In this case, however, it
+    still ends up just being $n \cdot c_3$, though (combined with the work from \code{split})
+  }$$
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   Now we can solve to:
-  \begin{align*} 
+  \begin{align*}
     &= W_{\code{msort}}(n) \\
     &= 2 \cdot W_{\code{msort}}\left(\frac{n}{2}\right) + W_{\code{split}}(n) + W_{\code{merge}}\left(\frac{n}{2}, \frac{n}{2}\right) + c_2\\
     &= 2 \cdot W_{\code{msort}}\left(\frac{n}{2}\right) + n \cdot c_3 + c_2
   \end{align*}
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   It turns out that this is the same as another recurrence we saw earlier, the balanced
-  work recurrence for \code{inord}, because we have two calls at size $\frac{n}{2}$, and 
-  linear work at each node. This solves to $O(n \log n)$. 
-
-  \footnotetext[10]{Here, we use the notation $W_{\code{merge}}(\frac{n}{2}, \frac{n}{2})$ because
-  the work of \code{merge} actually depends on both of its arguments. In this case, however, it
-  still ends up just being $n \cdot c_3$, though (combined with the work from \code{split})}
+  work recurrence for \code{inord}, because we have two calls at size $\frac{n}{2}$, and
+  linear work at each node. This solves to $O(n \log n)$.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1475,44 +1466,42 @@
   What about span? \code{msort} makes two calls to itself in parallel, so there is an opportunity for
   a speedup.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   We note that the span of \code{merge} and \code{split} must be the same as the
-  work, though we don't show that here. 
+  work, though we don't show that here.
 
-  \pause 
+  \pause
   \vspace{\fill}
 
-  Where $n$ is the length of the list \code{L} in the expression \code{msort L}\footnotemark:
-  \begin{align*} 
+  Where $n$ is the length of the list \code{L} in the expression \code{msort L}:\footnote{Base cases same as work.}
+  \begin{align*}
     & S_{\code{msort}}(n) \\
-    &= \max\left(S_{\code{msort}}\left(\frac{n}{2}\right), S_{\code{msort}}\left(\frac{n}{2}\right)\right) + S_{\code{split}}(n) + S_{\code{merge}}\left(\frac{n}{2}, \frac{n}{2}\right) + c_2 \\ 
+    &= \max\left(S_{\code{msort}}\left(\frac{n}{2}\right), S_{\code{msort}}\left(\frac{n}{2}\right)\right) + S_{\code{split}}(n) + S_{\code{merge}}\left(\frac{n}{2}, \frac{n}{2}\right) + c_2 \\
     &= S_{\code{msort}}\left(\frac{n}{2}\right) + S_{\code{split}}(n) + S_{\code{merge}}\left(\frac{n}{2}, \frac{n}{2}\right) + c_2 \\
     &= S_{\code{msort}}\left(\frac{n}{2}\right) + n \cdot c_2 + c_3
   \end{align*}
-  
-  \footnotetext[11]{Base cases same as work.}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{\code{msort}: Span Recurrence}
 
-  $$ S_{\code{msort}}(n) = S_{\code{msort}}\left(\frac{n}{2}\right) + n \cdot c_2 + c_3$$ 
+  $$ S_{\code{msort}}(n) = S_{\code{msort}}\left(\frac{n}{2}\right) + n \cdot c_2 + c_3$$
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   Now we solve:
   \begin{align*}
-    &= S_{\code{msort}}(n) \\ 
+    &= S_{\code{msort}}(n) \\
     &= S_{\code{msort}}\left(\frac{n}{2}\right) + n \cdot c_2 + c_3 \\
     &= S_{\code{msort}}\left(\frac{n}{4}\right) + \frac{n}{2} \cdot c_2 + n \cdot c_2 + c_3 \\
     &= ... \\
     &= (1 + 2 + 4 + ... + n) \cdot c_2
   \end{align*}
 
-  \pause 
+  \pause
   \vspace{\fill}
 
   So we get that, in parallel, merge sort is in $O(n)$.
@@ -1521,7 +1510,7 @@
 \begin{frame}[fragile]
   \frametitle{Conclusions}
 
-  That's pretty huge! The power of parallelism offers us to not just get a 
+  That's pretty huge! The power of parallelism offers us to not just get a
   speedup when doing computations, but mathematically prove that we achieve
   a better asymptotic bound -- a linear time sort. That's pretty cool.
 
@@ -1538,15 +1527,16 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSekBRG1pMvqGcLSmuIFXZqCpTf-UJboduJ0Yvd6NczMruKtkQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_june6}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSekBRG1pMvqGcLSmuIFXZqCpTf-UJboduJ0Yvd6NczMruKtkQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_june6}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}
-

@@ -1,16 +1,16 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
- 
+    \documentclass[aspectratio=169, handout]{beamer}
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
 
@@ -19,7 +19,7 @@
     \newcommand{\bgColor}{d3cade}      % the color of the background of the slide
     \newcommand{\darkBg}{d4cedb}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -51,7 +51,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -90,7 +90,7 @@
   \pause
   \vspace{5pt}
 
-  We learned that \textbf{only well-typed expressions are evaluated}, and that expressions can 
+  We learned that \textbf{only well-typed expressions are evaluated}, and that expressions can
   exhibit one of three behaviors:
 
   \pause
@@ -115,7 +115,7 @@
   \frametitle{More on types}
 
   There are a few basic types to know in SML.
-  
+
   \pause
   \vspace{10pt}
 
@@ -142,7 +142,7 @@
 
   \tgs
 
-  SML has \term{tuples}, which are just collections of values of 
+  SML has \term{tuples}, which are just collections of values of
   other types.
 
   \pause
@@ -152,7 +152,7 @@
 
   \vspace{5pt}
 
-  \begin{itemize} 
+  \begin{itemize}
     \item \code{(1, 2) : int * int}
     \item \code{(1, "hi") : int * string}
     \item \code{("a", true, 1.0) : string * bool * real}
@@ -184,7 +184,7 @@
   \pause
   \vspace{\fill}
 
-  So for instance, \code{(1, 2, 3) : int * int * int} is a valid tuple, but so is 
+  So for instance, \code{(1, 2, 3) : int * int * int} is a valid tuple, but so is
   \code{(1, (2, 3)) : int * (int * int)}. These are different values!
 
   \vspace{5pt}
@@ -198,7 +198,7 @@
 \begin{frame}[fragile]
   \frametitle{Functions}
 
-  Similarly to how we can use \code{*} to make tuple types out of other types, we can use \code{->} to make 
+  Similarly to how we can use \code{*} to make tuple types out of other types, we can use \code{->} to make
   function types out of other types.
 
   \vspace{5pt}
@@ -227,7 +227,7 @@
   \pause
   \vspace{\fill}
 
-  We write \code{fn (x : int) => x + 1} for the function which takes in an int, and adds one to it. 
+  We write \code{fn (x : int) => x + 1} for the function which takes in an int, and adds one to it.
   We call this a \term{lambda expression}.
 
   \pause
@@ -261,7 +261,7 @@
   \vspace{\fill}
 
   This means that they can be bound to variables like any other value! So while we earlier
-  wrote 
+  wrote
   \begin{codeblock}
     fun double (n : int) : int = n + n
   \end{codeblock}
@@ -284,14 +284,14 @@
 \begin{frame}[fragile]
   \frametitle{Lambdas Aren't Recursive}
 
-  Suppose I wanted to declare the \code{fact} function using a lambda expression. 
+  Suppose I wanted to declare the \code{fact} function using a lambda expression.
 
   \pause
   \vspace{\fill}
 
   I might write something like:
   \begin{codeblock}
-    fn (n : int) => 
+    fn (n : int) =>
       if n = 0 then 1
       else (* ??? *)
   \end{codeblock}
@@ -315,34 +315,32 @@
   \pause
   \vspace{5pt}
 
-  SML is an \term{eagerly evaluated} language, meaning that arguments to functions are 
+  SML is an \term{eagerly evaluated} language, meaning that arguments to functions are
   \textbf{always} reduced to values, before the function can be called.
 
   \pause
   \vspace{\fill}
 
   Consider the expression \code{(fn (x : int * int) => 150) (1 + 1, 3 * 4)}
+
   \pause
   \begin{align*}
-    & \code{(fn (x : int * int) => 150) (1 + 1, 3 * 4)} \\ 
+    & \code{(fn (x : int * int) => 150) (1 + 1, 3 * 4)} \\
     & \stepsTo \code{(fn (x : int * int) => 150) (2, 3 * 4)} & \tag{def of \code{+}}\\
     & \stepsTo \code{(fn (x : int * int) => 150) (2, 12)} & \tag{def of \code{*}}\\
     & \stepsTo \code{150} & \tag{function application}
   \end{align*}
-  \begin{align*}
-    \code{(fn (x : int * int) => 150) (1 + 1, 3 * 4)} \stepsTo 1 + fact \\ 
 
-  \end{align*}
   \pause
-  Note that, when stepping expressions like this, usually we will want 
-  to cite a \textbf{justification} for each step to the right of the 
+  Note that, when stepping expressions like this, usually we will want
+  to cite a \textbf{justification} for each step to the right of the
   newly-obtained expression. You should do this on your homework too.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Stepping into a Function}
 
-  We glossed over this in the previous lecture, but when we 
+  We glossed over this in the previous lecture, but when we
   apply a function, it's with the goal of stepping into the
   \term{function body}.
 
@@ -353,14 +351,14 @@
   that the function should evaluate to, given arguments.}
 
   \vspace{\fill}
-  
-  So for instance, in \code{fn (n : int) => n + n}, the 
+
+  So for instance, in \code{fn (n : int) => n + n}, the
   body is the expression \code{n + n}.
 
   \pause
   \vspace{\fill}
 
-  When the arguments to a function are values, we can then 
+  When the arguments to a function are values, we can then
   \term{substitute} those values for the function's arguments,
   within its body. This produces \term{bindings}.
 \end{frame}
@@ -375,13 +373,13 @@
   \pause
   \vspace{\fill}
 
-  The syntax: 
+  The syntax:
 
   \begin{codeblock}
     val x : int = 2
   \end{codeblock}
 
-  \textbf{binds} the value \code{2} to the variable \code{x}. 
+  \textbf{binds} the value \code{2} to the variable \code{x}.
 
   \pause
   \vspace{\fill}
@@ -398,27 +396,27 @@
 \begin{frame}[fragile]
   \frametitle{Binding vs. Assignment}
 
-  The easy way to see how binding differs from assignment is to consider 
+  The easy way to see how binding differs from assignment is to consider
   the following code:
 
   \pause
   \vspace{\fill}
 
   \begin{codeblock}
-    val x : int = 2 
+    val x : int = 2
     fun foo (y : int) : int = x + y
-    val x : int = 4 
+    val x : int = 4
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
   After this code, what is the value of \code{foo 1}?
-  
+
   \pause
   \vspace{\fill}
 
-  The imperative answer is \code{5}. 
+  The imperative answer is \code{5}.
 
   \pause
   \vspace{\fill}
@@ -430,15 +428,15 @@
   \frametitle{Binding vs. Assignment}
 
   \begin{codeblock}
-    val x : int = 2 
+    val x : int = 2
     fun foo (y : int) : int = x + y
-    val x : int = 4 
+    val x : int = 4
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  In an imperative language, you \textbf{change the world} by \textbf{reassigning} the 
+  In an imperative language, you \textbf{change the world} by \textbf{reassigning} the
   value of the variable \code{x}.
 
   \vspace{5pt}
@@ -458,13 +456,13 @@
 \begin{frame}[fragile]
   \frametitle{A Binding Analogy}
 
-  Suppose you are named Brandon, and you have a 9-5 job. 
+  Suppose you are named Brandon, and you have a 9-5 job.
 
   \pause
   \vspace{\fill}
 
   Your manager walks in and says "Brandon, your performance
-  has been suffering lately", and walks out. 
+  has been suffering lately", and walks out.
 
   \pause
   \vspace{\fill}
@@ -487,19 +485,19 @@
 \begin{frame}[fragile]
   \frametitle{Environments}
 
-  \defBox{\, The \term{environment} at a particular point in a program is the 
+  \defBox{\, The \term{environment} at a particular point in a program is the
   collection of all currently active bindings.}
 
   \pause
   \vspace{\fill}
 
-  \code{val} bindings and \code{fun} declarations introduce \textbf{new bindings} into 
+  \code{val} bindings and \code{fun} declarations introduce \textbf{new bindings} into
   the environment, and displace old ones. This is called \term{shadowing}.
-  
+
   \pause
   \vspace{5pt}
 
-  When a binding is shadowed, we are no longer in its scope. 
+  When a binding is shadowed, we are no longer in its scope.
 
   \pause
   \vspace{\fill}
@@ -511,7 +509,7 @@
 \begin{frame}[fragile]
   \frametitle{A Trace of Environment}
 
-  Let's look at an example of a trace with environments attached. 
+  Let's look at an example of a trace with environments attached.
 
   \pause
   \vspace{10pt}
@@ -529,10 +527,10 @@
   \vspace{\fill}
 
   \begin{align*}
-    & \code{val x : int = 1} &\text{(results in)} &&[\code{1}/\code{x}] \\ 
-    & \code{val y : int = 1 + x} &\text{(results in)} &&[\code{1}/\code{x}, \code{2}/\code{y}] \\ 
-    & \code{val x : int = 3} &\text{(results in)} &&[\code{3}/\code{x}, \code{2}/\code{y}] \\ 
-    & \code{val z : int = x + y} &\text{(results in)} &&[\code{3}/\code{x}, \code{2}/\code{y}, \code{5}/\code{z}] \\ 
+    & \code{val x : int = 1} &\text{(results in)} &&[\code{1}/\code{x}] \\
+    & \code{val y : int = 1 + x} &\text{(results in)} &&[\code{1}/\code{x}, \code{2}/\code{y}] \\
+    & \code{val x : int = 3} &\text{(results in)} &&[\code{3}/\code{x}, \code{2}/\code{y}] \\
+    & \code{val z : int = x + y} &\text{(results in)} &&[\code{3}/\code{x}, \code{2}/\code{y}, \code{5}/\code{z}] \\
   \end{align*}
 \end{frame}
 
@@ -550,7 +548,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, A function binding is composed of two things, a lambda expression and the 
+  \defBox{\, A function binding is composed of two things, a lambda expression and the
   environment \textbf{at the time of binding}. This is known as a \term{closure}.}
 
   \vspace{5pt}
@@ -572,9 +570,9 @@
   \ptmt
 
   \begin{codeblock}
-    val x : int = 2 
+    val x : int = 2
     fun foo (y : int) : int = x + y
-    val x : int = 4 
+    val x : int = 4
   \end{codeblock}
 
   \pause
@@ -651,7 +649,7 @@
   \vspace{\fill}
 
   For the example we gave above, we used the pattern \code{(x, y)} to \term{deconstruct}
-  the value \code{(1, 2)}, because we knew that the tuple \code{(1, 2)} has two entries. 
+  the value \code{(1, 2)}, because we knew that the tuple \code{(1, 2)} has two entries.
 
   \pause
   \vspace{\fill}
@@ -701,10 +699,10 @@
 
   \begin{itemize}
     \item variables, such as \code{x}, \code{y}, \code{z}. These produce a binding on a successful match.
-    \item the \term{wildcard} pattern, \code{_}. This matches \textbf{all} values, and 
+    \item the \term{wildcard} pattern, \code{_}. This matches \textbf{all} values, and
     produces no binding.
     \item constants, such as \code{1}, \code{"hi"}, and \code{true}
-    \item tuples, where each entry is itself a pattern. For instance, \code{(_, x, 2)} is 
+    \item tuples, where each entry is itself a pattern. For instance, \code{(_, x, 2)} is
     a valid pattern.
   \end{itemize}
 \end{frame}
@@ -716,9 +714,9 @@
 
   \vspace{\fill}
 
-  \begin{codeblock}
+  \begin{lstlisting}[style=15150code, numbers=none, language=sml]
     val <pattern> : <type> = <expr>
-  \end{codeblock}
+  \end{lstlisting}
 
   \pause
   \vspace{\fill}
@@ -736,7 +734,7 @@
   with the program. If the value doesn't match, then an exception will be raised, for instance
   on the binding
   \begin{codeblock}
-    val 2 = 1 (* doesn't match! exception raised *) 
+    val 2 = 1 (* doesn't match! exception raised *)
   \end{codeblock}
 \end{frame}
 
@@ -752,13 +750,13 @@
   \pause
   \vspace{\fill}
 
-  But what if we want functions with more complicated control flow? We might introduce 
+  But what if we want functions with more complicated control flow? We might introduce
   \term{conditionals}.
 
   \begin{codeblock}
     fun isEven (n : int) : bool =
-      if n mod 2 = 0 then true 
-      else false 
+      if n mod 2 = 0 then true
+      else false
   \end{codeblock}
 
   \pause
@@ -783,7 +781,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, The typing rule for if expressions is that for \code{if e1 then e2 else e3} : t 
+  \defBox{\, The typing rule for if expressions is that for \code{if e1 then e2 else e3} : t
   iff \code{e1 : bool}, and \code{e2 : t} and \code{e3 : t}}.
 
   \pause
@@ -799,7 +797,7 @@
   \vspace{\fill}
 
   Depending on if \code{sasquatchIsReal}, we might return an \code{int}, or we might return
-  a \code{string}! This is really bad, because this breaks our whole future-sight of 
+  a \code{string}! This is really bad, because this breaks our whole future-sight of
   type-checking.
 \end{frame}
 
@@ -812,7 +810,7 @@
   \vspace{\fill}
 
   The way that \code{if e1 then e2 else e3} works is that if \code{e1} evaluates to
-  \code{true}, then the whole expression evaluates to \code{e2}. Otherwise, if 
+  \code{true}, then the whole expression evaluates to \code{e2}. Otherwise, if
   \code{e1} evaluates to \code{false}, then the whole expression evaluates to \code{e3}.
 
   \pause
@@ -823,8 +821,8 @@
   \begin{align*}
     \code{isEven 2} &\stepsTo \code{if 2 mod 2 = 0 then true else false} & \tag{def of \code{isEven}} \\
                     &\stepsTo \code{if 0 = 0 then true else false} & \tag{def of \code{mod}} \\
-                    &\stepsTo \code{if true then true else false} & \tag{def of \code{=}} \\ 
-                    &\stepsTo \code{true} & \tag{if expression} 
+                    &\stepsTo \code{if true then true else false} & \tag{def of \code{=}} \\
+                    &\stepsTo \code{true} & \tag{if expression}
   \end{align*}
 
   \pause
@@ -849,8 +847,8 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    fun fact (n : int) : int = 
-      if n = 0 then 1 
+    fun fact (n : int) : int =
+      if n = 0 then 1
       else n * fact (n - 1)
   \end{codeblock}
 
@@ -860,7 +858,7 @@
   Function syntax in SML actually offers a better way of writing certain things. For instance,
   we could write:
   \begin{codeblock}
-    fun fact (0 : int) : int = 1 
+    fun fact (0 : int) : int = 1
       | fact (n : int) : int = n * fact (n - 1)
   \end{codeblock}
 
@@ -877,12 +875,12 @@
 
   \pause
   \vspace{\fill}
-  
-  \begin{codeblock}
-    fun f (<pat1> : <ty1>) : <ty2> = <expr1> 
+
+  \begin{lstlisting}[style=15150code, language=sml, numbers=none]
+    fun f (<pat1> : <ty1>) : <ty2> = <expr1>
       | f (<pat2> : <ty1>) : <ty2> = <expr2>
       ...
-  \end{codeblock}
+  \end{lstlisting}
 
   \pause
   \vspace{\fill}
@@ -905,16 +903,16 @@
   \frametitle{Function Clauses}
 
   Function clauses behave similarly to if expressions, in that
-  they must always return the same type. Otherwise, we might get 
+  they must always return the same type. Otherwise, we might get
   type unsafety.
 
   \pause
   \vspace{\fill}
 
   Writing functions via clauses is generally more powerful than when
-  using if expressions. Pattern matching is a more 
+  using if expressions. Pattern matching is a more
   fundamental notion than conditionals, and we will see in the next
-  lecture what else we can use it for. 
+  lecture what else we can use it for.
 \end{frame}
 
 
@@ -925,7 +923,7 @@
 
   \ptmt
 
-  We have now described the difference between variable binding in SML and 
+  We have now described the difference between variable binding in SML and
   assignment in other languages.
 
   \pause
@@ -937,13 +935,13 @@
   \vspace{\fill}
 
   In the first lecture, we described some of the ideals of a good programming language,
-  and one of them was \textbf{modularity}. We should be able to change a part of a 
-  program without affecting another. 
+  and one of them was \textbf{modularity}. We should be able to change a part of a
+  program without affecting another.
 
   \pause
   \vspace{5pt}
-  
-  Remember that functions in SML are like mathematical functions, they always 
+
+  Remember that functions in SML are like mathematical functions, they always
   give the same outputs for the same inputs (purity).
 
   \pause
@@ -985,7 +983,7 @@
 
   \vspace{\fill}
 
-  So for instance, \code{2 + 2} $\eeq$ \code{4} $\eeq$ \code{1 + 3}. 
+  So for instance, \code{2 + 2} $\eeq$ \code{4} $\eeq$ \code{1 + 3}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1003,7 +1001,7 @@
   \pause
   \vspace{\fill}
 
-  Based on the definition given before, we also know that \code{1 + 1} $\eeq$ 
+  Based on the definition given before, we also know that \code{1 + 1} $\eeq$
   \code{2}. What gives? What's the difference?
 
   \pause
@@ -1052,15 +1050,14 @@
   What this means is that, whenever you are deciding which to use, know
   that you can't freely go from one to another! If you know equivalence,
   you don't necessarily know reduction. You need to take care to make sure
-  you use the right notation\footnotemark.
-
-  \footnotetext[1]{There is at least one homework problem in this class
+  you use the right notation.\footnote{There is at least one homework problem in this class
   where the distinction is important.}
+
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{A Picture of Evaluation}
-  
+
   \makebox[\textwidth][c]{
     \begin{tikzpicture}
       \node[] (E1) at (-4.5,5) {\textellipsis};
@@ -1108,10 +1105,9 @@
 
   \vspace{\fill}
 
-  Every node\footnotemark in this graph is extensionally equivalent, but reduction 
-  only flows one way!
+  Every node\footnote{If you want to sound really fancy, say "lattice".} in this
+  graph is extensionally equivalent, but reduction only flows one way!
 
-  \footnotetext[2]{If you want to sound really fancy, say "lattice".}
 \end{frame}
 
 
@@ -1126,8 +1122,8 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, \term{Referential Transparency} - If \code{e1} $\eeq$ \code{e2}, then 
-  replacing \code{e1} with \code{e2} anywhere in a program will produce an extensionally 
+  \defBox{\, \term{Referential Transparency} - If \code{e1} $\eeq$ \code{e2}, then
+  replacing \code{e1} with \code{e2} anywhere in a program will produce an extensionally
   equivalent program.
   }
 
@@ -1136,7 +1132,7 @@
 
   So for instance, you could replace \code{2 + 2} with \code{1 + 3} anywhere, and always
   be assured that program behavior \textbf{will not change}.
-  
+
   \pause
   \vspace{5pt}
 
@@ -1145,7 +1141,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{\, This is the foundation of \textbf{equational reasoning}, which lets us 
+  \noteBox{\, This is the foundation of \textbf{equational reasoning}, which lets us
   reason about code like we would reason about math.}
 \end{frame}
 
@@ -1153,8 +1149,8 @@
   \frametitle{The Refactoring Lemma}
 
   Another way to think of referential transparency is as the
-  \textbf{refactoring lemma}. Refactoring is easy, safe, and 
-  mathematically guaranteed. 
+  \textbf{refactoring lemma}. Refactoring is easy, safe, and
+  mathematically guaranteed.
 
   \pause
   \vspace{\fill}
@@ -1162,16 +1158,16 @@
   For instance, suppose that you are the engineering manager at a large
   tech firm named after a red fruit that grows on apple trees. You
   hire an intern for the summer, and you review their first PR, and you
-  see: 
+  see:
 
   \pause
   \begin{codeblock}
     if flagIsSet then (
-      flagisSet andalso ( 
+      flagisSet andalso (
         if permissionsGranted then
           true
         else
-          permissionsGranted 
+          permissionsGranted
       )
     ) else false
   \end{codeblock}
@@ -1191,21 +1187,21 @@
   \vspace{\fill}
 
   For instance, if we are within the \code{then} branch of
-  an if expression, we know that the expression we cased on 
+  an if expression, we know that the expression we cased on
   must be equivalent to \code{true}. The same is true for
   the \code{else} branch and \code{false}.
-   
+
   \vspace{\fill}
 
   Let's do some refactoring based on equivalences:
   \pause
   \begin{codeblock}
     if flagIsSet then (
-      true andalso ( 
+      true andalso (
         if permissionsGranted then
           true
         else
-          false 
+          false
       )
     ) else false
   \end{codeblock}
@@ -1225,7 +1221,7 @@
       if permissionsGranted then
         true
       else
-        false 
+        false
     ) else false
   \end{codeblock}
 \end{frame}
@@ -1286,7 +1282,7 @@
   \pause
   \vspace{\fill}
 
-  It's now hard to tell, because these lambda expressions are values, but it's not obvious 
+  It's now hard to tell, because these lambda expressions are values, but it's not obvious
   if they are extensionally equivalent or not.
 \end{frame}
 
@@ -1308,7 +1304,7 @@
 
   \pause
   \vspace{\fill}
-  
+
   \noteBox{\, We specified that \code{f x} $\eeq$ \code{g x}, not that \code{f x} and \code{g x}
   reduce to the same value. Why?}
 \end{frame}
@@ -1328,7 +1324,7 @@
   \vspace{5pt}
 
   \textbf{SML functions can be partial}, that is, undefined on some input. There may be \code{f}
-  and \code{x} such that there is no \code{v} where \code{f x} $\hookrightarrow$ \code{v}.  
+  and \code{x} such that there is no \code{v} where \code{f x} $\hookrightarrow$ \code{v}.
 
   \pause
   \vspace{\fill}
@@ -1352,11 +1348,11 @@
 
   In particular, for functions, we are interested in writing \textbf{descriptive} code,
   that accurately reflects the function's behavior.
-  
+
   \pause
   \vspace{5pt}
 
-  To that end, it is helpful to write alongside a function the conditions which 
+  To that end, it is helpful to write alongside a function the conditions which
   must be true \textbf{prior} to calling the function, and must be true \textbf{after}
   calling the function.
 
@@ -1366,14 +1362,14 @@
   \begin{codeblock}
     (* REQUIRES: x is not 0 *)
     (* ENSURES: divide x is total *)
-    fun divide (x : int) : int = 2 div x 
+    fun divide (x : int) : int = 2 div x
   \end{codeblock}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{The Specification of Specification}
 
-  In this class, our way of writing specifications will follow the 
+  In this class, our way of writing specifications will follow the
   five-step methodology.
 
   \pause
@@ -1397,14 +1393,14 @@
 \begin{frame}[fragile]
   \frametitle{Specification, pt. 2}
 
-  We use comments in the form of \code{REQUIRES} and \code{ENSURES} to describe 
-  what must be true of the inputs the function receives, and what then is guaranteed 
-  to hold of the function's behavior. 
+  We use comments in the form of \code{REQUIRES} and \code{ENSURES} to describe
+  what must be true of the inputs the function receives, and what then is guaranteed
+  to hold of the function's behavior.
 
   \pause
   \vspace{\fill}
 
-  It is often unrealistic to have a function which has meaning on \textit{every} possible 
+  It is often unrealistic to have a function which has meaning on \textit{every} possible
   input (like \code{div}, or square root, or logarithm). The \code{REQUIRES} helps to
   describe the range of "relevant inputs", and the \code{ENSURES} helps to describe
   what the function does.
@@ -1417,26 +1413,34 @@
   \begin{itemize}
     \item this function must be called with only safe values, \pause
     \item this library can only be invoked in single-threaded programs, \pause
-    \item this API is not guaranteed to work with non-ASCII characters \pause 
+    \item this API is not guaranteed to work with non-ASCII characters \pause
   \end{itemize}
 
   \vspace{\fill}
 
   It is important that code is documented so users and maintainers know pertinent
-  information about it! 
+  information about it!
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Specification, pt. 3}
 
-  The last piece of the formula is writing tests.\footnotemark
+  The last piece of the formula is writing tests.\footnote{
+    There's a lot I could say here about the importance
+    of writing tests. Test-driven development is a real thing, and especially
+    in imperative languages, it's very important to have a solid backbone
+    of tests to make sure you don't accidentally regress behavior when
+    introducing a small change. However, this is a class on functional
+    programming, and not software engineering, so I'll decline to comment
+    for now.\footnotemark
+  }
 
   \pause
   \vspace{\fill}
 
   In this class, we will use a 150-specific testing framework, where
   we write something like:
-  
+
   \begin{codeblock}
     val () = Test.int ("test1", 2 + 2, 1 + 3)
   \end{codeblock}
@@ -1447,14 +1451,6 @@
 
   \noteBox{\, I realize writing tests sucks. So does life, sometimes.}
 
-  \footnotetext[3]{There's a lot I could say here about the importance
-  of writing tests. Test-driven development is a real thing, and especially
-  in imperative languages, it's very important to have a solid backbone
-  of tests to make sure you don't accidentally regress behavior when 
-  introducing a small change. However, this is a class on functional
-  programming, and not software engineering, so I'll decline to comment
-  for now.\footnotemark}
-
   \footnotetext[4]{This is a really long footnote.}
 \end{frame}
 
@@ -1462,7 +1458,7 @@
   \frametitle{Back to Fact}
 
   Now that we have all these tools for mathematically analyzing
-  code, let's look at a specific example. Let's take the factorial 
+  code, let's look at a specific example. Let's take the factorial
   function that we wrote earlier.
 
   \vspace{\fill}
@@ -1492,7 +1488,7 @@
   \vspace{\fill}
 
   But for our intents and purposes, we don't really
-  care about what \code{fact} does on negative inputs, anyways. So 
+  care about what \code{fact} does on negative inputs, anyways. So
   let's restrict our domain of interest to strictly non-negative
   numbers.
 
@@ -1508,10 +1504,27 @@
   \end{codeblock}
 
   \pause
-  \customBox{Lesson}{\, Oftentimes, we are interested in only a 
+  \customBox{Lesson}{\, Oftentimes, we are interested in only a
   subset of the domain of a function, and we only get to
   make interesting claims about its behavior when we restrict
   our attention to it.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Remark: Slide Notation}
+
+  Instead of putting specifications in comments above the code, when
+  writing code within these slides, they will often be conveyed via
+  specification blocks.
+
+  \vspace{\fill}
+
+  For instance, for the \code{fact} function, I would instead write:
+  \spec
+    {fact}
+    {int -> int}
+    {\code{n >= 0}}
+    {\code{fact n} evaluates to $n!$}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1536,16 +1549,17 @@
   and \term{types}. We will develop this more in the future.
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    Post-lecture survey: \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_may18}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     Post-lecture survey: \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_may18}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 
 \end{document}
-

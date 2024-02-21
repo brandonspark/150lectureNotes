@@ -2,24 +2,24 @@
 
 % DOCUMENT CLASS AND PACKAGE USE
     \documentclass[aspectratio=169, handout]{beamer}
- 
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{039c1a}     % the color of note boxes and stuff
     \newcommand{\presentColor}{E45535} % the primary color of the slide borders
     \newcommand{\bgColor}{e3f3ff}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -53,7 +53,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -89,7 +89,7 @@
 \begin{frame}[fragile]
   \frametitle{Last time}
 
-  Last time, we discussed the \term{tree method} and how it can be used to 
+  Last time, we discussed the \term{tree method} and how it can be used to
   solve more difficult recurrences, that make multiple recursive calls.
 
   \pause
@@ -125,10 +125,10 @@
   \pause
   \vspace{\fill}
 
-  If we did that, however, we would need to redo every lecture that we've done 
+  If we did that, however, we would need to redo every lecture that we've done
   up to this point, because everything we've discovered has only been for the type
   \code{int}! If only there were some way of doing things in a generic way, for
-  any type. 
+  any type.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -138,7 +138,7 @@
 
   \pause
   \begin{codeblock}
-    fun length ([] : int list) : int = 0 
+    fun length ([] : int list) : int = 0
       | length (x::xs) = 1 + length xs
   \end{codeblock}
 
@@ -150,7 +150,7 @@
 
   \pause
   \begin{codeblock}
-    fun length ([] : int list) : int = 0 
+    fun length ([] : int list) : int = 0
       | length (_::xs) = 1 + length xs
   \end{codeblock}
 
@@ -163,14 +163,14 @@
   \tgs
 
   We have been type annotating our code the entire semester. In keeping with
-  our Big Idea that \term{Types Guide Structure}, we want to make sure that 
+  our Big Idea that \term{Types Guide Structure}, we want to make sure that
   the structure of our code is easily described via types.
 
   \pause
   \vspace{\fill}
-  
-  This is often a lot of work, however! We know that SML is able to automatically 
-  determine whether an expression is ill-typed -- that is, if there types are 
+
+  This is often a lot of work, however! We know that SML is able to automatically
+  determine whether an expression is ill-typed -- that is, if there types are
   used in a contradictory way. Is SML also able to determine the type of programs
   automatically?
 
@@ -185,17 +185,17 @@
 
   SML performs \term{type inference}, which is the automatic derivation of
   types for all expressions. When this process fails, the program is rejected
-  as ill-typed.\footnotemark
+  as ill-typed.\footnote{
+    You might say that the SML type system has type \code{expression -> typ option}.
+  }
 
   \pause
   \vspace{\fill}
 
-  The type inference algorithm is basically a straightforward recursive 
+  The type inference algorithm is basically a straightforward recursive
   algorithm on an expression. When we encounter a function that we know to have
   a certain type, we assume that it type-checks, and then recurse to see
-  if there are any contradictions. 
-
-  \footnotetext[1]{You might say that the SML type system has type \code{expression -> typ option}}.
+  if there are any contradictions.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -208,15 +208,15 @@
 
   Since this is just the application of a function \code{+ : int * int -> int},
   we assume it has type \code{int}.
-  
+
   \pause
   \vspace{\fill}
-  
+
   We then check whether \code{2 : int}, which it does, so no contradiction.
-  
+
   \pause
   \vspace{\fill}
-  
+
   We then check whether \code{3 : int}, which it does, so no contradiction.
 
   \pause
@@ -265,7 +265,7 @@
   \vspace{\fill}
 
   Here, we again assign \code{x} an unknown type, and then proceed
-  to type-check the body of the function. We see the expression 
+  to type-check the body of the function. We see the expression
   \code{x + 1}, and by the same reasoning as earlier, conclude that
   \code{x : int}.
 
@@ -274,18 +274,18 @@
 
   However, we then type-check \code{x ^ "1"}, and conclude that,
   since \code{^ : string * string -> string}, it must be the case
-  that \code{x : string}. This is a contradiction, because we 
+  that \code{x : string}. This is a contradiction, because we
   previously concluded \code{x : int}! So type-checking fails.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Type Inference: Ambiguity}
 
-  The previous example showed an expression that was ill-typed, 
-  due to too much information being specified. We added enough 
+  The previous example showed an expression that was ill-typed,
+  due to too much information being specified. We added enough
   constraints onto the type of \code{x} that we couldn't possibly
   satisfy them all!
-  
+
   \pause
   \vspace{\fill}
 
@@ -313,7 +313,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, A \term{type variable} is the type given to an expression
+  \defBox{ A \term{type variable} is the type given to an expression
   whose type is not known. The role of the type inference algorithm is
   to solve for what that type variable's type should be.}
 
@@ -335,13 +335,13 @@
   \pause
   \vspace{\fill}
 
-  Before, we asked about what the type of \code{fn x => x} is. Here, we enforce 
+  Before, we asked about what the type of \code{fn x => x} is. Here, we enforce
   \textbf{zero constraints} on the type of \code{x}, so its type remains the same
   as it was originally initialized to, which is a type variable, in this case \code{'a}.
 
   \pause
   \vspace{\fill}
-  
+
   So we say that this function has type \code{'a -> 'a} (or "alpha to alpha").
 \end{frame}
 
@@ -358,14 +358,14 @@
 
   \pause
   \vspace{\fill}
-  
-  \defBox{\, We say that an expression has a \term{polymorphic type} if it has a
+
+  \defBox{ We say that an expression has a \term{polymorphic type} if it has a
   type that contains type variables.}
 
   \pause
   \vspace{\fill}
 
-  Another name for the function we just defined, \code{fn x => x}, is the 
+  Another name for the function we just defined, \code{fn x => x}, is the
   \term{identity function}. It is a polymorphic function.
 \end{frame}
 
@@ -382,9 +382,9 @@
     fun identityInt (x : int) : int = x
   \end{codeblock}
 
-  and we would only be able to use it like \code{identityInt 150}, but 
+  and we would only be able to use it like \code{identityInt 150}, but
   \code{identityInt "hi"} would be ill-typed.
-  
+
   \pause
   \vspace{\fill}
 
@@ -401,15 +401,15 @@
 \begin{frame}[fragile]
   \frametitle{Code Reuse}
 
-  The key observation is that the actual \textbf{contents} of the function 
+  The key observation is that the actual \textbf{contents} of the function
   are the same. They all look like some form of \code{fn x => x}.
 
   \pause
   \vspace{\fill}
 
   So why should we need to restate this definition for every single type? We
-  should be able to use the actual code that we wrote, irrespective of 
-  type annotation, if the \textbf{meaning} of the code is agnostic to type.  
+  should be able to use the actual code that we wrote, irrespective of
+  type annotation, if the \textbf{meaning} of the code is agnostic to type.
 
   \pause
   \vspace{\fill}
@@ -421,7 +421,7 @@
 \begin{frame}[fragile]
   \frametitle{Parametric Polymorphism}
 
-  \defBox{\, We say a type is \term{parametrically polymorphic} if it is 
+  \defBox{ We say a type is \term{parametrically polymorphic} if it is
   parameterized by one or more type variables, which are instantiated at
   a later time by substitution.}
 
@@ -445,55 +445,55 @@
 \begin{frame}[fragile]
   \frametitle{Generic Code}
 
-  This allows a notion of \term{generic} code, which is code that can be 
-  used generically in its type!\footnotemark Essentially, the type 
+  This allows a notion of \term{generic} code, which is code that can be
+  used generically in its type!\footnote{
+    Some languages actually do call this "generics".
+  } Essentially, the type
   \code{'a -> 'a} means "for all types \code{a}, \code{a -> a}".
 
   \pause
   \vspace{\fill}
 
   In the previous example, \code{identity} is bound to a generic type, meaning
-  that it can be instantiated concretely as \code{int -> int} in the RHS of 
-  the binding to \code{x}, and as \code{string -> string} in the other case. 
+  that it can be instantiated concretely as \code{int -> int} in the RHS of
+  the binding to \code{x}, and as \code{string -> string} in the other case.
 
   \pause
   \vspace{\fill}
 
   In this case, we would call the two calls to \code{identity} as different
-  instances of the same function. They are concrete cases of a general 
+  instances of the same function. They are concrete cases of a general
   function template, known as \code{identity}.
- 
-  \footnotetext[2]{Some languages actually do call this "generics".}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Let-polymorphism}
 
-  The specific kind of polymorphism employed by SML is known as \term{let-polymorphism}.\footnotemark
+  The specific kind of polymorphism employed by SML is known as \term{let-polymorphism}.\footnote{
+    It's not really important to know why it's called this.
+  }
 
   \pause
   \vspace{\fill}
 
-  \defBox{\, \term{Let-polymorphism} means that values can only be \textbf{generalized} as 
+  \defBox{ \term{Let-polymorphism} means that values can only be \textbf{generalized} as
   polymorphic after their declaration site.}
 
   \pause
   \vspace{\fill}
 
-  This doesn't really come up, but this can happen if you're expecting a 
+  This doesn't really come up, but this can happen if you're expecting a
   function to be polymorphic \textit{while you're defining it!}
-
-  \footnotetext[3]{It's not really important to know why it's called this.}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Let-polymorphism}
 
-  For instance, this function fails to be polymorphic: 
+  For instance, this function fails to be polymorphic:
   \pause
   \begin{codeblock}
     fun identity x =
-      let 
+      let
         val _ = identity 5
       in
         x
@@ -505,21 +505,21 @@
 
   Even though it seems like it "should" still be polymorphic, the use of \code{identity}
   concretely within its own definition causes it to be typed at \code{int -> int}. It
-  is only after a function is defined, that it is able to be used generically. 
+  is only after a function is defined, that it is able to be used generically.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{More Generic Functions}
 
   The identity function is kind of a contrived example, however. We don't use it that
-  often.\footnotemark
+  often.\footnote{Yet.}
 
   \pause
   \vspace{\fill}
 
   As we alluded to earlier, the \code{length} function we wrote needed not be specified
   at any particular type, because we never actually look at any of the elements of
-  the list! We could indeed write: 
+  the list! We could indeed write:
 
   \pause
   \vspace{\fill}
@@ -530,8 +530,6 @@
   \end{codeblock}
 
   and obtain \code{length : 'a list -> int}.
-
-  \footnotetext[4]{Yet.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -544,20 +542,20 @@
   \vspace{\fill}
 
   We can try to do it ourselves. Suppose we have the following function:
-  
+
   \pause
   \begin{codeblock}
-    fun foo (a, b, c, d) = 
-      if a then 
+    fun foo (a, b, c, d) =
+      if a then
         (b + 1, c)
       else
-        d () 
+        d ()
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  How are we going to determine the type of this function? First, we 
+  How are we going to determine the type of this function? First, we
   start off with all of the types of our arguments as unknowns.
 \end{frame}
 
@@ -565,19 +563,19 @@
   \frametitle{Polymorphic Playtime}
 
   \begin{codeblock}
-    fun foo (a, b, c, d) = 
-      if a then 
+    fun foo (a, b, c, d) =
+      if a then
         (b + 1, c)
       else
-        d () 
+        d ()
   \end{codeblock}
 
   \vspace{-0.5cm}
   \hspace{2in}
     \begin{align*}
-     \code{a} \, & \mapsto \, \code{'a} \\ 
-     \code{b} \, & \mapsto \, \code{'b} \\ 
-     \code{c} \, & \mapsto \, \code{'c} \\ 
+     \code{a} \, & \mapsto \, \code{'a} \\
+     \code{b} \, & \mapsto \, \code{'b} \\
+     \code{c} \, & \mapsto \, \code{'c} \\
      \code{d} \, & \mapsto \, \code{'d}
     \end{align*}
 
@@ -592,19 +590,19 @@
   \frametitle{Polymorphic Playtime}
 
   \begin{codeblock}
-    fun foo (a, b, c, d) = 
-      if a then 
+    fun foo (a, b, c, d) =
+      if a then
         (b + 1, c)
       else
-        d () 
+        d ()
   \end{codeblock}
 
   \vspace{-0.5cm}
   \hspace{2in}
     \begin{align*}
-     \code{a} \, & \mapsto \, \mathrlap{\colorbox{yellow!20!white}{\code{bool}}}\phantom{\code{bool}} \\ 
-     \code{b} \, & \mapsto \, \code{'b} \\ 
-     \code{c} \, & \mapsto \, \code{'c} \\ 
+     \code{a} \, & \mapsto \, \mathrlap{\colorbox{yellow!20!white}{\code{bool}}}\phantom{\code{bool}} \\
+     \code{b} \, & \mapsto \, \code{'b} \\
+     \code{c} \, & \mapsto \, \code{'c} \\
      \code{d} \, & \mapsto \, \code{'d}
     \end{align*}
 
@@ -619,20 +617,20 @@
   \frametitle{Polymorphic Playtime}
 
   \begin{codeblock}
-    fun foo (a, b, c, d) = 
-      if a then 
+    fun foo (a, b, c, d) =
+      if a then
         (b + 1, c)
       else
-        d () 
+        d ()
   \end{codeblock}
 
   \vspace{-0.5cm}
   \hspace{2in}
     \begin{align*}
-     \code{a} \, & \mapsto \, \code{bool} \\ 
-     \code{b} \, & \mapsto \, \mathrlap{\colorbox{yellow!20!white}{\code{int}}}\phantom{\code{int}} \\ 
-     \code{c} \, & \mapsto \, \code{'c} \\ 
-     \code{d} \, & \mapsto \, \code{'d} 
+     \code{a} \, & \mapsto \, \code{bool} \\
+     \code{b} \, & \mapsto \, \mathrlap{\colorbox{yellow!20!white}{\code{int}}}\phantom{\code{int}} \\
+     \code{c} \, & \mapsto \, \code{'c} \\
+     \code{d} \, & \mapsto \, \code{'d}
     \end{align*}
 
   \pause
@@ -647,19 +645,19 @@
   \frametitle{Polymorphic Playtime}
 
   \begin{codeblock}
-    fun foo (a, b, c, d) = 
-      if a then 
+    fun foo (a, b, c, d) =
+      if a then
         (b + 1, c)
       else
-        d () 
+        d ()
   \end{codeblock}
 
   \vspace{-0.5cm}
   \hspace{2in}
     \begin{align*}
-     \code{a} \, & \mapsto \, \code{bool} \\ 
-     \code{b} \, & \mapsto \, \code{int} \\ 
-     \code{c} \, & \mapsto \, \code{'c} \\ 
+     \code{a} \, & \mapsto \, \code{bool} \\
+     \code{b} \, & \mapsto \, \code{int} \\
+     \code{c} \, & \mapsto \, \code{'c} \\
      \code{d} \, & \mapsto \, \mathrlap{\colorbox{yellow!20!white}{\code{unit -> 'e}}}\phantom{\code{unit -> 'e}}
     \end{align*}
 
@@ -675,19 +673,19 @@
   \frametitle{Polymorphic Playtime}
 
   \begin{codeblock}
-    fun foo (a, b, c, d) = 
-      if a then 
+    fun foo (a, b, c, d) =
+      if a then
         (b + 1, c)
       else
-        d () 
+        d ()
   \end{codeblock}
 
   \vspace{-0.5cm}
   \hspace{2in}
     \begin{align*}
-     \code{a} \, & \mapsto \, \code{bool} \\ 
-     \code{b} \, & \mapsto \, \code{int} \\ 
-     \code{c} \, & \mapsto \, \code{'c} \\ 
+     \code{a} \, & \mapsto \, \code{bool} \\
+     \code{b} \, & \mapsto \, \code{int} \\
+     \code{c} \, & \mapsto \, \code{'c} \\
      \code{d} \, & \mapsto \, \mathrlap{\colorbox{yellow!20!white}{\code{unit -> int * 'c}}}\phantom{\code{unit -> int * 'c}}
     \end{align*}
 
@@ -695,10 +693,8 @@
   \vspace{\fill}
 
   Finally, this is also the return type of the function, so the ultimate type of
-  our function is 
-  \code{bool * int * 'c * (unit -> int * 'c) -> int * 'c}.\footnotemark 
-
-  \footnotetext[5]{A very useful type.}
+  our function is
+  \code{bool * int * 'c * (unit -> int * 'c) -> int * 'c}.\footnote{A very useful type.}
 \end{frame}
 
 \quizBreak{\textlangle obfuscated\textrangle}
@@ -708,37 +704,37 @@
 \begin{frame}[fragile]
   \frametitle{More Parametricity}
 
-  We have seen that we can have types such as \code{'a -> 'a} and 
-  \code{'a list -> int}, which rely on type variables. These are polymorphic types 
+  We have seen that we can have types such as \code{'a -> 'a} and
+  \code{'a list -> int}, which rely on type variables. These are polymorphic types
   that are "pre-existing", in the sense that we did not need to define the types
   of \code{list}, or the \code{->} type constructor.
 
   \pause
   \vspace{\fill}
-  
+
   We can also define our own types that are parameterized by other types!
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Parameterized Datatypes}
-  
+
   \tgs
 
-  \defBox{\, A \term{parameterized datatype} is a datatype declared with
+  \defBox{ A \term{parameterized datatype} is a datatype declared with
   a \term{type parameter}. This defines many types, which accept a type
   as an input.}
-  
+
   \pause
   \vspace{\fill}
 
-  \noteBox{\, The \code{list} and \code{option} datatypes as discussed
+  \noteBox{ The \code{list} and \code{option} datatypes as discussed
   earlier in the course are examples of parameterized datatypes!}
 
   \pause
   \vspace{\fill}
 
-  This is the reason why lists and options can contain values of any 
-  type. 
+  This is the reason why lists and options can contain values of any
+  type.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -763,7 +759,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{\, The two uses of \code{'a} in the type of \code{::} are the same!
+  \noteBox{ The two uses of \code{'a} in the type of \code{::} are the same!
   This means it is still invalid to write \code{2::[true]}, because \code{2 : int}
   and \code{[true] : bool list}.}
 \end{frame}
@@ -779,14 +775,14 @@
 
   Previously, we had to say things like:
 
-  \defBox{}{\, For any type \code{t}, \code{[] : t list}, and \code{:: : t * t list -> t list}}.
+  \defBox{}{ For any type \code{t}, \code{[] : t list}, and \code{:: : t * t list -> t list}}.
 
   \pause
   \vspace{\fill}
 
   This quantification around the type of the list's elements, \code{t}, was all
   due to the type variable in the types of \code{[]} and \code{::}. In reality,
-  what we could have just said was that \code{[] : 'a list}, and 
+  what we could have just said was that \code{[] : 'a list}, and
   \code{:: : 'a * 'a list -> 'a list}.
 
 \end{frame}
@@ -801,7 +797,7 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree 
+    datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree
   \end{codeblock}
 
   \pause
@@ -809,10 +805,10 @@
 
   Now, we can have:
   \begin{itemize}
-    \item \code{Empty : 'a tree}  
-    \item \code{Node (Empty, 5, Empty) : int tree}  
-    \item \code{Node (Empty, "hi", Empty) : string tree}  
-    \item \code{Node (Empty, Empty, Empty) : 'a tree tree}  
+    \item \code{Empty : 'a tree}
+    \item \code{Node (Empty, 5, Empty) : int tree}
+    \item \code{Node (Empty, "hi", Empty) : string tree}
+    \item \code{Node (Empty, Empty, Empty) : 'a tree tree}
   \end{itemize}
 \end{frame}
 
@@ -845,7 +841,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{}{\, What the future looks like, now that we can put strings in trees.}
+  \noteBox{}{ What the future looks like, now that we can put strings in trees.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -884,9 +880,9 @@
   \pause
   \vspace{\fill}
 
-  For instance, what is the type of \code{[]}? We don't have enough information 
+  For instance, what is the type of \code{[]}? We don't have enough information
   to constrain it either way, so the type is just \code{'a list}. This means that
-  we could write the following code: 
+  we could write the following code:
 
   \pause
   \vspace{\fill}
@@ -898,31 +894,31 @@
   \end{codeblock}
 
   \pause
-  The two instances of \code{l} are instantiated at \code{int list} and 
+  The two instances of \code{l} are instantiated at \code{int list} and
   \code{string list}, respectively!
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Generic Types}
 
-  It is now no longer true that each expression has only one type. 
+  It is now no longer true that each expression has only one type.
 
   \pause
   \vspace{\fill}
 
-  For certain expressions like \code{fn x => x}, it could be 
+  For certain expressions like \code{fn x => x}, it could be
   interpreted to have multiple types, such as \code{int -> int}, or \code{'a -> 'a}.
 
   \pause
   \vspace{\fill}
 
-  To explain away this ambiguity, we will revise our interest in types to be 
+  To explain away this ambiguity, we will revise our interest in types to be
   for the \term{most general type} for an expression.
 
   \pause
   \vspace{\fill}
 
-  \defBox{\, The \term{most general type} for an expression is the type that every
+  \defBox{ The \term{most general type} for an expression is the type that every
   other type for that expression is an instance of.}
 \end{frame}
 
@@ -930,12 +926,12 @@
   \frametitle{Type Instances}
 
   We spoke briefly on how different calls to \code{identity} were instances of
-  the main declaration. We also define a concept of \term{instances} on types. 
-  
+  the main declaration. We also define a concept of \term{instances} on types.
+
   \pause
   \vspace{\fill}
 
-  \defBox{\, A type \code{t1} is an \term{instance} of type \code{t2} if 
+  \defBox{ A type \code{t1} is an \term{instance} of type \code{t2} if
   \code{t1} can be obtained from \code{t2} by substituting for some type variables.}
 
   \pause
@@ -943,10 +939,10 @@
 
   So here are some examples:
   \begin{itemize}
-    \item \code{int} is an instance of \code{'a} 
-    \item \code{int list} is an instance of \code{'a list} 
-    \item \code{int * int} is an instance of \code{'a * 'b} 
-    \item \code{int * bool} is an instance of \code{'a * 'b} 
+    \item \code{int} is an instance of \code{'a}
+    \item \code{int list} is an instance of \code{'a list}
+    \item \code{int * int} is an instance of \code{'a * 'b}
+    \item \code{int * bool} is an instance of \code{'a * 'b}
     \item \code{'b * 'c} is an instance of \code{'a}
     \item \code{'a list list} is an instance of \code{'a list}
   \end{itemize}
@@ -1000,7 +996,7 @@
   \pause
   \vspace{\fill}
 
-  Note that only the type \code{bool * 'b} has further instances, because 
+  Note that only the type \code{bool * 'b} has further instances, because
   it's the only one with a remaining type variable.
 
   \pause
@@ -1015,9 +1011,9 @@
   \frametitle{Most General Types}
 
   So we see that the MGT of \code{length} is \code{'a list -> int},
-  because while it can be typed as \code{int list -> int}, and 
-  \code{string list -> int}, among others, they are all just instances 
-  of the type \code{'a list -> int}. 
+  because while it can be typed as \code{int list -> int}, and
+  \code{string list -> int}, among others, they are all just instances
+  of the type \code{'a list -> int}.
 
   \pause
   \vspace{\fill}
@@ -1029,8 +1025,8 @@
   \vspace{\fill}
 
   \badBox{}{\, Be careful not to confuse being an \term{instance} of a type with
-  a \term{most general type}. All types are instances of \code{'a}, but most 
-  expressions do not have MGT \code{'a}. 
+  a \term{most general type}. All types are instances of \code{'a}, but most
+  expressions do not have MGT \code{'a}.
   }
 \end{frame}
 
@@ -1042,7 +1038,7 @@
   \pause
   \vspace{\fill}
 
-  \thmBox{}{ \code{length (L @ R)} $\eeq$ \code{length L + length R} } 
+  \thmBox{}{ \code{length (L @ R)} $\eeq$ \code{length L + length R} }
 
   \pause
   \vspace{\fill}
@@ -1072,7 +1068,7 @@
   \pause
   \vspace{\fill}
 
-  There is only one value of type \code{'a list}, so how can we possibly induct 
+  There is only one value of type \code{'a list}, so how can we possibly induct
   on it? To add another element would be to escape the type entirely, because
   that would specify the type of the list!
 
@@ -1093,7 +1089,7 @@
   \vspace{\fill}
 
   \ihBox{}{\, Case: \code{L = xs}, for some \code{xs : t list}. Assume ...}
-  \isBox{}{\, Case: \code{L = x::xs}, for some \code{x : t}. Let's show ...}
+  \isBox{}{Case: \code{L = x::xs}, for some \code{x : t}. Let's show ...}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1101,13 +1097,13 @@
 
   When proving a claim on values of a parametric type, you are essentially writing
   a proof for many types. To do this properly, you need to parameterize your proof
-  by an arbitary type, and then proceed with the proof. This which will end up 
-  proving the claim for the parametric type. 
+  by an arbitary type, and then proceed with the proof. This which will end up
+  proving the claim for the parametric type.
 
   \pause
   \vspace{\fill}
 
-  Another reason why the former proof doesn't work is that there are 
+  Another reason why the former proof doesn't work is that there are
   \textbf{no values of type \code{'a}}. This would entail a value which could
   be instantiated at any type, which obviously shouldn't exist!
 \end{frame}
@@ -1147,9 +1143,9 @@
 
   \pause
   \vspace{\fill}
-  
+
   We previously discussed sorting, but only on integers! Let's abstract and try to create a
-  \term{generic} sorting function. We'd like a function: 
+  \term{generic} sorting function. We'd like a function:
 
   \pause
   \vspace{\fill}
@@ -1173,7 +1169,7 @@
 
   Recall that if we impose any constraints on what the type of the elements of the list are,
   then it will no longer generalize polymorphically. We have to somehow sort elements of a
-  list without ever looking at what any given element is. 
+  list without ever looking at what any given element is.
 
   \pause
   \vspace{\fill}
@@ -1191,14 +1187,14 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We say that a function \code{f : t * t -> order} is a \term{comparison function}
+  \defBox{}{ We say that a function \code{f : t * t -> order} is a \term{comparison function}
   if it is total, and defines a \term{total order}}
 
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A \term{total order} is a binary relation that essentially relates 
-  a bunch of things which can be ordered on a line. So 
+  \defBox{}{ A \term{total order} is a binary relation that essentially relates
+  a bunch of things which can be ordered on a line. So
   a total order \code{f} should not have any cycles.}
 
   \pause
@@ -1207,12 +1203,12 @@
   So we might define these comparison functions as:
 
   \begin{codeblock}
-    val revIntCompare = 
-      fn (x, y) => case Int.compare (x, y) of 
-                     LESS => GREATER 
+    val revIntCompare =
+      fn (x, y) => case Int.compare (x, y) of
+                     LESS => GREATER
                    | GREATER => LESS
                    | EQUAL => EQUAL
-    val mod12Compare = 
+    val mod12Compare =
       fn (x, y) => Int.compare (x mod 12, y mod 12)
   \end{codeblock}
 \end{frame}
@@ -1229,14 +1225,14 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We say that a list \code{L : t list} is \term{\code{cmp}-sorted}} if
+  \defBox{}{ We say that a list \code{L : t list} is \term{\code{cmp}-sorted}} if
   it has the following properties:
 
   \pause
   \begin{itemize}
     \item \code{L} $\eeq$ \code{[]}
     \item \code{L} $\eeq$ \code{[x]}
-    \item \code{L} $\eeq$ \code{x::y::xs}, where \code{cmp (x, y)} $\eeq$ 
+    \item \code{L} $\eeq$ \code{x::y::xs}, where \code{cmp (x, y)} $\eeq$
     \code{LESS} or \code{EQUAL}, and \code{y::xs} is \code{cmp}-sorted.
   \end{itemize}
 \end{frame}
@@ -1251,7 +1247,7 @@
   \vspace{\fill}
 
   Now, instead of being of type \code{'a list -> 'a list}, we will add a parameter
-  to our \code{sort} function, which is a comparison function by which to sort. 
+  to our \code{sort} function, which is a comparison function by which to sort.
 
   \pause
   \vspace{\fill}
@@ -1262,12 +1258,13 @@
 \begin{frame}[fragile]
   \frametitle{Functions are Values}
 
-  This might come as a surprise\footnotemark, but functions are values.
+  This might come as a surprise\footnote{The same way that an annual tuition increase is a surprise.},
+  but functions are values.
 
   \pause
   \vspace{\fill}
 
-  We've seen it, by binding lambda expressions in \code{val} declarations, which 
+  We've seen it, by binding lambda expressions in \code{val} declarations, which
   is an equivalent form to the \code{fun} declarations we've been using so far.
 
   \pause
@@ -1275,9 +1272,7 @@
 
   Another consequence of this is the fact that functions are \term{first-class citizens}.
   This means that they can be bound to values, passed into functions, and returned
-  from functions, just like any other value. 
-
-  \footnotetext[6]{The same way that an annual tuition increase is a surprise.}
+  from functions, just like any other value.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1316,7 +1311,7 @@
   \begin{codeblock}
     fun split [] = []
       | split [x] = [x]
-      | split (x::y::xs) = 
+      | split (x::y::xs) =
           let
             val (A, B) = split xs
           in
@@ -1333,11 +1328,11 @@
 
     fun msort [] = []
       | msort [x] = [x]
-      | msort L = 
+      | msort L =
           let
-            val (A, B) = split L 
+            val (A, B) = split L
           in
-            merge (msort A, msort B) 
+            merge (msort A, msort B)
           end
   \end{codeblock}
   }
@@ -1350,7 +1345,7 @@
   \begin{codeblock}
     fun split [] = []
       | split [x] = [x]
-      | split (x::y::xs) = 
+      | split (x::y::xs) =
           let
             val (A, B) = split xs
           in
@@ -1366,11 +1361,11 @@
 
     fun msort (`cmp`, []) = []
       | msort (`cmp`, [x]) = [x]
-      | msort (`cmp`, L) = 
+      | msort (`cmp`, L) =
           let
-            val (A, B) = split L 
+            val (A, B) = split L
           in
-            merge (`cmp`, (msort (`cmp`, A), msort (`cmp`, B))) 
+            merge (`cmp`, (msort (`cmp`, A), msort (`cmp`, B)))
           end
   \end{codeblock}
   }
@@ -1380,7 +1375,7 @@
   \frametitle{Finishing Off \code{sort}}
 
 
-  All we did was pass the \code{cmp} function through, and then change a 
+  All we did was pass the \code{cmp} function through, and then change a
   single place (where we used to do the integer comparison), instead using
   the provided comparison function. The code easily generalizes!
 
@@ -1392,7 +1387,7 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    fun sort (cmp : 'a * 'a -> order, L : 'a list) : 'a list = msort (cmp, L) 
+    fun sort (cmp : 'a * 'a -> order, L : 'a list) : 'a list = msort (cmp, L)
   \end{codeblock}
 
   \pause
@@ -1411,15 +1406,16 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSf9z0VuNTzebKdD29dw3k4sdp-SR8fQhxDoeBbZ7dSsMKtO5w/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_june8}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSf9z0VuNTzebKdD29dw3k4sdp-SR8fQhxDoeBbZ7dSsMKtO5w/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_june8}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}
-

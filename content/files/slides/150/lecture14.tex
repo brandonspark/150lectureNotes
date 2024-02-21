@@ -121,7 +121,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A \term{namespace} is a particular group of defined elements which
+  \defBox{}{A \term{namespace} is a particular group of defined elements which
   live separately from others. In a programming language, there will usually be
   ways of referring to different namespaces, to separate out used names from each
   other.}
@@ -137,7 +137,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{}{\, This means there could be definitions of the same name in different
+  \noteBox{}{This means there could be definitions of the same name in different
   namespaces! We could have separate \code{List.compare} and \code{Int.compare}
   functions.}
 \end{frame}
@@ -151,7 +151,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A \term{module} or \term{structure} is a grouping of declarations
+  \defBox{}{A \term{module} or \term{structure} is a grouping of declarations
   underneath a particular name.}
 
   \pause
@@ -194,13 +194,13 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{}{\, Because modules can contain exceptions and types, and their
+  \noteBox{}{Because modules can contain exceptions and types, and their
   components can be referred to by name, they are more powerful than just simple
-  tuples, which can only contain values organized by position!\footnotemark}
-
-  \footnotetext[1]{Technically, SML has a notion of \term{records}, which are
-  tuples with fields organized by name. But records also can only contain
-  values, and not things like types.}
+  tuples, which can only contain values organized by position!\footnote{
+    Technically, SML has a notion of \term{records}, which are
+    tuples with fields organized by name. But records also can only contain
+    values, and not things like types.
+  }}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -403,7 +403,7 @@
 \begin{frame}[fragile]
   \frametitle{Signatures}
 
-  \defBox{}{\, A \term{signature} is an SML construct, consisting of a collection
+  \defBox{}{A \term{signature} is an SML construct, consisting of a collection
   of \term{specifications} for things such as types, values, and exceptions.}
 
   \pause
@@ -462,7 +462,7 @@
 \begin{frame}[fragile]
   \frametitle{Ascription}
 
-  \defBox{}{\, The act of specifying that a module should implement a given
+  \defBox{}{The act of specifying that a module should implement a given
   signature is called \term{ascription}.}
 
   \pause
@@ -566,9 +566,7 @@
   Why is it important to me, as a user of this sorting library, that it
   is implemented as a merge sort? The reason why I am using it is that I
   want a sorted list -- but the concrete implementation details
-  \textbf{do not matter} to me.\footnotemark
-
-  \footnotetext[2]{The astute reader might raise complaints about how it
+  \textbf{do not matter} to me.\footnote{The astute reader might raise complaints about how it
   may be important to know the run-time complexity of the sorting function.
   Merge sort isn't the only $O(n \log n)$ sorting algorithm out there, though,
   and generally when using a library, you should be able to trust that the
@@ -680,7 +678,7 @@
     \includegraphics[scale=0.35]{open}
   \end{center}
 
-  \noteBox{}{\, The \code{open} keyword allows you to open all the things in a
+  \noteBox{}{The \code{open} keyword allows you to open all the things in a
   module into the enclosing scope.}
 
   \pause
@@ -729,9 +727,7 @@
   \pause
   \vspace{\fill}
 
-  This code destroys the universe.\footnotemark
-
-  \footnotetext[3]{Sometimes that happens.}
+  This code destroys the universe.\footnote{Sometimes that happens.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -768,7 +764,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, \term{Opaque ascription} is transparent ascription, but any
+  \defBox{}{\term{Opaque ascription} is transparent ascription, but any
   abstract types in the signature are unknown to users of the structure.}
 
   \pause
@@ -972,7 +968,7 @@
 
   This is the ultimate form of the duck test -- if it walks like a duck,
   swims like a duck, and quacks like a duck, then it's probably a duck. In this
-  case, if it behaves like a set, you can think of it like a set.\footnotemark
+  case, if it behaves like a set, you can think of it like a set.
 
   \pause
   \vspace{\fill}
@@ -989,7 +985,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, \term{Representation independence} is the phenomena where use of a
+  \defBox{}{\term{Representation independence} is the phenomena where use of a
   library is independent of how it is represented. Ideally, any library involving
   an abstract type should be representationally independent.
   }
@@ -1081,7 +1077,7 @@
 
   \ptmt
 
-  The previous image had many\footnotemark nodes and edges missing from it,
+  The previous image had many\footnote{In fact, infinitely many.} nodes and edges missing from it,
   but the basic idea is that the circles denote the representational equivalence
   classes for values which \textit{cannot be distinguished}, from outside
   the structure. They all denote the same basic mathematical set, which labels
@@ -1101,8 +1097,6 @@
   In other words, you can define a \term{relation} on values, showing that
   they must always produce equivalently related values, from the same
   operations.
-
-  \footnotetext[5]{In fact, infinitely many.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1300,16 +1294,18 @@
   is amazingly helpful.
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center}
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLScWNjKIXl9qUl8Kz6skApKkg9teS0h3_oyoT7UcL1amTN1haw/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_july6} \\
-    \vspace{5pt}
-    And the House Quiz winner is...
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLScWNjKIXl9qUl8Kz6skApKkg9teS0h3_oyoT7UcL1amTN1haw/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_july6} \\
+%     \vspace{5pt}
+%     And the House Quiz winner is...
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}

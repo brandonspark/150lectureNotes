@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
+    \documentclass[aspectratio=169, handout]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -334,7 +334,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A \term{red-black tree} is a kind of BST which has some nodes which
+  \defBox{}{A \term{red-black tree} is a kind of BST which has some nodes which
   are colored red, and some nodes which are colored black. It also has three
   important invariants:}
 
@@ -431,7 +431,7 @@
 \begin{frame}
   \frametitle{All Roads}
 
-  \keyBox{}{\, This means on a given path to the bottom, there can be at worst approximately
+  \keyBox{}{This means on a given path to the bottom, there can be at worst approximately
   as many red nodes as there are black nodes.}
 
   \pause
@@ -472,7 +472,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A \term{self-balancing tree} is a kind of tree data structure that can
+  \defBox{}{A \term{self-balancing tree} is a kind of tree data structure that can
   perform some balancing operations upon insertion or removal, to ensure the tree
   remains approximately balanced.}
 \end{frame}
@@ -1385,12 +1385,15 @@
   \frametitle{Almost Done}
 
   We can formalize the notion of our algorithm by defining a new kind of
-  tree, which we will call an \term{almost red-black tree}\footnotemark.
+  tree, which we will call an \term{almost red-black tree}.\footnote{
+    Sort of in the same way that I am an \textit{almost professor},
+    which is to say, I am not one.
+  }
 
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, An \term{almost red-black tree} shares the same properties
+  \defBox{}{An \term{almost red-black tree} shares the same properties
   as a red-black tree, but its root node and one of the root node's children
   may both be red.}
 
@@ -1399,9 +1402,6 @@
 
   In other words, an almost red-black tree is allowed to break the red children
   invariant, once, and only at the root.
-
-  \footnotetext[1]{Sort of in the same way that I am an \textit{almost professor},
-  which is to say, I am not one.}
 \end{frame}
 
 \begin{frame}
@@ -1849,7 +1849,10 @@
   \frametitle{to err is human, to functor divine}
 
   Now we can assemble the final parts of the puzzle, by putting everything
-  we just wrote in a functor\footnotemark, so that we can achieve full generality!
+  we just wrote in a functor\footnote{
+    Remember those? This didn't stop being a lecture on modules,
+    or anything.
+  }, so that we can achieve full generality!
 
   \pause
   \vspace{\fill}
@@ -1867,11 +1870,6 @@
         (* ... *)
       end
   \end{codeblock}
-
-
-  \footnotetext[2]{Remember those? This didn't stop being a lecture on modules,
-  or anything.}
-
 \end{frame}
 
 
@@ -2245,16 +2243,18 @@
   \end{center}
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center}
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSeuWVRsHKsKLdm0YIQBSbxIhdp4lozuzs90zZfY0QKmrJDPtA/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_july13} \\
-    \vspace{5pt}
-    And the House Quiz winner is...
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSeuWVRsHKsKLdm0YIQBSbxIhdp4lozuzs90zZfY0QKmrJDPtA/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_july13} \\
+%     \vspace{5pt}
+%     And the House Quiz winner is...
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}

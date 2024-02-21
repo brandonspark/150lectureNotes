@@ -2,24 +2,24 @@
 
 % DOCUMENT CLASS AND PACKAGE USE
     \documentclass[aspectratio=169, handout]{beamer}
- 
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{03009A}     % the color of note boxes and stuff
     \newcommand{\presentColor}{0066FF} % the primary color of the slide borders
     \newcommand{\bgColor}{d8eff2}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -33,7 +33,7 @@
     }
     \newcommand\eh{\tikz[remember picture]
       \node (end highlight) {};
-      \tikz[remember picture, overlay] 
+      \tikz[remember picture, overlay]
       \draw[yellow,line width=10pt,opacity=0.3] (begin highlight) -- (end
         highlight);
     }
@@ -62,7 +62,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -147,14 +147,14 @@
   \frametitle{Pipelines}
 
   We talked about the \code{|>} operator, which lets us sequence operations.
-  
+
   So now, we can write some very straightforward code:
 
   \begin{codeblock}
     fun getSumOfNumbersInFile filename =
       readFile filename
       |> String.tokens (fn c => c = #",")
-      |> List.map Int.fromString  
+      |> List.map Int.fromString
       |> List.map Option.valOf (* never actually do this *)
       |> List.foldr op+ 0
   \end{codeblock}
@@ -163,7 +163,7 @@
 \begin{frame}[fragile]
   \frametitle{Explicitness}
 
-  But what if we wanted to divide by the number of total items? 
+  But what if we wanted to divide by the number of total items?
 
   This would be pretty difficult, because we can't refer to the list we're
   summing!
@@ -172,7 +172,7 @@
     fun getSumOfNumbersInFile filename =
       readFile filename
       |> String.tokens (fn c => c = #",")
-      |> List.map Int.fromString  
+      |> List.map Int.fromString
       |> List.map Option.valOf (* never actually do this *)
       |> List.foldr op+ 0
   \end{codeblock}
@@ -193,7 +193,7 @@
 
   This lets us produce code like
   \begin{codeblock}
-    [1, 2, 3] 
+    [1, 2, 3]
     |> map Int.toString
     |> foldr (fn (x, y) => x ^ "," ^ y) ""
   \end{codeblock}
@@ -215,10 +215,10 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    ["1", "2", "3"] 
-    |> map Int.fromString 
+    ["1", "2", "3"]
+    |> map Int.fromString
     |> map Option.valOf
-    |> (fn L => (foldr op+ 0 L) div (List.length L)) 
+    |> (fn L => (foldr op+ 0 L) div (List.length L))
   \end{codeblock}
 
   \pause
@@ -226,20 +226,22 @@
 
   We have to introduce a lambda, because we want to use the value of
   \code{L} twice. We need to know how much the denominator is.
-  
+
   \pause
   \vspace{\fill}
 
-  This is kind of gross, and breaks our nice sequencing, though! Because of 
+  This is kind of gross, and breaks our nice sequencing, though! Because of
   this \code{div} function, it's not clear what the control flow of our
-  function is. Before, our steps were cleanly separated by pipes -- now, 
+  function is. Before, our steps were cleanly separated by pipes -- now,
   we rely on evaluation order. Can we do better?
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Super Explicit Piping}
 
-  Recall the idea of \term{eta expansion}\footnotemark, which is that any valuable
+  Recall the idea of \term{eta expansion}\footnote{
+    See Lecture 10: Combinators and Staging if you need a refresher.
+  }, which is that any valuable
   function expression \code{f} is extensionally equivalent to putting it
   into a lambda which explicit names its argument, like \code{fn x => f x}.
 
@@ -256,11 +258,9 @@
     |> `(fn L1 =>`    map Int.fromString `L1`
     |> `(fn L2 =>`    map Option.valOf `L2`
     |> (fn L =>     foldr op+ 0 L
-    |> `(fn total =>` List.length L 
+    |> `(fn total =>` List.length L
     |> `(fn len =>`   `total` div `len` )))))
   \end{codeblock}
-
-  \footnotetext[1]{See Lecture 10: Combinators and Staging if you need a refresher.}
 \end{frame}
 
 
@@ -270,11 +270,11 @@
   Actually, we usually prefer to indent it slightly differently:
 
   \begin{codeblock}
-    ["1", "2", "3"]       |> (fn L1 =>    
-    map Int.fromString L1 |> (fn L2 =>    
-    map Option.valOf L2   |> (fn L =>     
-    foldr op+ 0 L         |> (fn total => 
-    List.length L         |> (fn len =>   
+    ["1", "2", "3"]       |> (fn L1 =>
+    map Int.fromString L1 |> (fn L2 =>
+    map Option.valOf L2   |> (fn L =>
+    foldr op+ 0 L         |> (fn total =>
+    List.length L         |> (fn len =>
     total div len         )))))
   \end{codeblock}
 
@@ -298,10 +298,10 @@
   a little more clear:
 
   \begin{codeblock}
-    ["1", "2", "3"] |> <r(r>fn L1 =>    
-      map Int.fromString L1 |> <p(p>fn L2 =>    
-        map Option.valOf L2 |> <g(g>fn L =>     
-          foldr op+ 0 L |> <r(r>fn total => 
+    ["1", "2", "3"] |> <r(r>fn L1 =>
+      map Int.fromString L1 |> <p(p>fn L2 =>
+        map Option.valOf L2 |> <g(g>fn L =>
+          foldr op+ 0 L |> <r(r>fn total =>
             List.length L |> (fn len => total div len)
           <r)r>
         <g)g>
@@ -324,27 +324,27 @@
   But wait, let's revisit the pipeline we just created:
 
   \begin{codeblock}
-    ["1", "2", "3"]       |> (fn L1 =>    
-    map Int.fromString L1 |> (fn L2 =>    
-    map Option.valOf L2   |> (fn L =>     
-    foldr op+ 0 L         |> (fn total => 
-    List.length L         |> (fn len =>   
+    ["1", "2", "3"]       |> (fn L1 =>
+    map Int.fromString L1 |> (fn L2 =>
+    map Option.valOf L2   |> (fn L =>
+    foldr op+ 0 L         |> (fn total =>
+    List.length L         |> (fn len =>
     total div len         )))))
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  It seems that every single function call is destined to be immediately 
-  piped into a lambda of what it must do next. What if we cut out 
-  the middleman, and define each function so it takes in that lambda directly? 
+  It seems that every single function call is destined to be immediately
+  piped into a lambda of what it must do next. What if we cut out
+  the middleman, and define each function so it takes in that lambda directly?
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Cool Functions}
 
   We call such functions, that take in lambdas that their results are going
-  to be piped into, \term{cool functions}. 
+  to be piped into, \term{cool functions}.
 
   \begin{codeblock}
     fun mapCool f L k       = map f L |> k
@@ -353,11 +353,11 @@
   \end{codeblock}
 
   \begin{codeblock}
-    ["1", "2", "3"]           |> (fn L1 =>    
-    `mapCool` Int.fromString L1 `  ` (fn L2 =>    
-    `mapCool` Option.valOf L2   `  ` (fn L =>     
-    `foldrCool` op+ 0 L         `  ` (fn total => 
-    `lengthCool` L              `  ` (fn len =>   
+    ["1", "2", "3"]           |> (fn L1 =>
+    `mapCool` Int.fromString L1 `  ` (fn L2 =>
+    `mapCool` Option.valOf L2   `  ` (fn L =>
+    `foldrCool` op+ 0 L         `  ` (fn total =>
+    `lengthCool` L              `  ` (fn len =>
     total div len                )))))
   \end{codeblock}
 
@@ -388,13 +388,11 @@
   \pause
   \vspace{\fill}
 
-  It's similarly readable.\footnotemark
-
-  \footnotetext[2]{Actually, massively more so.}
+  It's similarly readable.\footnote{Actually, massively more so.}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{\code{let} It Go} 
+  \frametitle{\code{let} It Go}
 
   What if we wanted to do this for a recursive function, though?
 
@@ -403,8 +401,8 @@
 
   \begin{codeblock}
     fun fact 0 = 1
-      | fact n = 
-        let 
+      | fact n =
+        let
           val rec_ans = fact (n - 1)
           val res = n * rec_ans
         in
@@ -426,7 +424,7 @@
   \pause
   \vspace{\fill}
 
-  We make the recursive call to \code{fact}, and then multiply it by 
+  We make the recursive call to \code{fact}, and then multiply it by
   \code{n}. Actually, this is exactly equivalent to the ordinary \code{fact}
   function we would ordinarily write, just spread out on multiple lines.
 
@@ -435,7 +433,7 @@
 
   We know the solution, of course. Let's write:
   \begin{codeblock}
-    fun tfact 0 acc = acc 
+    fun tfact 0 acc = acc
       | tfact n acc = tfact (n - 1) (acc * n)
   \end{codeblock}
 
@@ -450,13 +448,13 @@
 
   Let's try \code{map}. For this one, we similarly cannot
   naively use a \code{let} for our intermediate computations.
-  
+
   \pause
   \vspace{\fill}
 
   \begin{codeblock}
     fun tmap f [] acc = acc
-      | tmap f (x::xs) acc = tmap f xs (f x :: acc) 
+      | tmap f (x::xs) acc = tmap f xs (f x :: acc)
 
     fun map f L = tmap f L []
   \end{codeblock}
@@ -472,19 +470,19 @@
 \begin{frame}[fragile]
   \frametitle{A Redundant Problem}
 
-  We see that \code{tmap Int.toString [1, 2, 3] []} $\hookrightarrow$ 
+  We see that \code{tmap Int.toString [1, 2, 3] []} $\hookrightarrow$
   \code{["3", "2", "1"]}! It reverses the list!
 
   \pause
   \vspace{\fill}
 
-  What can we do? Well, maybe all is not lost. It happens to be that 
+  What can we do? Well, maybe all is not lost. It happens to be that
   we know how to implement a tail-recursive version of \code{rev}:
 
   {\small
   \begin{codeblock}
     fun tmap_backwards f [] acc = acc
-      | tmap_backwards f (x::xs) acc = tmap f xs (f x :: acc) 
+      | tmap_backwards f (x::xs) acc = tmap f xs (f x :: acc)
 
     fun trev [] acc = acc
       | trev (x::xs) acc = trev xs (x::acc)
@@ -518,21 +516,21 @@
   \pause
   \vspace{\fill}
 
-  One way to solve is by what we did earlier, having each function in our pipeline 
+  One way to solve is by what we did earlier, having each function in our pipeline
   take in a lambda which contained the "next step" to be done.
 
   \pause
   \vspace{\fill}
 
-  These criteria are also satisfied with \code{let} expressions, except for the  
+  These criteria are also satisfied with \code{let} expressions, except for the
   fact that in most cases, simply using a \code{let} ends up being non
   tail recursive!
 
   \pause
   \vspace{\fill}
 
-  \keyBox{}{\, This method of taking in a lambda of the "next step" provides a
-  more straightforward way to translate a function to a tail recursive style. 
+  \keyBox{}{This method of taking in a lambda of the "next step" provides a
+  more straightforward way to translate a function to a tail recursive style.
   We call this \term{continuation-passing style}.}
 \end{frame}
 
@@ -546,7 +544,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A \term{continuation} is a function taken in as an argument,
+  \defBox{}{A \term{continuation} is a function taken in as an argument,
   which denotes what to do \textit{after} the current computation.}
 
   \pause
@@ -587,7 +585,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{}{\, The return type is polymorphic, because it depends on what the 
+  \noteBox{}{The return type is polymorphic, because it depends on what the
   particular continuation that is passed in does!}
 \end{frame}
 
@@ -635,7 +633,7 @@
 
   \pause
   \vspace{\fill}
- 
+
   \begin{codeblock}
     fun add x y = x + y
   \end{codeblock}
@@ -661,13 +659,13 @@
 
   \pause
   \vspace{\fill}
-  
+
   Is it always as simple as this, though? Suppose we were trying to
   make \code{fact} in CPS:
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{CPS and Tail Recursion} 
+  \frametitle{CPS and Tail Recursion}
 
   \begin{codeblock}
     fun factCPS f L k = k (fact f L)
@@ -681,14 +679,14 @@
   \pause
   \vspace{\fill}
 
-  There's something wrong with our implementation. We do indeed call 
+  There's something wrong with our implementation. We do indeed call
   \code{k}, but we make another call to \code{fact}, which is a hugely
   non tail-recursive function! Moreover, it trivializes the problem.
 
   \pause
   \vspace{\fill}
 
-  Our goal here was to transform a non-tail-recursive function into 
+  Our goal here was to transform a non-tail-recursive function into
   a tail-recursive one. Just adding a trivial continuation
   like this doesn't make it tail recursive, however.
 
@@ -700,7 +698,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{CPS and Coolness} 
+  \frametitle{CPS and Coolness}
 
   Let's relate this to that idea of \term{cool functions} that we defined earlier,
   which are functions that pipe some result into the continuation they take in.
@@ -708,12 +706,12 @@
   \pause
   \vspace{\fill}
 
-  As we said, \code{factCPS} as we've defined here is most definitely not 
-  actually in CPS: 
+  As we said, \code{factCPS} as we've defined here is most definitely not
+  actually in CPS:
   \begin{codeblock}
     fun factCPS f L k = k (fact f L)
   \end{codeblock}
-  but it is a cool function, because it gives its result to \code{k}, its 
+  but it is a cool function, because it gives its result to \code{k}, its
   continuation.
 
   \pause
@@ -738,7 +736,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We say a function is in \term{continuation-passing} style if it
+  \defBox{}{We say a function is in \term{continuation-passing} style if it
   fulfills the following criteria:}
 
   \pause
@@ -748,7 +746,7 @@
     \item It takes in and uses continuations \pause
     \item It makes calls to other functions with continuations (including itself)
     as tail calls \pause
-    \item It only calls continuations as tail calls 
+    \item It only calls continuations as tail calls
   \end{enumerate}
 
   \pause
@@ -771,9 +769,9 @@
 
   \begin{codeblock}
     fun fact 0 = 1
-      | fact n = 
-        let 
-          val rec_ans = fact (n - 1) 
+      | fact n =
+        let
+          val rec_ans = fact (n - 1)
           val res = n * rec_ans
         in
           res
@@ -804,7 +802,7 @@
   The way to think about this is to draw a distinction between
   \textbf{writing down instructions} versus \textbf{remembering instructions}.
   In another sense, the difference is the distinction between \textbf{now}
-  and \textbf{later}. 
+  and \textbf{later}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -827,22 +825,22 @@
   This happens a couple of times before I realize that the fact that I need to keep
   organizing the music after Jonny prints it for me is annoying. I need to drop
   what I'm doing and start sorting it, and the key problem is I need to \textit{remember}
-  to sort it! This takes up space in my brain. 
+  to sort it! This takes up space in my brain.
 
   \pause
   \vspace{\fill}
 
   A better way of doing things would be for me to, instead of \textbf{later}
-  having to remember to sort the papers, to ask Jonny right \textbf{now} to 
-  sort the papers for me, and then bring them back to me in the right order. 
+  having to remember to sort the papers, to ask Jonny right \textbf{now} to
+  sort the papers for me, and then bring them back to me in the right order.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Later (Remembering Instructions)}
 
   \begin{codeblock}
-    let 
-      val rec_ans = fact (n - 1) 
+    let
+      val rec_ans = fact (n - 1)
       val res = n * rec_ans
     in
       res
@@ -863,7 +861,7 @@
   \vspace{\fill}
 
   This means that after the recursive call, we \textbf{later} need to remember to
-  do further work. This means we have to \textbf{remember instructions}. 
+  do further work. This means we have to \textbf{remember instructions}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -886,9 +884,9 @@
   {\small
   \begin{codeblock}
     fun factCPS 0 `k` = `k 1`
-      | factCPS n `k` = 
+      | factCPS n `k` =
         `factCPS (n - 1) (fn rec_ans =>`
-          let 
+          let
             val rec_ans = `rec_ans`
             val res = n * rec_ans
           in
@@ -908,7 +906,7 @@
   \pause
   \vspace{\fill}
 
-  The difference is that we put the work that must be done afterwards 
+  The difference is that we put the work that must be done afterwards
   into a \term{continuation}, which is to say a lambda expression. This
   means that we don't need to do anything after the recursive call, but
   we \textit{tell the recursive call what it needs to do after}, \textbf{now}.
@@ -965,14 +963,14 @@
   down something like:
 
   \begin{codeblock}
-    (fn onions => onions |> chop |> grill |> put sandwich) 
+    (fn onions => onions |> chop |> grill |> put sandwich)
   \end{codeblock}
 
   is equivalent in intention to a list of instructions, which says:
   \begin{itemize}
-    \item Take the onions 
-    \item Chop the onions 
-    \item Grill the onions 
+    \item Take the onions
+    \item Chop the onions
+    \item Grill the onions
     \item Put the onions on a sandwich
   \end{itemize}
 \end{frame}
@@ -980,19 +978,19 @@
 \begin{frame}[fragile]
   \frametitle{Finishing the Translation}
 
-  After some extensionally equivalent refactoring, we end up with the 
+  After some extensionally equivalent refactoring, we end up with the
   CPS translation of \code{fact} as:
 
   \begin{codeblock}
     fun factCPS 0 k = k 1
-      | factCPS n k = 
-          factCPS (n - 1) (fn rec_ans => k (n * rec_ans)) 
+      | factCPS n k =
+          factCPS (n - 1) (fn rec_ans => k (n * rec_ans))
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  The final interpretation of this function is as one which, instead of 
+  The final interpretation of this function is as one which, instead of
   computing the result of \code{fact} on \code{n - 1}, and then returning
   that value to be multiplied, we write down the \textit{instruction} to
   multiply by \code{n} \textbf{now}, and carry that forward into the
@@ -1014,9 +1012,9 @@
   \pause
   \begin{codeblock}
     fun factCPS 0 k = k 1
-      | factCPS n k = 
-          factCPS (n - 1)    (fn rec_ans => 
-          n * rec_ans     |> k) 
+      | factCPS n k =
+          factCPS (n - 1)    (fn rec_ans =>
+          n * rec_ans     |> k)
   \end{codeblock}
 
   \pause
@@ -1037,7 +1035,7 @@
   \frametitle{A Functional Accumulator}
 
   One way to envision how this function actually works is that it \textit{accumulates
-  its continuation}. 
+  its continuation}.
 
   \pause
   \vspace{\fill}
@@ -1090,7 +1088,7 @@
     2 * res2  |> (fn res1 =>
     3 * res1  |> k)))
   \end{codeblock}
-  
+
   \pause
   \vspace{\fill}
 
@@ -1146,7 +1144,7 @@
   is just the identity function, because we only ever append to the end
   of the list of instructions we generate, and we break it down from
   left-to-right. This means we will cons on the oldest elements first,
-  thus preserving our ordering. 
+  thus preserving our ordering.
 
   \pause
   \vspace{\fill}
@@ -1182,9 +1180,9 @@
     of type \code{t -> 'a}, and then change the return type to \code{'a}. \pause
     \item Call the continuation on every single return value of the function. \pause
     \item Suppose there is a recursive call to the function, which is the expression
-    \code{e}. Change that to a new variable, let's say \code{rec_ans}. \pause 
-    \item Change the body of the recursive case to one which first performs 
-    \code{e (fn rec_ans => <body>)}, where the \code{<body>} is just the current 
+    \code{e}. Change that to a new variable, let's say \code{rec_ans}. \pause
+    \item Change the body of the recursive case to one which first performs
+    \code{e (fn rec_ans => <body>)}, where the \code{<body>} is just the current
     body of the function.
   \end{enumerate}
 \end{frame}
@@ -1197,7 +1195,7 @@
 
   \begin{codeblock}
     fun map f []      = []
-      | map f (x::xs) = 
+      | map f (x::xs) =
           f x :: map f xs
   \end{codeblock}
 \end{frame}
@@ -1209,7 +1207,7 @@
 
   \begin{codeblock}
     fun map f [] `k`      = []
-      | map f (x::xs) `k` = 
+      | map f (x::xs) `k` =
           f x :: map f xs
   \end{codeblock}
 \end{frame}
@@ -1218,11 +1216,11 @@
   \frametitle{I'm the Map: Step 2}
 
   Now, let's call the continuation \code{k} on every expression which
-  is returned by the function: 
+  is returned by the function:
 
   \begin{codeblock}
     fun map f [] k      = `k []`
-      | map f (x::xs) k = 
+      | map f (x::xs) k =
           `k (`f x :: map f xs`)`
   \end{codeblock}
 \end{frame}
@@ -1230,12 +1228,12 @@
 \begin{frame}[fragile]
   \frametitle{I'm the Map: Step 3}
 
-  Next, let's identify the recursive calls to \code{map}. In this case, 
+  Next, let's identify the recursive calls to \code{map}. In this case,
   our recursive call \code{e} is just \code{map f xs}:
 
   \begin{codeblock}
     fun map f [] k      = k []
-      | map f (x::xs) k = 
+      | map f (x::xs) k =
           k (f x :: `map f xs`)
   \end{codeblock}
 
@@ -1247,7 +1245,7 @@
 
   \begin{codeblock}
     fun map f [] k      = k []
-      | map f (x::xs) k = 
+      | map f (x::xs) k =
           k (f x :: `rec_ans`)
   \end{codeblock}
 \end{frame}
@@ -1256,12 +1254,12 @@
   \frametitle{I'm the Map: Step 4}
 
   Now, we take the recursive case and wrap it in a tail-recursive call to
-  \code{e}, the expression we just replaced, except given a continuation binding 
+  \code{e}, the expression we just replaced, except given a continuation binding
   \code{rec_ans}:
 
   \begin{codeblock}
     fun map f [] k      = k []
-      | map f (x::xs) k = 
+      | map f (x::xs) k =
           `map f xs (fn rec_ans =>` k (f x :: rec_ans)`)`
   \end{codeblock}
 \end{frame}
@@ -1273,7 +1271,7 @@
 
   \begin{codeblock}
     fun mapCPS f [] k      = k []
-      | mapCPS f (x::xs) k = 
+      | mapCPS f (x::xs) k =
           mapCPS f xs (fn rec_ans => k (f x :: rec_ans))
   \end{codeblock}
 \end{frame}
@@ -1286,8 +1284,8 @@
   \pause
   \vspace{\fill}
 
-  All we are doing is making the binding of the recursive call to 
-  \code{map} explicit. Instead of leaving it somewhere nested in a big 
+  All we are doing is making the binding of the recursive call to
+  \code{map} explicit. Instead of leaving it somewhere nested in a big
   expression, to be used later, we \textit{first} make the recursive call to
   the CPS-ified \code{map}, which is then \textit{given instructions}
   on what to do with the recursive call's value.
@@ -1296,7 +1294,7 @@
   \vspace{\fill}
 
   The application of \code{k} to each returning expression is necessary to
-  complete the "inductive handshake", to fulfill the promise that we 
+  complete the "inductive handshake", to fulfill the promise that we
   pass whatever value we compute to the continuation.
 \end{frame}
 
@@ -1304,7 +1302,7 @@
   To demonstrate the difference between CPS and direct-style,
   call for a student volunteer.
 
-  I will ask the student to walk across the room and get a 
+  I will ask the student to walk across the room and get a
   "FUNCTIONS ARE POINTERS" sticker. When they return with
   it, I will rip it up.
 
@@ -1336,7 +1334,7 @@
     fun search p Empty = NONE
       | search p (Node (L, x, R)) =
           if p x then
-            SOME x 
+            SOME x
           else
             case search p L of
               NONE => search p R
@@ -1359,7 +1357,7 @@
   \vspace{\fill}
 
   In essence, the function needs to "continue" from the recursive call in
-  one of two cases: 
+  one of two cases:
   \begin{itemize}
     \item no information, in the \code{NONE} case \pause
     \item a value of type \code{t}, for a \code{t tree}, in the \code{SOME} case
@@ -1374,7 +1372,7 @@
 \begin{frame}[fragile]
   \frametitle{Success and Failure}
 
-  To make our reasoning more explicit, we will separate the logic of these 
+  To make our reasoning more explicit, we will separate the logic of these
   cases into \textit{two} continuations.
 
   \pause
@@ -1382,7 +1380,7 @@
 
   Instead of a single continuation of type \code{t option -> 'a},
   we will instead have a \term{success continuation} of type \code{t -> 'a},
-  and a \term{failure continuation} of type \code{unit -> 'a}. 
+  and a \term{failure continuation} of type \code{unit -> 'a}.
 
   \pause
   \vspace{\fill}
@@ -1436,17 +1434,17 @@
 
   \pause
   \begin{enumerate}
-    \item For a function with return type \code{t option}, add two continuation 
-    arguments -- one of type \code{t -> 'a} (the \term{success continuation}), 
-    and then one of type \code{unit -> 'a} (the \term{failure continuation}). 
+    \item For a function with return type \code{t option}, add two continuation
+    arguments -- one of type \code{t -> 'a} (the \term{success continuation}),
+    and then one of type \code{unit -> 'a} (the \term{failure continuation}).
     Change the return type to \code{'a}. \pause
     \item For every return of \code{NONE}, call the failure continuation instead.
     For every return of \code{SOME x}, call the success continuation on \code{x}
-    instead. \pause 
-    \item Suppose there is a \code{case} on a recursive call to the function. 
-    Replace the \code{case} with a call to the CPS-ified function itself, but 
-    with the success continuation changed to the code in the \code{SOME} case, 
-    and the failure continuation changed to the code in the \code{NONE} case. 
+    instead. \pause
+    \item Suppose there is a \code{case} on a recursive call to the function.
+    Replace the \code{case} with a call to the CPS-ified function itself, but
+    with the success continuation changed to the code in the \code{SOME} case,
+    and the failure continuation changed to the code in the \code{NONE} case.
   \end{enumerate}
 \end{frame}
 
@@ -1457,12 +1455,12 @@
 
   \pause
   \vspace{\fill}
-  
+
   \begin{codeblock}
     fun search p Empty `sc fc` = NONE
       | search p (Node (L, x, R)) `sc fc` =
           if p x then
-            SOME x 
+            SOME x
           else
             case search p L of
               NONE => search p R
@@ -1474,16 +1472,16 @@
   \frametitle{A Star Search: Step 2}
 
   Now let's change the implicit returning values to explicit calls to
-  \code{sc} and \code{fc}: 
+  \code{sc} and \code{fc}:
 
   \pause
   \vspace{\fill}
-  
+
   \begin{codeblock}
     fun search p Empty sc fc = `fc ()`
       | search p (Node (L, x, R)) sc fc =
           if p x then
-            `sc x` 
+            `sc x`
           else
             case search p L of
               NONE => search p R
@@ -1498,7 +1496,7 @@
 
   \pause
   \vspace{\fill}
-  
+
   Let's change that to instead be a call to \code{search}, except with the
   success and failure continuations corresponding to the code of each case.
 
@@ -1506,12 +1504,12 @@
   \vspace{\fill}
 
   First, let's identify each branch we are interested in:
-  
+
   \begin{codeblock}
     fun search p Empty sc fc = fc ()
       | search p (Node (L, x, R)) sc fc =
           if p x then
-            sc x 
+            sc x
           else
             case search p L of
               &NONE => search p R&
@@ -1528,11 +1526,11 @@
     fun search p Empty sc fc = fc ()
       | search p (Node (L, x, R)) sc fc =
           if p x then
-            sc x 
+            sc x
           else
-            search p L 
+            search p L
               `(fn res => sc res)`
-              &(fn () => search p R sc fc)& 
+              &(fn () => search p R sc fc)&
   \end{codeblock}
 \end{frame}
 
@@ -1545,9 +1543,9 @@
     fun searchCPS p Empty sc fc = fc ()
       | searchCPS p (Node (L, x, R)) sc fc =
           if p x then
-            sc x 
+            sc x
           else
-            searchCPS p L 
+            searchCPS p L
               (fn res => sc res)
               (fn () => searchCPS p R sc fc)
   \end{codeblock}
@@ -1558,7 +1556,7 @@
 
   Continuation-passing style is merely a \textbf{different way of structuring
   computation}.
-  
+
   \pause
   \vspace{\fill}
 
@@ -1576,22 +1574,21 @@
   \vspace{\fill}
 
   Regardless, understanding of CPS is an important skill. Being able to convert functions
-  into CPS demonstrates mastery over the distinction between data as 
+  into CPS demonstrates mastery over the distinction between data as
   ordinary values versus data as function, and CPS-like code shows up in common
   applications, such as in the form of callbacks for web programming.
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLScUJiDK78X4rvW6k1fuNN3RcfmBpH_kn_C7xeh3yMCBcyugQg/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_june15}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLScUJiDK78X4rvW6k1fuNN3RcfmBpH_kn_C7xeh3yMCBcyugQg/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_june15}
+%   \end{center}
+% \end{frame}
 
-
+\thankyou
 
 \end{document}
-

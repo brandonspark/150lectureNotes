@@ -1,25 +1,25 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
- 
+    \documentclass[aspectratio=169, handout]{beamer}
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{0f8a73}     % the color of note boxes and stuff
     \newcommand{\presentColor}{002B5B} % the primary color of the slide borders
     \newcommand{\bgColor}{a6c4e3}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -51,7 +51,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -85,292 +85,292 @@
 \begin{frame}[fragile]
   \frametitle{Last time}
 
-  In the last lecture, we learned about some of the more complex types in 
-  SML, like tuples and functions. 
+  In the last lecture, we learned about some of the more complex types in
+  SML, like tuples and functions.
 
   \vspace{\fill}
-  
+
   We learned about how to declare variables and functions. We learned that declaring
-  a variable \textbf{binds} it, which is different than assignment. 
-  
+  a variable \textbf{binds} it, which is different than assignment.
+
   \vspace{\fill}
 
-  We also learned how we can mathematically prove things 
-  about SML code using a notion of \textbf{extensional equivalence}. 
+  We also learned how we can mathematically prove things
+  about SML code using a notion of \textbf{extensional equivalence}.
 \end{frame}
 
-\begin{frame}[plain]
-  \begin{center}
-    \huge \color{presentColor} \intermedium{0 - Equivalence} \\ 
-    \vspace{10pt}
-    \large \color{presentColor} \intermedium{This material was meant to be covered during the last
-    lecture, but was moved here due to time constraints. }
-  \end{center}
-\end{frame}
+% \begin{frame}[plain]
+%   \begin{center}
+%     \huge \color{presentColor} \intermedium{0 - Equivalence} \\
+%     \vspace{10pt}
+%     \large \color{presentColor} \intermedium{This material was meant to be covered during the last
+%     lecture, but was moved here due to time constraints. }
+%   \end{center}
+% \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{On the Equivalence of Values}
+% \begin{frame}[fragile]
+%   \frametitle{On the Equivalence of Values}
 
-  Up until this point, we've said that a value is a "final answer". You should be able
-  to tell if values are the same just by looking at them, like with \code{2} and \code{2},
-  or with \code{(3, 4)} and \code{(3, 4)}.
+%   Up until this point, we've said that a value is a "final answer". You should be able
+%   to tell if values are the same just by looking at them, like with \code{2} and \code{2},
+%   or with \code{(3, 4)} and \code{(3, 4)}.
 
-  \vspace{\fill}
+%   \vspace{\fill}
 
-  But what about functions?
+%   But what about functions?
 
-  \pause
-  \vspace{5pt}
+%   \pause
+%   \vspace{5pt}
 
-  Are \code{fn (x : int) => x + x} and \code{fn (x : int) => 2 * x} extensionally equivalent?
+%   Are \code{fn (x : int) => x + x} and \code{fn (x : int) => 2 * x} extensionally equivalent?
 
-  \pause
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  It's now hard to tell, because these lambda expressions are values, but it's not obvious 
-  if they are extensionally equivalent or not.
-\end{frame}
+%   It's now hard to tell, because these lambda expressions are values, but it's not obvious
+%   if they are extensionally equivalent or not.
+% \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Extensional Equivalence for Functions}
+% \begin{frame}[fragile]
+%   \frametitle{Extensional Equivalence for Functions}
 
-  Functions necessitate their own rule for extensional equivalence.
+%   Functions necessitate their own rule for extensional equivalence.
 
-  \pause
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  \defBox{\, Two functions \code{f : t1 -> t2} and \code{g : t1 -> t2} are \term{extensionally equivalent}
-  if for all values \code{x : t1}, \code{f x} $\eeq$ \code{g x}}.
+%   \defBox{\, Two functions \code{f : t1 -> t2} and \code{g : t1 -> t2} are \term{extensionally equivalent}
+%   if for all values \code{x : t1}, \code{f x} $\eeq$ \code{g x}}.
 
-  \pause
-  \vspace{5pt}
+%   \pause
+%   \vspace{5pt}
 
-  In other words, two functions are equivalent if \textbf{for all inputs, they give equivalent outputs}.
+%   In other words, two functions are equivalent if \textbf{for all inputs, they give equivalent outputs}.
 
-  \pause
-  \vspace{\fill}
-  
-  \noteBox{\, We specified that \code{f x} $\eeq$ \code{g x}, not that \code{f x} and \code{g x}
-  reduce to the same value. Why?}
-\end{frame}
+%   \pause
+%   \vspace{\fill}
 
-\begin{frame}[fragile]
-  \frametitle{Totality}
+%   \noteBox{\, We specified that \code{f x} $\eeq$ \code{g x}, not that \code{f x} and \code{g x}
+%   reduce to the same value. Why?}
+% \end{frame}
 
-  The reason why is simple - some functions do not have defined outputs!
+% \begin{frame}[fragile]
+%   \frametitle{Totality}
 
-  \pause
-  \vspace{\fill}
+%   The reason why is simple - some functions do not have defined outputs!
 
-  We described functions in SML as mathematical functions, which is true, but not exactly in the
-  same way as some mathematical functions, such as $+$, or $\sin$.
+%   \pause
+%   \vspace{\fill}
 
-  \pause
-  \vspace{5pt}
+%   We described functions in SML as mathematical functions, which is true, but not exactly in the
+%   same way as some mathematical functions, such as $+$, or $\sin$.
 
-  SML functions can be \term{partial}, that is, undefined on some input. There may be \code{f}
-  and \code{x} such that there is no \code{v} where \code{f x} $\hookrightarrow$ \code{v}.  
+%   \pause
+%   \vspace{5pt}
 
-  \pause
-  \vspace{\fill}
+%   SML functions can be \term{partial}, that is, undefined on some input. There may be \code{f}
+%   and \code{x} such that there is no \code{v} where \code{f x} $\hookrightarrow$ \code{v}.
 
-  \defBox{\, We say that \code{f : t1 -> t2} is \term{total} if for all values \code{v : t1},
-  there is a value \code{v' : t2} such that \code{f v} $\hookrightarrow$ \code{v'}.}
+%   \pause
+%   \vspace{\fill}
 
-  \vspace{5pt}
+%   \defBox{\, We say that \code{f : t1 -> t2} is \term{total} if for all values \code{v : t1},
+%   there is a value \code{v' : t2} such that \code{f v} $\hookrightarrow$ \code{v'}.}
 
-  For example, the SML functions \code{+}, \code{not}, and \code{^} are all total.
-\end{frame}
+%   \vspace{5pt}
 
-\begin{frame}[fragile]
-  \frametitle{Specification}
+%   For example, the SML functions \code{+}, \code{not}, and \code{^} are all total.
+% \end{frame}
 
-  Concepts like purity, extensional equivalence, and totality are all just means to
-  an end, which is being able to \textbf{specify} the behavior of code.
+% \begin{frame}[fragile]
+%   \frametitle{Specification}
 
-  \pause
-  \vspace{\fill}
+%   Concepts like purity, extensional equivalence, and totality are all just means to
+%   an end, which is being able to \textbf{specify} the behavior of code.
 
-  In particular, for functions, we are interested in writing \textbf{descriptive} code,
-  that accurately reflects the function's behavior.
-  
-  \pause
-  \vspace{5pt}
+%   \pause
+%   \vspace{\fill}
 
-  To that end, it is helpful to write alongside a function the conditions which 
-  must be true \textbf{prior} to calling the function, and must be true \textbf{after}
-  calling the function.
-
-  \pause
-  \vspace{\fill}
+%   In particular, for functions, we are interested in writing \textbf{descriptive} code,
+%   that accurately reflects the function's behavior.
 
-  \begin{codeblock}
-    (* REQUIRES: x is not 0 *)
-    (* ENSURES: divide x is total *)
-    fun divide (x : int) : int = 2 div x 
-  \end{codeblock}
+%   \pause
+%   \vspace{5pt}
 
-  \ptmt
-\end{frame}
+%   To that end, it is helpful to write alongside a function the conditions which
+%   must be true \textbf{prior} to calling the function, and must be true \textbf{after}
+%   calling the function.
+
+%   \pause
+%   \vspace{\fill}
 
-\begin{frame}[fragile]
-  \frametitle{The Specification of Specification}
+%   \begin{codeblock}
+%     (* REQUIRES: x is not 0 *)
+%     (* ENSURES: divide x is total *)
+%     fun divide (x : int) : int = 2 div x
+%   \end{codeblock}
 
-  In this class, our way of writing specifications will follow the 
-  five-step methodology.
+%   \ptmt
+% \end{frame}
 
-  \pause
-  \vspace{\fill}
+% \begin{frame}[fragile]
+%   \frametitle{The Specification of Specification}
 
-  There are five components to this methodology, shockingly:
-  \pause
-  \begin{enumerate}
-    \item the function's type \pause
-    \item the \code{REQUIRES} clause (preconditions) \pause
-    \item the \code{ENSURES} clause (postconditions) \pause
-    \item the function's definition \pause
-    \item test cases! \pause
-  \end{enumerate}
+%   In this class, our way of writing specifications will follow the
+%   five-step methodology.
 
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  We will frequently annotate our functions this way this semester.
-\end{frame}
+%   There are five components to this methodology, shockingly:
+%   \pause
+%   \begin{enumerate}
+%     \item the function's type \pause
+%     \item the \code{REQUIRES} clause (preconditions) \pause
+%     \item the \code{ENSURES} clause (postconditions) \pause
+%     \item the function's definition \pause
+%     \item test cases! \pause
+%   \end{enumerate}
 
-\begin{frame}[fragile]
-  \frametitle{Specification, pt. 2}
+%   \vspace{\fill}
 
-  We use comments in the form of \code{REQUIRES} and \code{ENSURES} to describe 
-  what must be true of the inputs the function receives, and what then is guaranteed 
-  to hold of the function's behavior. 
+%   We will frequently annotate our functions this way this semester.
+% \end{frame}
 
-  \pause
-  \vspace{\fill}
+% \begin{frame}[fragile]
+%   \frametitle{Specification, pt. 2}
 
-  It is often unrealistic to have a function which has meaning on \textit{every} possible 
-  input (like \code{div}, or square root, or logarithm). The \code{REQUIRES} helps to
-  describe the range of "relevant inputs", and the \code{ENSURES} helps to describe
-  what the function does.
+%   We use comments in the form of \code{REQUIRES} and \code{ENSURES} to describe
+%   what must be true of the inputs the function receives, and what then is guaranteed
+%   to hold of the function's behavior.
 
-  \pause
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  These "contracts" pop up in real code all the time:
-  \pause
-  \begin{itemize}
-    \item this function must be called with only safe values, \pause
-    \item this library can only be invoked in single-threaded programs, \pause
-    \item this API is not guaranteed to work with non-ASCII characters \pause 
-  \end{itemize}
+%   It is often unrealistic to have a function which has meaning on \textit{every} possible
+%   input (like \code{div}, or square root, or logarithm). The \code{REQUIRES} helps to
+%   describe the range of "relevant inputs", and the \code{ENSURES} helps to describe
+%   what the function does.
 
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  It is important that code is documented so users and maintainers know pertinent
-  information about it! 
-\end{frame}
+%   These "contracts" pop up in real code all the time:
+%   \pause
+%   \begin{itemize}
+%     \item this function must be called with only safe values, \pause
+%     \item this library can only be invoked in single-threaded programs, \pause
+%     \item this API is not guaranteed to work with non-ASCII characters \pause
+%   \end{itemize}
 
-\begin{frame}[fragile]
-  \frametitle{Specification, pt. 3}
+%   \vspace{\fill}
 
-  The last piece of the formula is writing tests.\footnotemark
+%   It is important that code is documented so users and maintainers know pertinent
+%   information about it!
+% \end{frame}
 
-  \pause
-  \vspace{\fill}
+% \begin{frame}[fragile]
+%   \frametitle{Specification, pt. 3}
 
-  In this class, we will use a 150-specific testing framework, where
-  we write something like:
-  
-  \begin{codeblock}
-    val () = Test.int ("test1", 2 + 2, 1 + 3)
-  \end{codeblock}
-  which will raise an exception if the second and third parts of the
-  tuple do not evaluate to the same value.
+%   The last piece of the formula is writing tests.\footnote{
+%     There's a lot I could say here about the importance
+%     of writing tests. Test-driven development is a real thing, and especially
+%     in imperative languages, it's very important to have a solid backbone
+%     of tests to make sure you don't accidentally regress behavior when
+%     introducing a small change. However, this is a class on functional
+%     programming, and not software engineering, so I'll decline to comment
+%     for now.\footnotemark
+%   }
 
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  \noteBox{\, I realize writing tests sucks. So does life, sometimes.}
+%   In this class, we will use a 150-specific testing framework, where
+%   we write something like:
 
-  \footnotetext[1]{There's a lot I could say here about the importance
-  of writing tests. Test-driven development is a real thing, and especially
-  in imperative languages, it's very important to have a solid backbone
-  of tests to make sure you don't accidentally regress behavior when 
-  introducing a small change. However, this is a class on functional
-  programming, and not software engineering, so I'll decline to comment
-  for now.\footnotemark}
+%   \begin{codeblock}
+%     val () = Test.int ("test1", 2 + 2, 1 + 3)
+%   \end{codeblock}
+%   which will raise an exception if the second and third parts of the
+%   tuple do not evaluate to the same value.
 
-  \footnotetext[2]{This is a really long footnote.}
-\end{frame}
+%   \vspace{\fill}
 
-\begin{frame}[fragile]
-  \frametitle{Back to Fact}
+%   \noteBox{\, I realize writing tests sucks. So does life, sometimes.}
 
-  Now that we have all these tools for mathematically analyzing
-  code, let's look at a specific example. Let's take the factorial 
-  function that we wrote earlier.
+%   \footnotetext[2]{This is a really long footnote.}
+% \end{frame}
 
-  \vspace{\fill}
+% \begin{frame}[fragile]
+%   \frametitle{Back to Fact}
 
-  \begin{codeblock}
-    fun fact (0 : int) : int = 1
-      | fact n = n * fact (n - 1)
-  \end{codeblock}
+%   Now that we have all these tools for mathematically analyzing
+%   code, let's look at a specific example. Let's take the factorial
+%   function that we wrote earlier.
 
-  \pause
-  \vspace{\fill}
+%   \vspace{\fill}
 
-  \customBox{Question}{\, Is \code{fact} total?}
-\end{frame}
+%   \begin{codeblock}
+%     fun fact (0 : int) : int = 1
+%       | fact n = n * fact (n - 1)
+%   \end{codeblock}
 
-\begin{frame}[fragile]
-  \frametitle{A Specific Specification}
+%   \pause
+%   \vspace{\fill}
 
-  \textbf{Answer:} It is not.
+%   \customBox{Question}{\, Is \code{fact} total?}
+% \end{frame}
 
-  \pause
-  \vspace{\fill}
+% \begin{frame}[fragile]
+%   \frametitle{A Specific Specification}
 
-  The \code{fact} function loops forever on a negative input.
+%   \textbf{Answer:} It is not.
 
-  \pause
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  But for our intents and purposes, we don't really
-  care about what \code{fact} does on negative inputs, anyways. So 
-  let's restrict our domain of interest to strictly non-negative
-  numbers.
+%   The \code{fact} function loops forever on a negative input.
 
-  \pause
-  \vspace{\fill}
+%   \pause
+%   \vspace{\fill}
 
-  \begin{codeblock}
-    (* fact : int -> int *)
-    (* REQUIRES: n >= 0 *)
-    (* ENSURES: fact n evaluates to the nth factorial *)
-    fun fact (0 : int) : int = 1
-      | fact n = n * fact (n - 1)
-  \end{codeblock}
+%   But for our intents and purposes, we don't really
+%   care about what \code{fact} does on negative inputs, anyways. So
+%   let's restrict our domain of interest to strictly non-negative
+%   numbers.
 
-  \pause
-  \customBox{Lesson}{\, Oftentimes, we are interested in only a 
-  subset of the domain of a function, and we only get to
-  make interesting claims about its behavior when we restrict
-  our attention to it.}
-\end{frame}
+%   \pause
+%   \vspace{\fill}
 
-\begin{frame}[fragile]
-  \frametitle{Remark: Slide Notation}
+%   \begin{codeblock}
+%     (* fact : int -> int *)
+%     (* REQUIRES: n >= 0 *)
+%     (* ENSURES: fact n evaluates to the nth factorial *)
+%     fun fact (0 : int) : int = 1
+%       | fact n = n * fact (n - 1)
+%   \end{codeblock}
 
-  Instead of putting specifications in comments above the code, when
-  writing code within these slides, they will often be conveyed via
-  specification blocks.
+%   \pause
+%   \customBox{Lesson}{\, Oftentimes, we are interested in only a
+%   subset of the domain of a function, and we only get to
+%   make interesting claims about its behavior when we restrict
+%   our attention to it.}
+% \end{frame}
 
-  For instance, for the \code{fact} function, I would instead write:
-  \spec
-    {fact}
-    {int -> int}
-    {\code{n >= 0}}
-    {\code{fact n} evaluates to $n!$}
-\end{frame}
+% \begin{frame}[fragile]
+%   \frametitle{Remark: Slide Notation}
+
+%   Instead of putting specifications in comments above the code, when
+%   writing code within these slides, they will often be conveyed via
+%   specification blocks.
+
+%   For instance, for the \code{fact} function, I would instead write:
+%   \spec
+%     {fact}
+%     {int -> int}
+%     {\code{n >= 0}}
+%     {\code{fact n} evaluates to $n!$}
+% \end{frame}
 
 \sectionSlide{1}{Recursion}
 
@@ -383,7 +383,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, We call a function \term{recursive} if it calls itself. 
+  \defBox{\, We call a function \term{recursive} if it calls itself.
   More generally, something which refers to itself is recursive.}
 
   \pause
@@ -396,24 +396,24 @@
 
   SML doesn't have for loops, so recursion will be our preferred method
   for repeating some computation. We will find that, in conjunction with
-  purity and binding, this will greatly help us reason about our code. 
+  purity and binding, this will greatly help us reason about our code.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Recursion, Mathematically}
 
-  While recursion is a concept which is usually taught in programming classes, 
+  While recursion is a concept which is usually taught in programming classes,
   it's just as much a mathematical concept.
 
   \pause
   \vspace{\fill}
 
-  The factorial function is usually specified as: 
+  The factorial function is usually specified as:
 
   \vspace{5pt}
 
   \begin{equation}
-    \text{fact}(n) = 
+    \text{fact}(n) =
     \left\{
         \begin{array}{lr}
             1, & \text{if } n = 0\\
@@ -424,14 +424,14 @@
 
   \vspace{5pt}
 
-  which references the factorial function in its own definition. In other words, it's 
+  which references the factorial function in its own definition. In other words, it's
   recursive.
 
   \pause
   \vspace{\fill}
 
   We see that the SML code for the factorial function closely resembles the mathematical
-  definition. 
+  definition.
 
   \rprs
 \end{frame}
@@ -446,7 +446,7 @@
 
   \begin{itemize}
     \item Identify and write the \term{base case}, \pause
-    \item Identify the recursive case, \pause 
+    \item Identify the recursive case, \pause
     \item Assume that the function \textbf{already works} on a "smaller" input, \pause
     \item Write the recursive case under that assumption.
   \end{itemize}
@@ -461,7 +461,7 @@
 \begin{frame}[fragile]
   \frametitle{A \code{pow} Function}
 
-  Let's try to write out a different function using this formula. 
+  Let's try to write out a different function using this formula.
 
   \spec
     {pow}
@@ -472,13 +472,13 @@
   \pause
   \vspace{\fill}
 
-  We know that raising any number to the power of $0$ will produce $1$, so 
-  our base case will simply be the case where the second value we receive is 
+  We know that raising any number to the power of $0$ will produce $1$, so
+  our base case will simply be the case where the second value we receive is
   \code{0}.
 
   \pause
   \begin{codeblock}
-    fun pow (n : int, 0 : int) : int = 1 
+    fun pow (n : int, 0 : int) : int = 1
       | (* ... *)
   \end{codeblock}
 
@@ -487,7 +487,7 @@
 
   Since our base case is casing upon the value of the exponent, this is a good
   indication that the exponent is going to be the value that we recurse on. We
-  call this the \term{variable of recurrence}. 
+  call this the \term{variable of recurrence}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -503,15 +503,15 @@
   works on a smaller input. Since our variable of recurrence is \code{k}, then
   we can assume that \code{pow (n, k - 1)} already evaluates to the
   $(k-1)$th power of $n$.
-  
+
   \pause
   \vspace{\fill}
 
   Given $n^{k - 1}$, we can recover $n^k$ by just multiplying by $n$, so we get:
 
   \begin{codeblock}
-    fun pow (n : int, 0 : int) : int = 1 
-      | pow (n, k) = n * pow (n, k - 1) 
+    fun pow (n : int, 0 : int) : int = 1
+      | pow (n, k) = n * pow (n, k - 1)
   \end{codeblock}
 
   \pause
@@ -527,7 +527,7 @@
 
   \begin{itemize}
     \item Identify and write the \term{base case}, \
-    \item Identify the recursive case, 
+    \item Identify the recursive case,
     \item Assume that the function \textbf{already works} on a "smaller" input,
     \item Write the recursive case under that assumption.
   \end{itemize}
@@ -556,15 +556,15 @@
 \begin{frame}[fragile]
   \frametitle{The Recursive Formula, Unmasked}
 
-  There is a simple four-step formula to proving any simple inductive theorem: 
+  There is a simple four-step formula to proving any simple inductive theorem:
 
   \vspace{5pt}
 
   \begin{itemize}
     \item Identify and write the \term{base case},
-    \item Identify the recursive case, 
-    \item Assume that the induction hypothesis holds, 
-    \item Prove the recursive case under that assumption. 
+    \item Identify the recursive case,
+    \item Assume that the induction hypothesis holds,
+    \item Prove the recursive case under that assumption.
   \end{itemize}
 
   \vspace{\fill}
@@ -602,14 +602,14 @@
   \pause
   \vspace{\fill}
 
-  In other words: "if you can prove $P(0)$, and that any step follows from the 
+  In other words: "if you can prove $P(0)$, and that any step follows from the
   previous, then the statement is true for all numbers".
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{The Inductive Formula}
 
-  There is a simple four-step formula to proving any simple inductive theorem: 
+  There is a simple four-step formula to proving any simple inductive theorem:
 
   \pause
   \vspace{5pt}
@@ -617,8 +617,8 @@
   \begin{itemize}
     \item Identify and write the \term{base case}, \pause
     \item Identify the recursive case, \pause
-    \item Assume that the induction hypothesis holds, \pause 
-    \item Prove the recursive case under that assumption. \pause 
+    \item Assume that the induction hypothesis holds, \pause
+    \item Prove the recursive case under that assumption. \pause
   \end{itemize}
 
   \pause
@@ -630,7 +630,7 @@
 
 \begin{frame}[fragile]
   \frametitle{An Example Inductive Proof}
- 
+
   { \small
   Let $S_n$ be the sum of the first $n$ odd natural numbers.
 
@@ -642,11 +642,11 @@
   \pause
   \vspace{\fill}
 
-  We proceed by mathematical induction on $n$. 
+  We proceed by mathematical induction on $n$.
 
   \vspace{\fill}
-  
-  \bcBox{\, $n = 1$} 
+
+  \bcBox{\, $n = 1$}
   Then, $1 = 1^2$.
 
   \vspace{\fill}
@@ -657,20 +657,20 @@
 
   \vspace{\fill}
 
-  We know the $k + 1$th odd natural number is $2k + 1$, so: 
-  \begin{align*} 
+  We know the $k + 1$th odd natural number is $2k + 1$, so:
+  \begin{align*}
     S_{k + 1} &= S_k + 2k + 1 \\
               &= k^2 + 2k + 1 \\
-              &= (k + 1)^2 
+              &= (k + 1)^2
   \end{align*}
 
-  Therefore, by the principle of mathematical induction, the theorem holds 
+  Therefore, by the principle of mathematical induction, the theorem holds
   for all natural numbers $n$.
   }
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Seeing Double} 
+  \frametitle{Seeing Double}
 
   We see that \term{recursion} and \term{induction} are really just two sides of the same coin.
 
@@ -694,7 +694,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Writing versus Verifying} 
+  \frametitle{Writing versus Verifying}
 
   We have seen now that induction can be used as a tool which can help us to
   \textit{write} recursive functions.
@@ -726,8 +726,8 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    fun pow (n : int, 0 : int) : int = 1 
-      | pow (n, k) = n * pow (n, k - 1) 
+    fun pow (n : int, 0 : int) : int = 1
+      | pow (n, k) = n * pow (n, k - 1)
   \end{codeblock}
 
   \pause
@@ -751,18 +751,18 @@
 \begin{frame}[fragile]
   \frametitle{Proving \code{pow} Correct}
 
-  \thmBox{}{\, Prove that \code{pow (n, k)} $\hookrightarrow$ $n^k$, for all 
+  \thmBox{}{\, Prove that \code{pow (n, k)} $\hookrightarrow$ $n^k$, for all
   \code{k >= 0}}
 
   \pause
   \vspace{\fill}
 
-  We proceed by mathematical induction on \code{k}. 
+  We proceed by mathematical induction on \code{k}.
 
   \pause
   \vspace{\fill}
-  
-  \bcBox{\, \code{k = 0}} 
+
+  \bcBox{\, \code{k = 0}}
   \pause
   \begin{align*}
        \code{pow(n, 0)} &\stepsTo \code{1} &\tag{clause 1 of \code{pow}}
@@ -771,7 +771,7 @@
   \pause
   \vspace{\fill}
 
-  \ihBox{}{\, Assume that \code{pow (n, k)} $\hookrightarrow$ $n^k$, for some \code{k}} 
+  \ihBox{}{\, Assume that \code{pow (n, k)} $\hookrightarrow$ $n^k$, for some \code{k}}
 
   \pause
 
@@ -787,13 +787,13 @@
 \begin{frame}[fragile]
   \frametitle{Proving a Function Correct}
 
-  We see that in an inductive proof on a recursive function, the isomorphism 
+  We see that in an inductive proof on a recursive function, the isomorphism
   between recursion and induction is made even more clear.
 
   \vspace{\fill}
 
   \begin{center}
-    \begin{tabular}{c || c} 
+    \begin{tabular}{c || c}
       \hline & \\[-1.5ex]
       Program & Proof \\ [2pt]
       \hline & \\[-1.5ex]
@@ -821,13 +821,13 @@
 
   \pause
 
-  \begin{codeblock}
+  \begin{lstlisting}[style=15150code, language=sml, numbers=none]
     case <expr> of
       <pat1> => <expr1>
     | <pat2> => <expr2>
     ...
-    | <patn> => <exprn> 
-  \end{codeblock}
+    | <patn> => <exprn>
+  \end{lstlisting}
 
   \vspace{\fill}
 
@@ -837,7 +837,7 @@
   \vspace{\fill}
 
   \noteBox{\, \code{case} expressions follow similar typing rules as
-  function clauses, where each case's expression must share the same type.} 
+  function clauses, where each case's expression must share the same type.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -845,7 +845,7 @@
   So for instance, we could rewrite the \code{fact} function as:
 
   \begin{codeblock}
-    fun fact (n : int) : int = 
+    fun fact (n : int) : int =
       case n of
         0 => 1
       | _ => n * fact (n - 1)
@@ -865,7 +865,7 @@
   \begin{codeblock}
     (case 2 of
       2 => 3
-    | _ => 5) + 1 
+    | _ => 5) + 1
   \end{codeblock}
 \end{frame}
 
@@ -894,7 +894,7 @@
 
   \pause
   \vspace{\fill}
-  
+
   What if we want to add to an existing list, though? We can also construct lists out of other lists, using a \term{constructor}!
 \end{frame}
 
@@ -902,18 +902,21 @@
   \frametitle{List Constructors}
 
   A list is characterized by two \term{constructors}, which are used to construct
-  values of some list type. These constructors are 
+  values of some list type. These constructors are
   \pause
   \begin{itemize}
-    \item \code{[]}\footnotemark, which is the empty list of type \code{t list} \pause
-    \item \code{::} (pronounced "cons"), an infix operator such that 
+    \item \code{[]}\footnote{
+      If you're viewing this presentation online, after the lecture, it's
+      important to me that you know this is pronounced "nil". Hard to convey digitally.
+    }, which is the empty list of type \code{t list} \pause
+    \item \code{::} (pronounced "cons"), an infix operator such that
     \code{x :: xs : t list} if \code{x : t} and \code{xs : t list}.
   \end{itemize}
 
   \pause
   \vspace{\fill}
 
-  While the bracket notation is simple, it's actually just syntactic sugar! The 
+  While the bracket notation is simple, it's actually just syntactic sugar! The
   list \code{[1, 2, 3]} is really just \code{1::2::3::[]}
 
   \pause
@@ -922,9 +925,6 @@
   \noteBox{ The \code{::} operator is \textit{right-associative}, meaning that
   \code{1::2::3::[]} is implicitly understood to be \code{1::(2::(3::[]))}}
 
-  \footnotetext[3]{If you're viewing this presentation online, after the lecture, it's
-  important to me that you know this is pronounced "nil". Hard to convey digitally.}
-
   \tgs
 \end{frame}
 
@@ -932,19 +932,19 @@
 \begin{frame}[fragile]
   \frametitle{List Constructors}
 
-  Constructors are patterns too! 
+  Constructors are patterns too!
 
   \pause
   \vspace{\fill}
 
-  This means that we can \code{case} upon a list to figure out what kind of 
+  This means that we can \code{case} upon a list to figure out what kind of
   \term{variant} it is. For instance, we can write a function to check whether
   a list is empty as:
-  
+
   \pause
 
   \begin{codeblock}
-    fun isEmpty (L : int list) : bool = 
+    fun isEmpty (L : int list) : bool =
       case L of
         [] => true
       | x::xs => false
@@ -953,8 +953,8 @@
   \pause
   \vspace{\fill}
 
-  We might say that these constructors are all that characterize a list. A list 
-  \textit{must be} either empty (\code{[]}) or have a first element, and the rest of 
+  We might say that these constructors are all that characterize a list. A list
+  \textit{must be} either empty (\code{[]}) or have a first element, and the rest of
   the list (\code{x::xs}). Pattern matching just lets us handle either case.
 \end{frame}
 
@@ -966,25 +966,25 @@
   \pause
   \vspace{\fill}
 
-  The base case must be the empty list \code{[]}, in which case we just return \code{0}. 
+  The base case must be the empty list \code{[]}, in which case we just return \code{0}.
 
   \pause
   \vspace{10pt}
 
   In the recursive case \code{x::xs}, we also assume that \code{length} works on a smaller
-  input. 
+  input.
 
   \pause
   \vspace{5pt}
-  
-  In this case, \code{xs} happens to be exactly a smaller input than the entire 
-  list \code{x::xs}, so we assume \code{length xs} works, and we get: 
+
+  In this case, \code{xs} happens to be exactly a smaller input than the entire
+  list \code{x::xs}, so we assume \code{length xs} works, and we get:
 
   \pause
   \vspace{\fill}
 
   \begin{codeblock}
-    fun length ([] : int list) : int = 0 
+    fun length ([] : int list) : int = 0
       | length (x::xs) = 1 + length xs
   \end{codeblock}
 \end{frame}
@@ -1001,7 +1001,7 @@
 
   The \code{pow} function we just implemented is fine, but it's not necessarily
   as fast as it could be! From eyeing the function, we can see that it would take
-  us $k$ many multiplications to compute the $k$th power of $n$. This is more 
+  us $k$ many multiplications to compute the $k$th power of $n$. This is more
   than it needs to be, because of a nice fact that we can take advantage of:
 
   \pause
@@ -1028,7 +1028,7 @@
   \begin{codeblock}
     fun fast_pow (n : int, 0 : int) : int = 1
       | fast_pow (n, k) =
-          if k mod 2 = 0 then 
+          if k mod 2 = 0 then
             fast_pow (n, k div 2) * fast_pow (n, k div 2)
           else
             n * fast_pow (n, k - 1)
@@ -1036,9 +1036,7 @@
 
   \vspace{\fill}
 
-  How's this look?\footnotemark
-
-  \footnotetext[4]{I actually adjusted the definition slightly from the
+  How's this look?\footnote{I actually adjusted the definition slightly from the
   mathematical definition, because it makes the proof easier. It can be
   done either way, though.}
 \end{frame}
@@ -1051,7 +1049,7 @@
 
   \vspace{\fill}
 
-  We wanted to save on effort by reusing our answers from the recursive call, 
+  We wanted to save on effort by reusing our answers from the recursive call,
   but we see here that we are just recomputing each time!
 
   \pause
@@ -1077,9 +1075,9 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    let 
+    let
       <declarations>
-    in 
+    in
       <expr>
     end
   \end{codeblock}
@@ -1090,12 +1088,12 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{\, \code{let} expressions are expressions in their own right, 
+  \noteBox{\, \code{let} expressions are expressions in their own right,
   so it is valid to write}
   \begin{codeblock}
-    (let 
+    (let
       val x = 2
-    in 
+    in
       x + x
     end) + 3
   \end{codeblock}
@@ -1107,22 +1105,22 @@
 
   SML is a \term{lexically scoped} language, which means that the scope in which
   variable bindings are visible depends on its context in the text of the program.
-  
+
   \pause
   \vspace{\fill}
 
   This means, for instance, that anything declared within a \code{let} expression
   is only potentially visible within the expression included with it. This means,
-  for instance, that this is invalid code: 
+  for instance, that this is invalid code:
 
   \begin{codeblock}
     (* INVALID CODE! What is `y`? *)
-    val x = 
-      (let 
+    val x =
+      (let
         val y = 3
-      in 
-        4 
-      end) + y 
+      in
+        4
+      end) + y
   \end{codeblock}
 \end{frame}
 
@@ -1137,14 +1135,14 @@
   \begin{codeblock}
     fun fast_pow (n : int, 0 : int) : int = 1
       | fast_pow (n, k) =
-          if k mod 2 = 0 then 
+          if k mod 2 = 0 then
             let
               val half_ans = fast_pow (n, k div 2)
             in
-              half_ans * half_ans 
+              half_ans * half_ans
             end
           else
-            n * fast_pow (n, k - 1) 
+            n * fast_pow (n, k - 1)
   \end{codeblock}
   }
 
@@ -1164,7 +1162,7 @@
 
   \pause
   \vspace{\fill}
-  
+
   This is not as straightforward as what we usually saw, with the recursive
   call being on one less than the current value.
 
@@ -1172,7 +1170,7 @@
   \vspace{\fill}
 
   If the recursive call corresponds to our inductive hypothesis, then will
-  a change to our recursive call change what our inductive hypothesis 
+  a change to our recursive call change what our inductive hypothesis
   should be?
 
   \pause
@@ -1215,12 +1213,12 @@
   \pause
   \vspace{\fill}
 
-  We proceed by strong induction on $k$. 
+  We proceed by strong induction on $k$.
 
   \pause
   \vspace{\fill}
-  
-  \bcBox{\, $k = 0$} 
+
+  \bcBox{\, $k = 0$}
   \pause
   \begin{align*}
        \code{fast_pow (n, 0)} &\eeq \code{1} &\tag{clause 1 of \code{fast_pow}} \\
@@ -1231,7 +1229,7 @@
   \vspace{\fill}
 
   \ihBox{}{\, Assume \code{fast_pow (n, k)} $\eeq$ \code{pow (n, i)}, for all \code{0 <= i < k},
-  for some \code{k}} 
+  for some \code{k}}
 
   \pause
   \vspace{\fill}
@@ -1248,7 +1246,7 @@
 
   \pause
   \vspace{\fill}
-  
+
   The way we deal with this in a proof is that we must prove that the theorem holds
   \textit{no matter which case we are in}.
 
@@ -1260,13 +1258,13 @@
 
   \vspace{\fill}
 
-  \lemmaBox{1}{\, When \code{k mod 2 = 0}, then} 
+  \lemmaBox{1}{\, When \code{k mod 2 = 0}, then}
   $$\code{pow (n, k div 2) * pow (n, k div 2)} \eeq \code{pow (n, k)}$$
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{\code{fast_pow} Is \code{pow}: Inductive Step}
-  
+
   \isBox{}{\, Then, we want to show that \code{fast_pow (n, k)} $\eeq$ \code{pow (n, k)}}
 
   \pause
@@ -1300,7 +1298,7 @@
   \frametitle{Programs and Proofs}
 
   \begin{center}
-    \begin{tabular}{c || c} 
+    \begin{tabular}{c || c}
       \hline & \\[-1.5ex]
       Program & Proof \\ [2pt]
       \hline & \\[-1.5ex]
@@ -1321,16 +1319,17 @@
 
   \ptmt
 \end{frame}
- 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    Post-lecture survey: \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_may23}
-  \end{center}
-\end{frame}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
+
+% 	\begin{center}
+%     Post-lecture survey: \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_may23}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}
-

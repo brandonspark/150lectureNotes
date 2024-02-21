@@ -1,25 +1,25 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
- 
+    \documentclass[aspectratio=169, handout]{beamer}
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{2791e3}
     \newcommand{\presentColor}{2e2e2e} % the primary color of the slide borders
     \newcommand{\bgColor}{d6d6d6}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -32,8 +32,8 @@
 
     \usepackage{lectureSlides}
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
-    \title{1 - Prologue} % TODO
-    \subtitle{Awesome slides with an awesome subtitle} % TODO
+    \title{Prologue} % TODO
+    \subtitle{A humble beginning} % TODO
     \date{16 May 2023} % TODO
     \author{Brandon Wu} % TODO
 
@@ -51,7 +51,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -87,7 +87,7 @@
   To properly introduce myself, I'm actually a recent graduate of CMU, I graduated
   with my bachelor's degree in computer science last spring, and when I was in undergrad,
   I TA'd this class five times, and I was Head TA for two semesters. While I am lucky
-  enough to teach this course to you this summer, I have a full-time job working  
+  enough to teach this course to you this summer, I have a full-time job working
   for a company called Semgrep in the Bay, where I actually do functional programming
   every single day.
 
@@ -109,10 +109,10 @@
 
   \vspace{\fill}
 
-  I TA'd 150 for three years while I was at CMU, and I currently work a 
-  full-time job as a software engineer at a security company called 
-  {\color{blue}\href{https://semgrep.dev/}{Semgrep}}, doing functional 
-  programming\footnotemark for program analysis.
+  I TA'd 150 for three years while I was at CMU, and I currently work a
+  full-time job as a software engineer at a security company called
+  {\color{blue}\href{https://semgrep.dev/}{Semgrep}}, doing functional
+  programming\footnote{Using a language very similar to the one you will learn in this class.} for program analysis.
 
   \vspace{\fill}
 
@@ -122,28 +122,26 @@
   \vspace{\fill}
 
   \noteBox{\, \textbf{I am not a professor}.}
-
-  \footnotetext[1]{Using a language very similar to the one you will learn in this class.}
 \end{frame}
 
 \begin{frame}[fragile]
     \frametitle{The Course Staff}
 
-    \begin{center} 
+    \begin{center}
       \includegraphics[width=0.12\columnwidth]{nancy} \qquad \qquad \qquad
       \includegraphics[scale=0.3]{me_smaller.jpg} \qquad \qquad \qquad
-      \includegraphics[width=0.12\columnwidth]{sonya} 
+      \includegraphics[width=0.12\columnwidth]{sonya}
     \end{center}
-    \begin{center} 
+    \begin{center}
       \large Nancy \qquad \qquad \quad
-      \Large Brandon Wu \qquad \qquad \quad 
+      \Large Brandon Wu \qquad \qquad \quad
       \large Sonya
     \end{center}
-    
+
     \vspace{\fill}
 
     \begin{center}\begin{tabular}{c c c c c c c c }
-      Kaz & Deya & Caroline & Stephen & Brandon & Michael \\  
+      Kaz & Deya & Caroline & Stephen & Brandon & Michael \\
       \includegraphics[width=0.1\columnwidth]{kaz} &
       \includegraphics[width=0.1\columnwidth]{deya} &
       \includegraphics[width=0.1\columnwidth]{caroline} &
@@ -157,7 +155,7 @@
   \frametitle{Course Logistics}
 
   \begin{itemize}
-    \item Homework every week -- due on Tuesdays or Thursdays (see the lecture schedule!) 
+    \item Homework every week -- due on Tuesdays or Thursdays (see the lecture schedule!)
     \item Turn in assignments via Gradescope
     \item Receive assignments via Canvas
     \item Piazza for any questions
@@ -179,7 +177,7 @@
   \frametitle{Grading}
 
   The grading policy for this semester will follow a \textit{choose-your-own-adventure} format.
-  
+
   \pause
   \vspace{\fill}
 
@@ -249,8 +247,8 @@
 
 \begin{frame}[fragile]
   \frametitle{House System}
-  
-  This semester, we are implementing a house system\footnotemark.  
+
+  This semester, we are implementing a house system.\footnote{Yes, like Harry Potter.}
 
   \pause
   \vspace{\fill}
@@ -259,7 +257,7 @@
   "house". Each house will be eligible to earn points on the merits of:
   \pause
   \begin{itemize}
-    \item Asking good questions on Piazza \pause 
+    \item Asking good questions on Piazza \pause
     \item Giving good answers on Piazza \pause
     \item Answering questions during lecture
   \end{itemize}
@@ -268,8 +266,6 @@
   \vspace{\fill}
 
   \textbf{Twice a semester, the house with the most points will earn boba for their entire lab}.
-
-  \footnotetext[2]{Yes, like Harry Potter.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -282,14 +278,14 @@
   \vspace{\fill}
 
   To facilitate this, we will have active learning exercises during lecture. There will be
-  a short (roughly 5 minute) quiz in the middle of every single lecture, that \textbf{will not 
+  a short (roughly 5 minute) quiz in the middle of every single lecture, that \textbf{will not
   count towards your grade}. Instead, it will simply be used by TAs to judge where your
   understanding may be lacking.
 
   \pause
   \vspace{\fill}
 
-  In particular, these quizzes are a whole-house effort! Every house will take the quiz 
+  In particular, these quizzes are a whole-house effort! Every house will take the quiz
   together, and whichever house scores the highest cumulatively earn points for their house,
   and be crowned that lecture's victor, along with earning other prizes.
 
@@ -297,10 +293,10 @@
   \vspace{\fill}
 
   This means that winning the house competition is a whole-house effort! It's in your interest
-  to discuss with others during these quizzes, and fill in gaps in yours and others' 
+  to discuss with others during these quizzes, and fill in gaps in yours and others'
   understanding.
 \end{frame}
-  
+
 \begin{frame}[fragile]
   \frametitle{Wellness}
 
@@ -310,7 +306,7 @@
   \vspace{\fill}
 
   The things you will learn in this class are important, but remember that
-  \textbf{it's just a class}. If you're sleeping 4 hours a night, skipping meals, 
+  \textbf{it's just a class}. If you're sleeping 4 hours a night, skipping meals,
   or otherwise compromising your health for the sake of this class, \textbf{something
   is wrong}.
 
@@ -320,20 +316,18 @@
   Things that are required:
   \begin{itemize}
     \item Sleeping \pause
-    \item Eating \pause 
-    \item Socializing (for most people) \pause 
-    \item Paying taxes 
+    \item Eating \pause
+    \item Socializing (for most people) \pause
+    \item Paying taxes
   \end{itemize}
 
   \pause
   \vspace{\fill}
-  
+
   Things that are not required:
   \begin{itemize}
-    \item Finishing 150 homework at the expense of these four things\footnotemark 
+    \item Finishing 150 homework at the expense of these four things\footnote{Especially the last one.}
   \end{itemize}
-
-  \footnotetext[3]{Especially the last one.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -372,13 +366,13 @@
   \end{center}
 
   \note{
-    To many of you, this is likely a brand new topic, and that's perfectly OK. How do I 
+    To many of you, this is likely a brand new topic, and that's perfectly OK. How do I
     like to describe it? Functional programming is a kind of paradigm of programming,
     like object-oriented or imperative programming. It's a kind of style, but deeper than
     the sense of MLA or Chicago style. It's not just how you format the text, but it's a
-    philosophically different style of programming. 
+    philosophically different style of programming.
 
-    Before I can go into the philosophy of functional programming though, I'd like to 
+    Before I can go into the philosophy of functional programming though, I'd like to
     detour a bit and talk about programming.
   }
 \end{frame}
@@ -394,8 +388,8 @@
   \pause
   \fontfamily{phv}\selectfont
 
-  \begin{center} 
-    Programming is the act of \textbf{instructing a computer on how to achieve some kind of operation.} 
+  \begin{center}
+    Programming is the act of \textbf{instructing a computer on how to achieve some kind of operation.}
   \end{center}
 
   \note{
@@ -410,7 +404,7 @@
 
   \vspace{5pt}
 
-  \begin{center} 
+  \begin{center}
     Programming is \textbf{inherently a communicative act.}
   \end{center}
 
@@ -422,7 +416,7 @@
   \pause
   \vspace{\fill}
 
-  \begin{center} 
+  \begin{center}
     Functional programming is \textbf{an improvement on our ability to communicate as programmers}.
   \end{center}
 
@@ -430,7 +424,7 @@
     The key part of that description, however, is \textit{instruction}. You can instruct someone in lots
     of different ways. It all boils down to someone's particular communication style. In
     that way, programming is inherently a communicative act. It's not just math or computer science, it's
-    \textit{linguistic}. I'm sure many of you have read bad code before. \\ 
+    \textit{linguistic}. I'm sure many of you have read bad code before. \\
 
     So, we know that some things make good communication, but what things make good programming?
   }
@@ -458,8 +452,8 @@
   }
 
   \note{
-    So how can we characterize good programming? \\ 
-    
+    So how can we characterize good programming? \\
+
     Well, for starters, programming should be descriptive. Good code should be self-documenting,
     in the sense that you can read it easily and figure out what's going on. This is something that is
     more subtle than just the names of your variables or the layout of your code, however. \\
@@ -468,7 +462,7 @@
     one of the pioneers of the field of computer science. You might know about it. It was called
     "Go To Statement Considered Harmful", and it was basically a treatise against something called
     a "go to statement". Before the days of loops and conditionals, there was the goto, which was
-    basically an unrestricted teleportation cheat code. It said, go here and start doing this 
+    basically an unrestricted teleportation cheat code. It said, go here and start doing this
     instead. It was the wild west of programming, where programs could sometimes just go and
     start doing something completely different, and it made programs extremely hard to read. \\
 
@@ -525,7 +519,7 @@
   \vspace{\fill}
 
   \begin{center}
-    Programs should be written with future maintainability in mind. 
+    Programs should be written with future maintainability in mind.
   \end{center}
 
   \pause
@@ -547,12 +541,12 @@
 \begin{frame}[fragile]
   \frametitle{What is Not Functional Programming?}
 
-  \note { 
-    So, now that we've identified some things that programming should ideally be, we can return 
+  \note {
+    So, now that we've identified some things that programming should ideally be, we can return
     to this discussion of functional programming. What is functional programming? \\
 
-    Functional programming is a conglomeration of different ideas, so there's not a one-size 
-    fits-all description for it, but I think the primary differences are along a few axes. 
+    Functional programming is a conglomeration of different ideas, so there's not a one-size
+    fits-all description for it, but I think the primary differences are along a few axes.
     So, I'll push back on that again, and answer the slightly easier question of what functional
     programming is not. Let's start with an example of code written in Python. \\
   }
@@ -565,8 +559,8 @@
     count = 0
 
     def increment():
-      global count 
-      count += 1 
+      global count
+      count += 1
 
       return count
   \end{lstlisting}
@@ -579,14 +573,14 @@
 
   \vspace{\fill}
 
-  \note { 
+  \note {
     The answer: It depends! It's not clear what this function might return, because it
     depends on when you call it. This is the notion of "state" in a program. \\
   }
 
   The answer: \textbf{it depends}. On the first call, it returns \code{1}, and on the
   second call, \code{2}, and so on.
-  
+
   \pause
 
   \vspace{\fill}
@@ -603,7 +597,7 @@
   \pause
   \vspace{\fill}
 
-  An imperative program is like a fully crowded kitchen with no rules. 
+  An imperative program is like a fully crowded kitchen with no rules.
   \begin{itemize}
     \item Everyone uses the same ingredients and the same cookware. \\
 
@@ -614,14 +608,14 @@
   \pause
   \vspace{\fill}
 
-  A functional program is like a kitchen where each cook has their own working space. 
+  A functional program is like a kitchen where each cook has their own working space.
 
   \begin{itemize}
     \item Everyone has their own pots, pans, and ingredients, and they only share things when
-    they finish producing their individual parts. 
+    they finish producing their individual parts.
 
     \item \textbf{Each cook only interacts when sharing finished results}. This means
-    it is impossible for one cook's actions to mess up another's cooking. 
+    it is impossible for one cook's actions to mess up another's cooking.
   \end{itemize}
 
   \note {
@@ -635,9 +629,9 @@
   \begin{center}
   \begin{tabular}{p{0.34\linewidth} @{\hspace{0.75in}} p{0.35\linewidth}}
     Programming, Imperatively & Programming, Functionally \\ \\
-    Computation by \textbf{modifying the computer's state} & 
+    Computation by \textbf{modifying the computer's state} &
     Computation by \textbf{reduction of expressions to values} \\ \pause \\
-    \makecell{\Large \code{x := 2;} \\ \\ \vspace{25pt} \Large \code{x + x}} & 
+    \makecell{\Large \code{x := 2;} \\ \\ \vspace{25pt} \Large \code{x + x}} &
     \makecell{\Large \code{2 + 2}}
   \end{tabular}
   \end{center}
@@ -650,7 +644,7 @@
     There are a few ways that we can contrast imperative and functional programming,
     but this notion of "state" is going to be a big one. \\
 
-    In an imperative program, you compute by changing the state of the computer, 
+    In an imperative program, you compute by changing the state of the computer,
     until eventually you can produce the answer you need. This means that any given
     computation depends on what has happened before, and any step might not make sense if
     you reorder them in a certain way. \\
@@ -667,15 +661,15 @@
   \vspace{\fill}
 
   In functional programs, we apply simplifying rules to expressions like \code{2 + 2},
-  to obtain the value of \code{4}. 
+  to obtain the value of \code{4}.
 
   \vspace{4pt}
-  
+
   These expressions are \textbf{disjoint}, in that evaluation of one expression
   is unrelated to the evaluation of another.
-  
 
-  \note { 
+
+  \note {
     In a functional program, you compute by taking expressions, and reducing them to
     values. You can then combine the results of these expressions in different ways to
     compute a final answer. The difference is that each individual expression, each step,
@@ -692,7 +686,7 @@
     might need to know exactly when the code has been run. This makes it really hard
     to understand programs, but functional programming has a big win here.
   }
-  
+
   In stateful programs, understanding a program entails not only understanding what the code does,
   but knowing the entire history of the program up until that point.
 
@@ -720,7 +714,7 @@
   \pause
   \vspace{5pt}
 
-  An important motivation behind functional programming will end up being that we should 
+  An important motivation behind functional programming will end up being that we should
   prefer to solve pure problems with pure components. In other words, don't introduce state
   when it's not necessary!
 \end{frame}
@@ -730,9 +724,9 @@
   \vspace{\fill}
 
   Functional programming can be characterized by three theses, which will be a recurring
-  theme throughout the semester. 
+  theme throughout the semester.
 
-  \pause 
+  \pause
 
   \vspace{\fill}
 
@@ -764,7 +758,7 @@
   \pause
   \vspace{\fill}
 
-  We will see that lists, trees, and other important structures employ a simple 
+  We will see that lists, trees, and other important structures employ a simple
   recursive description.
 
 \end{frame}
@@ -773,19 +767,19 @@
   \frametitle{Programmatic Thinking is Mathematical Thinking}
 
   Programs are simpler and more understandable when viewed in a mathematical lens.
-  
+
   \pause
   \vspace{\fill}
 
   Functional programming allows reasoning about programs and their subcomponents
-  in the same way that you would reason about a mathematical expression. 
+  in the same way that you would reason about a mathematical expression.
 
   \pause
   \vspace{\fill}
 
-  Furthermore, mathematical analysis of code grants techniques to reason about 
+  Furthermore, mathematical analysis of code grants techniques to reason about
   things like time complexity, parallel time complexity, and program correctness.
-  Functional programs are very amenable to proofs of correctness! 
+  Functional programs are very amenable to proofs of correctness!
 
   \pause
   \vspace{\fill}
@@ -802,21 +796,21 @@
   \pause
   \vspace{\fill}
 
-  We also stated how \textit{descriptivity} and \textit{maintainability} are 
+  We also stated how \textit{descriptivity} and \textit{maintainability} are
   key goals for good programming.
 
   \pause
   \vspace{\fill}
 
-  Functional programming places a great emphasis on \textit{types}, which serve 
-  the purpose of documenting the purpose of code, and restricting the range of 
+  Functional programming places a great emphasis on \textit{types}, which serve
+  the purpose of documenting the purpose of code, and restricting the range of
   behaviors that a program is allowed to exhibit.
-  
+
   \pause
   \vspace{\fill}
 
   In this way, types guide the structure of a program, by providing clean interfaces
-  for how different parts should interact, and what it should be allowed to do. 
+  for how different parts should interact, and what it should be allowed to do.
 
 \end{frame}
 
@@ -851,7 +845,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, An \term{expression} is the building block of an SML program. These 
+  \defBox{\, An \term{expression} is the building block of an SML program. These
   may or may not evaluate to a value.}
 
   \pause
@@ -878,7 +872,7 @@
 
   { \Large
   \begin{align*}
-    \code{(2 + 3) * 4} &\stepsTo \code{5 * 4} \\ 
+    \code{(2 + 3) * 4} &\stepsTo \code{5 * 4} \\
     &\stepsTo \code{20}
   \end{align*}
   }
@@ -893,11 +887,11 @@
   \vspace{\fill}
 
   \defBox{\, We use the $\stepsTo^*$ symbol to denote the application of the $\stepsTo$ relation
-  an arbitrary number of times, usually until completion.} 
+  an arbitrary number of times, usually until completion.}
 
   \pause
   \vspace{5pt}
-  
+
   So the expression \code{5 * 4} \textit{steps to} the expression \code{20}, and the expression
   \code{(2 + 3) * 4} $\stepsTo^*$ \code{20}.
 \end{frame}
@@ -905,7 +899,7 @@
 \begin{frame}[fragile]
   \frametitle{Computation as Evaluation}
 
-  We call the previous slide the \term{computation trace} of the expression \code{(2 + 3) * 4}. \\ 
+  We call the previous slide the \term{computation trace} of the expression \code{(2 + 3) * 4}. \\
 
   \vspace{5pt}
 
@@ -927,7 +921,7 @@
 \begin{frame}[fragile]
   \frametitle{Computation without Valuation}
 
-  We said before that the goal of a computation trace is to produce a value, but not 
+  We said before that the goal of a computation trace is to produce a value, but not
   all expressions do!
 
   \pause
@@ -979,13 +973,13 @@
 \begin{frame}[fragile]
   \frametitle{Types}
 
-  \defBox{\, A \term{type} is a specification of the behavior of a piece of code. It 
+  \defBox{\, A \term{type} is a specification of the behavior of a piece of code. It
   \textbf{predicts} what a program is allowed to do.}
 
   \pause
   \vspace{5pt}
 
-  We write \code{e : t} to say that the expression \code{e} has type \code{t}, so 
+  We write \code{e : t} to say that the expression \code{e} has type \code{t}, so
   we could write \code{ 1 + (2 * 3) : int }.
 
   \pause
@@ -1000,7 +994,7 @@
   \pause
   \vspace{\fill}
 
-  What can we say about the runtime behavior of \code{"1" ^ 50}? It's not clear, so 
+  What can we say about the runtime behavior of \code{"1" ^ 50}? It's not clear, so
   the expression \code{"1" ^ 50} \textbf{does not have a type}.
 \end{frame}
 
@@ -1011,12 +1005,12 @@
 
   \vspace{5pt}
 
-  It follows \term{typing rules} to determine this. For instance: 
+  It follows \term{typing rules} to determine this. For instance:
 
   \pause
   \vspace{\fill}
-  
-  \defBox{\, The typing rule for \code{+} is: \code{e1 + e2 : int} if \code{e1 : int} 
+
+  \defBox{\, The typing rule for \code{+} is: \code{e1 + e2 : int} if \code{e1 : int}
   and \code{e2 : int}
   }
 
@@ -1059,14 +1053,14 @@
   \pause
   \vspace{\fill}
 
-  \defBox{\, The typing rule for \code{^} is: \code{e1 ^ e2 : string} if \code{e1 : string} 
+  \defBox{\, The typing rule for \code{^} is: \code{e1 ^ e2 : string} if \code{e1 : string}
   and \code{e2 : string}
   }
 
   \pause
   \vspace{\fill}
 
-  Take the expression \code{"1" ^ 50}. 
+  Take the expression \code{"1" ^ 50}.
 
   \pause
   \vspace{\fill}
@@ -1106,7 +1100,7 @@
   \pause
   \vspace{\fill}
 
-  \keyBox{\, \textbf{Ill-typed programs are not evaluated.} } 
+  \keyBox{\, \textbf{Ill-typed programs are not evaluated.} }
 \end{frame}
 
 \sectionSlide{4}{Declarations}
@@ -1146,12 +1140,12 @@
   \frametitle{Function Application}
 
   To use the function we just defined, we have to \term{apply} it. This is done via
-  placing the function expression directly adjacent to the argument that it is meant 
-  to take in. 
+  placing the function expression directly adjacent to the argument that it is meant
+  to take in.
 
   \pause
   \vspace{\fill}
-  
+
   So for instance, instead of writing \code{double(2)} like we would in some programming
   languages, we would write \code{double 2}. This is known as \term{function application}.
 
@@ -1165,11 +1159,11 @@
   \frametitle{Typing for Functions}
 
   Since \code{double} is a function which takes in an \code{int} and returns an \code{int},
-  we would refer to it as having the \term{function type} \code{int -> int}. 
+  we would refer to it as having the \term{function type} \code{int -> int}.
 
   \pause
   \vspace{\fill}
-  
+
   How do we know that \code{double : int -> int}, however? Is it just because we annotated
   it as taking in \code{int} and returning \code{int}?
 
@@ -1199,7 +1193,7 @@
     fun double (n : int) : int = n + n
   \end{codeblock}
 
-  \pause 
+  \pause
 
   To check the type of \code{double}, SML will take our word for what the input type
   of \code{n} is, here.
@@ -1244,7 +1238,7 @@
   \pause
   \vspace{3pt}
 
-  We know \code{double : int -> int}, because of our previous reasoning. 
+  We know \code{double : int -> int}, because of our previous reasoning.
 
   \pause
   \vspace{3pt}
@@ -1262,7 +1256,7 @@
 
   Now we need to cover how to declare variables. The key word of interest here is
   \code{val}.
-  
+
   \vspace{\fill}
 
   \begin{codeblock}
@@ -1281,10 +1275,6 @@
   We will have more to say about variable declarations in the next lecture.
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
-\end{frame}
-
+\thankyou
 
 \end{document}
-

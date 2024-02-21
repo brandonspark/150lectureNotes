@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
+    \documentclass[aspectratio=169, handout]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -323,10 +323,8 @@
   \frametitle{On Regular Expressions}
 
   \begin{center}
-    \includegraphics[scale=0.7]{regex2}\footnotemark
+    \includegraphics[scale=0.7]{regex2}\footnote{There's an xkcd for everything.}
   \end{center}
-
-  \footnotetext[1]{There's an xkcd for everything.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -388,7 +386,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We say that an \term{alphabet} is a set of characters, that we
+  \defBox{}{We say that an \term{alphabet} is a set of characters, that we
   are interested in strings composed from. We usually denote this symbolically
   as $\Sigma$.}
 
@@ -401,7 +399,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We denote the set of strings over an alphabet $\Sigma$ by the
+  \defBox{}{We denote the set of strings over an alphabet $\Sigma$ by the
   symbol $\Sigma^*$.}
 
   \pause
@@ -413,7 +411,7 @@
 \begin{frame}[fragile]
   \frametitle{More Mathematical Notation}
 
-  \defBox{}{\, We say that a \term{language} $L$ is a subset of $\Sigma^*$. In
+  \defBox{}{We say that a \term{language} $L$ is a subset of $\Sigma^*$. In
   other words, a language is a particular set of strings composed from the
   alphabet $\Sigma$.}
 
@@ -448,8 +446,13 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We call a function \code{f : string -> bool} a \term{validator}
-  for language $L$, if \\ \code{f s} $\stepsTo^*$ \code{true} iff $s \in L$.\footnotemark}
+  \defBox{}{We call a function \code{f : string -> bool} a \term{validator}
+  for language $L$, if \\ \code{f s} $\stepsTo^*$ \code{true} iff $s \in L$.\footnote{
+    As an aside, this idea of languages and validators over them is very closely tied to
+    the idea of computability! In particular, it is \textbf{not} possible,
+    for every language $L$, to implement a validator for it. A more thorough treatment of this is reserved for a class on
+    computability theory, such as 15-251.
+  }}
 
   \pause
   \vspace{\fill}
@@ -458,18 +461,12 @@
   validators for a class of languages called \term{regular languages}. These
   have limitations on their complexity, but in practice a large amount
   of string validation problems fall into them.
-
-  \footnotetext[2]{
-   As an aside, this idea of languages and validators over them is very closely tied to
-  the idea of computability! In particular, it is \textbf{not} possible,
-  for every language $L$, to implement a validator for it. A more thorough treatment of this is reserved for a class on
-  computability theory, such as 15-251.}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{The Structure of a Regular Expression}
 
-  \defBox{}{\, Let's first define the structure of a regular expression $r$:}
+  \defBox{}{Let's first define the structure of a regular expression $r$:}
 
   \pause
   \begin{itemize}
@@ -491,7 +488,7 @@
 \begin{frame}[fragile]
   \frametitle{The Language of a Regular Expression}
 
-  \defBox{}{\, We use the notation $L(r)$ to denote the language matched by
+  \defBox{}{We use the notation $L(r)$ to denote the language matched by
   regular expression $r$, over some alphabet $\Sigma$. Then:}
 
   \pause
@@ -596,12 +593,13 @@
   In particular, recall the website example that we were talking about
   previously. We can express our website validator by the following
   regular expression:
-  $${(r_{an} + . + \_ )}^* @ ({r_{an}}^*) . (org + com)\footnotemark$$
+  $${(r_{an} + . + \_ )}^* @ ({r_{an}}^*) . (org + com)\footnote{
+    This is actually not quite it, because this regular expression
+    allows an empty name or website. But for the sake of brevity, we'll go with this.
+  }$$
   where $r_{an}$ is the regular expression of all alphanumeric
   characters, which could be specified as $a + b + ... + z + 1 + 2 + ... + 9 + 0$.
 
-  \footnotetext[3]{This is actually not quite it, because this regular expression
-  allows an empty name or website. But for the sake of brevity, we'll go with this.}
 \end{frame}
 
 \sectionSlide{3}{Finite-State Automata}
@@ -612,7 +610,10 @@
   It is a very interesting fact that regular expressions can be viewed as
   \term{finite-state machines}, which are graph-like constructs with \term{states},
   which change upon receiving characters as input. In particular, we can
-  characterize them by \term{deterministic finite-state automata}.\footnotemark
+  characterize them by \term{deterministic finite-state automata}.\footnote{
+    We can characterize them by \textbf{nondeterministic} finite-state automata
+    as well. But this, too, will be left in more detail to a class on computability.
+  }
 
   \pause
   \vspace{\fill}
@@ -635,9 +636,6 @@
       \draw (q3) edge node {$a$} (q5);
     \end{tikzpicture}
   }
-
-  \footnotetext[4]{We can characterize them by \textbf{nondeterministic} finite-state automata
-  as well. But this, too, will be left in more detail to a class on computability.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -795,12 +793,12 @@
   \vspace{\fill}
 
   This process is an extremely beautiful intersection where theory and
-  practice coincide, and is how many production regular expression engines\footnotemark
-  \, work today. However, the process of producing such an automaton from
+  practice coincide, and is how many production regular expression engines\footnote{
+    https://github.com/google/re2
+  }
+  work today. However, the process of producing such an automaton from
   a regular expression is rather involved. We will take another track
   for how to produce a validator from a regular expression.
-
-  \footnotetext[5]{https://github.com/google/re2}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1219,7 +1217,11 @@
   So how could we weaken the specification for our regular expression matcher? We
   could require that the regular expression be passed in in a form such that there
   are no occurrences of \code{Star r}, where $\epsilon \in L(\code{r})$. This would
-  be a cheap way of escaping, by pushing the burden onto the caller.\footnotemark
+  be a cheap way of escaping, by pushing the burden onto the caller.\footnote{
+    It turns out this can be done. We say that such regular expressions
+    are in \term{standard form}. There is a programmatic way of turning any regular
+    expression into one in standard form, but which matches the same language.
+  }
 
   \pause
   \vspace{\fill}
@@ -1232,10 +1234,6 @@
   \vspace{\fill}
 
   We will take this approach for now.
-
-  \footnotetext[6]{It turns out this can be done. We say that such regular expressions
-  are in \term{standard form}. There is a programmatic way of turning any regular
-  expression into one in standard form, but which matches the same language.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1433,7 +1431,7 @@
 
   In the following two proofs, Let $P(\code{r})$ be the following:
 
-  \thmBox{}{ \, For total \code{k}, \code{match r cs k} $\hookrightarrow$ \code{true}
+  \thmBox{}{\, For total \code{k}, \code{match r cs k} $\hookrightarrow$ \code{true}
   if and only if \code{cs} $\eeq$ \code{p @ s} where \code{p} $\in L(r)$, and
   \code{k s} $\eeq$ \code{true}.}
 \end{frame}
@@ -1490,7 +1488,10 @@
   \pause
   \vspace{\fill}
 
-  Without loss of generality\footnotemark, assume that \colorbox{pink}
+  Without loss of generality\footnote{
+    This is a fancy CMU way of saying that the proof is similar
+    in either case, so we're only going to bother to prove it for one.
+  }, assume that \colorbox{pink}
   {\code{match r1 cs k} $\eeq$ \code{true}}. Then, we can apply
   our induction hypothesis $P(\code{r1})$, and obtain that
   \colorbox{blue!25!white}{\code{cs} $\eeq$ \code{p @ s} where
@@ -1510,9 +1511,6 @@
   With both \colorbox{yellow!30!white}{the previous} and
   \colorbox{green!25!white}{our inductive conclusion}, then this is exactly what we
   wanted to show, so we have proven \colorbox{orange!30!white}{the theorem}.
-
-  \footnotetext[7]{This is a fancy CMU way of saying that the proof is similar
-  in either case, so we're only going to bother to prove it for one.}
 \end{frame}
 
 
@@ -1582,16 +1580,18 @@
   So we have proven \colorbox{cyan!20!white}{the theorem}.
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center}
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSfEi-IbFfU51lsWJGQuxjEmEtDggdxlZ3LvN4iVziYapC_PdQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_july3} \\
-    \vspace{5pt}
-    And the House Quiz winner is...
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSfEi-IbFfU51lsWJGQuxjEmEtDggdxlZ3LvN4iVziYapC_PdQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_july3} \\
+%     \vspace{5pt}
+%     And the House Quiz winner is...
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}

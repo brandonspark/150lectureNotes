@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
+    \documentclass[aspectratio=169, handout]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -191,16 +191,16 @@
   \pause
   \vspace{\fill}
 
-  This will give us $O(\log n)$ search time\footnotemark.
+  This will give us $O(\log n)$ search time.\footnote{
+    At least, in principle. In actuality, we have no guarantee
+    that such BSTs are relatively balanced, meaning that search time may be
+    linear still. We will leave this problem for another lecture.
+  }
 
   \pause
   \vspace{\fill}
 
   Let's implement it.
-
-  \footnotetext[1]{At least, in principle. In actuality, we have no guarantee
-  that such BSTs are relatively balanced, meaning that search time may be
-  linear still. We will leave this problem for another lecture.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -226,7 +226,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{}{\, In this case, we choose to \term{opaquely ascribe} the
+  \noteBox{}{In this case, we choose to \term{opaquely ascribe} the
   \code{Dict} structure to the \code{STR_DICT} signature.}
 \end{frame}
 
@@ -355,7 +355,11 @@
   \frametitle{An Implementation for Polymorphic Dictionaries}
 
   Uh oh. How do we compare our key, of an arbitrary type \code{'a}, to
-  another key of an arbitrary type \code{'a}?\footnotemark
+  another key of an arbitrary type \code{'a}?\footnote{
+    It is technically misleading to say "of type \code{'a}",
+    because I really mean something more like, for some type \code{t}, two
+    keys of type \code{t}. But this is close enough.
+  }
 
   \pause
   \vspace{\fill}
@@ -363,10 +367,6 @@
   Similarly to how we tried to implement \code{sort : 'a list -> 'a list},
   we need a little bit of a helping hand here, because we don't know what
   our comparison function is!
-
-  \footnotetext[2]{It is technically misleading to say "of type \code{'a}",
-  because I really mean something more like, for some type \code{t}, two
-  keys of type \code{t}. But this is close enough.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -524,10 +524,10 @@
   \pause
   \vspace{\fill}
 
-  This comparison function just compares two strings in Pig Latin\footnotemark \, instead of
+  This comparison function just compares two strings in Pig Latin\footnote{
+    {\color{blue}\href{https://en.wikipedia.org/wiki/Pig_Latin}{See this reference for more}}
+  } instead of
   in regular text.
-
-  \footnotetext[3]{\color{blue}\href{https://en.wikipedia.org/wiki/Pig_Latin}{See this reference for more}}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -834,7 +834,7 @@
 \begin{frame}[fragile]
   \frametitle{Type Classes}
 
-  \defBox{}{\, A \term{type class} is the signature which describes a type,
+  \defBox{}{A \term{type class} is the signature which describes a type,
   and some operations which may be performed on that type.}
 
   \pause
@@ -911,7 +911,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{}{\, We choose to transparently ascribe these structures, because the
+  \noteBox{}{We choose to transparently ascribe these structures, because the
   point of a typeclass is that you know what the type inside of it is. I mean, it's
   in the name of the structure.}
 
@@ -1063,7 +1063,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We can modify a signature with \textit{selective transparency} by the syntax
+  \defBox{}{We can modify a signature with \textit{selective transparency} by the syntax
   \code{SIG where type <name> = <type>}, which defines that the type
   named \code{<name>} is explicitly defined as the input \code{<type>}.}
 
@@ -1300,7 +1300,7 @@
   \pause
   \vspace{\fill}
 
-  \noteBox{}{\, There is no semicolon or comma between the two declarations of
+  \noteBox{}{There is no semicolon or comma between the two declarations of
   \code{type t} and \code{val x : int}. There's just space.}
 
   \pause
@@ -1312,7 +1312,7 @@
 \begin{frame}[fragile]
   \frametitle{Functorial Syntactic Sugar}
 
-  \noteBox{}{\, It is important to realize that a functor \textbf{can only take
+  \noteBox{}{It is important to realize that a functor \textbf{can only take
   in one structure.}}
 
   \pause
@@ -1510,16 +1510,18 @@
   \end{codeblock}
 \end{frame}
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center}
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSfAjJB9M1Jt-AV_290144DaRvzkjqXklQ4Q3OL7lDIic3nx2g/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_july11} \\
-    \vspace{5pt}
-    And the House Quiz winner is...
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSfAjJB9M1Jt-AV_290144DaRvzkjqXklQ4Q3OL7lDIic3nx2g/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_july11} \\
+%     \vspace{5pt}
+%     And the House Quiz winner is...
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}

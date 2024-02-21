@@ -1,25 +1,25 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169]{beamer}
- 
+    \documentclass[aspectratio=169, handout]{beamer}
+
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
     \colorlambdafalse % DEFAULT: false
-    
+
     % Use auxcolor for syntax highlighting
     \newif\ifuseaux
     \useauxfalse % DEFAULT: false
-   
+
     % Color settings
     \useauxtrue
-    
+
     \newcommand{\auxColor}{F48C6B}     % the color of note boxes and stuff
     \newcommand{\presentColor}{A827E4} % the primary color of the slide borders
     \newcommand{\bgColor}{eee6ff}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
     \newcommand{\lambdaColor}{\auxColor}
-  
+
     \colorlambdatrue
 
     \usepackage{comment} % comment blocks
@@ -51,7 +51,7 @@
     %       (* FRAGMENT KK *)
     %           <CONTENT>
     %       (* END KK *)
-    
+
     %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
         %  2. On the slide where you want code fragment K
                 % \smlFrag[color]{KK}
@@ -115,21 +115,21 @@
   \begin{itemize}
     \item Evaluate to a value \pause
     \item Loop forever \pause
-    \item \textbf{Raise an exception} 
+    \item \textbf{Raise an exception}
   \end{itemize}
 
   \pause
   \vspace{\fill}
 
-  Until now, we've given an intentionally bare bones treatment of 
-  exceptions. Now, it is time to dive into exceptions in more detail. 
+  Until now, we've given an intentionally bare bones treatment of
+  exceptions. Now, it is time to dive into exceptions in more detail.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{An Exceptional Language}
 
-  One of the first examples of expressions that we ever saw was the 
-  expression \code{1 div 0}. This expression raises an exception, 
+  One of the first examples of expressions that we ever saw was the
+  expression \code{1 div 0}. This expression raises an exception,
   when evaluated.
 
   \pause
@@ -252,7 +252,7 @@
 
   \pause
   \vspace{\fill}
-  
+
   For exceptions like \code{Div}, we use them to \textit{escape} from
   having to return a value, when given some input. Instead of returning
   a value, we simply abort execution.
@@ -277,7 +277,7 @@
   \begin{codeblock}
     infix safeDiv
 
-    fun n safeDiv 0 = NONE 
+    fun n safeDiv 0 = NONE
       | n safeDiv d = SOME (n div d)
   \end{codeblock}
 
@@ -297,7 +297,7 @@
   \spec
     {div}
     {int * int -> int}
-    {\code{n > 0}}
+    {\code{n <> 0}}
     {\code{div (n, d)} evaluates to the
     floor of \code{n} divided by \code{d}}
 
@@ -306,11 +306,11 @@
     {safeDiv}
     {int * int -> int option}
     {\code{true}}
-    {\code{safeDiv (n, d)} evaluates to \code{NONE} if \code{d} is \code{0}, 
+    {\code{safeDiv (n, d)} evaluates to \code{NONE} if \code{d} is \code{0},
     and \code{SOME (n div 0)} otherwise}
 
   \pause
-  They look rather similar! The difference is that \code{safeDiv} has 
+  They look rather similar! The difference is that \code{safeDiv} has
   moved the precondition into the type of its return value.
 \end{frame}
 
@@ -347,9 +347,9 @@
 
   For instance, we might have occasions where we know for sure that
   an exceptional case cannot be reached. Suppose we are implementing
-  the following function to collect the average grade of every 
+  the following function to collect the average grade of every
   student in 150:
-  
+
   \pause
   \begin{codeblock}
     fun averageGrade (grades : int list) : int =
@@ -384,7 +384,7 @@
 
   The only sensible thing to do (if not raising an exception) is often just to
   propagate the \code{option}, and cause all of the dependencies to also need
-  to return optional values. 
+  to return optional values.
 
   \pause
   \vspace{\fill}
@@ -395,14 +395,16 @@
 \begin{frame}[fragile]
   \frametitle{Implicit Preconditions}
 
-  The thing is, this entire mess was never really necessary. 
+  The thing is, this entire mess was never really necessary.
 
   \pause
   \vspace{\fill}
 
   Unless something is deeply wrong, it's a fairly safe bet that
-  the database containing grade data for the entire class  
-  isn't empty.\footnotemark
+  the database containing grade data for the entire class
+  isn't empty.\footnote{
+    If it is, I have bigger problems.
+  }
 
   \pause
   \vspace{\fill}
@@ -415,10 +417,8 @@
   \vspace{\fill}
 
   So in this case, we might prefer the exceptional behavior, because it leads
-  to cleaner code in a hypothetically impossible case. We have an 
+  to cleaner code in a hypothetically impossible case. We have an
   \textit{implicit precondition} on our inputs.
-
-  \footnotetext[1]{If it is, I have bigger problems.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -431,15 +431,15 @@
   \vspace{\fill}
 
   This is why judicious use of exceptions is important! In some cases, it really
-  is OK to raise an exception in a failure case, depending on how bad the 
+  is OK to raise an exception in a failure case, depending on how bad the
   failure case is.
 
   \pause
   \vspace{\fill}
 
-  It might seem that an unrecoverable error that completely crashes the 
+  It might seem that an unrecoverable error that completely crashes the
   running process might be worth no amount of code golfing. Luckily,
-  SML does have ways of dealing with raised exceptions. 
+  SML does have ways of dealing with raised exceptions.
 \end{frame}
 
 \sectionSlide{2}{Using Exceptions}
@@ -453,27 +453,27 @@
   \vspace{\fill}
 
   What expressions are we allowed to raise? SML has a type of exception values,
-  which is called \code{exn}. This may stand for "exception name". 
+  which is called \code{exn}. This may stand for "exception name".
 
   \pause
   \vspace{\fill}
 
   So for instance, valid constant constructors of type \code{exn} include:
   \begin{itemize}
-    \item \code{Match} 
+    \item \code{Match}
     \item \code{Bind}
     \item \code{Div}
   \end{itemize}
 
   \pause
   but not \code{Fail : string -> exn}, which takes in an additional argument
-  of type \code{string} before it can be raised. 
+  of type \code{string} before it can be raised.
 
   \pause
   \vspace{\fill}
 
   We use the syntax \code{raise e} to raise exception \code{e}, given that
-  \code{e : exn}. 
+  \code{e : exn}.
 
   \pause
   \vspace{\fill}
@@ -493,14 +493,14 @@
   \vspace{\fill}
 
   Given that it never returns a value, it doesn't actually matter. For our
-  purposes, it's important to use that an expression of type \code{t} 
+  purposes, it's important to use that an expression of type \code{t}
   returns a value of type \code{t}, \textit{if it returns at all}.
 
   \pause
   \vspace{\fill}
 
   Since \code{raise} never returns, we are free to give it any type. So
-  \code{raise e} has type \code{'a}, in that it can take on any type. 
+  \code{raise e} has type \code{'a}, in that it can take on any type.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -515,28 +515,28 @@
       (let
         val grades = List.map snd records
       in
-        "The average was " ^ Int.toString (averageGrade grades) 
+        "The average was " ^ Int.toString (averageGrade grades)
       end)
-      handle Div => "ERROR: No grades found" 
+      handle Div => "ERROR: No grades found"
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
   In this case, we use \code{handle} to evaluate the body of the function to
-  an error string in the case where \code{Div} is raised. Otherwise, we 
-  evaluate normally. 
+  an error string in the case where \code{Div} is raised. Otherwise, we
+  evaluate normally.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Handling, Generally}
 
-  A \code{handle} expression has the following behaviors: 
+  A \code{handle} expression has the following behaviors:
 
   \pause
   \vspace{\fill}
 
-  The expression 
+  The expression
   \begin{codeblock}
     e handle p1 => e1 | ... | pn => en
   \end{codeblock}
@@ -552,14 +552,14 @@
   \pause
   \vspace{\fill}
 
-  The behavior of the above \code{handle} expression is that: \pause 
+  The behavior of the above \code{handle} expression is that: \pause
   \begin{itemize}
-    \item If the expression \code{e} never raises an exception, then it 
+    \item If the expression \code{e} never raises an exception, then it
     evaluates to \code{e} \pause
     \item If the expression \code{e} raises exception \code{ex}, then
     it matches to the first \code{pi} that matches \code{ex} \pause
     \item If the exception \code{e} raises matches none of the
-    \code{handle} cases, it raises that exception again 
+    \code{handle} cases, it raises that exception again
   \end{itemize}
 \end{frame}
 
@@ -573,9 +573,9 @@
 
   \begin{itemize}
     \item \code{raise Div} raises exception \code{Div}
-    \item \code{(raise Div) handle Div => 2} $\hookrightarrow$ \code{2} 
-    \item \code{(raise Div) handle Bind => 2} raises exception \code{Div} 
-    \item \code{(raise Div) handle Bind => 1 | Div => 2} $\hookrightarrow$ \code{2} 
+    \item \code{(raise Div) handle Div => 2} $\hookrightarrow$ \code{2}
+    \item \code{(raise Div) handle Bind => 2} raises exception \code{Div}
+    \item \code{(raise Div) handle Bind => 1 | Div => 2} $\hookrightarrow$ \code{2}
     \item \code{2 handle Div => 3} $\hookrightarrow$ \code{3}
   \end{itemize}
 
@@ -588,11 +588,11 @@
 
   The great strength of \code{handle} is that it can be used to handle
   exceptions from \textit{anywhere inside of the enclosing expression}.
-  
+
   \pause
   \vspace{\fill}
 
-  \keyBox{}{\, For non \code{handle} expressions, if a sub-expression
+  \keyBox{}{For non \code{handle} expressions, if a sub-expression
   raises an exception, then that expression does too.}
 
   \pause
@@ -614,29 +614,29 @@
 \begin{frame}[fragile]
   \frametitle{Nonlocal Control Flow}
 
-  So in the expression \code{1 + (3 * (4 div 0)) handle Div => 5}: 
-  
+  So in the expression \code{1 + (3 * (4 div 0)) handle Div => 5}:
+
   \pause
   \vspace{\fill}
 
-  The expression \code{4 div 0} raises \code{Div}. 
+  The expression \code{4 div 0} raises \code{Div}.
 
   \pause
   \vspace{3pt}
 
   The sub-expression \code{4 div 0} of \code{3 * (4 div 0)} raises \code{Div},
-  so \code{3 * (4 div 0)} raises it too. 
-  
-  \pause
-  \vspace{3pt}
-
-  The sub-expression \code{3 * (4 div 0)} of \code{1 + (3 * (4 div 0))} raises 
-  \code{Div}, so \code{1 + (3 * (4 div 0))} raises it too. 
+  so \code{3 * (4 div 0)} raises it too.
 
   \pause
   \vspace{3pt}
-  
-  The sub-expression \code{1 + (3 * (4 div 0))} of 
+
+  The sub-expression \code{3 * (4 div 0)} of \code{1 + (3 * (4 div 0))} raises
+  \code{Div}, so \code{1 + (3 * (4 div 0))} raises it too.
+
+  \pause
+  \vspace{3pt}
+
+  The sub-expression \code{1 + (3 * (4 div 0))} of
   \code{1 + (3 * (4 div 0)) handle Div => 5} raises \code{Div}. Since this
   entire expression is a \code{handle}, we match \code{Div} to the
   handler's first case, and evaluate to \code{5}.
@@ -660,7 +660,7 @@
   \vspace{\fill}
 
   Let's generalize. Suppose we have a function \code{f : t1 -> t2},
-  which is possibly exception-raising. Then, we can define \code{f_opt} 
+  which is possibly exception-raising. Then, we can define \code{f_opt}
   with the following spec:
 
   \pause
@@ -685,7 +685,7 @@
 \begin{frame}[fragile]
   \frametitle{Exceptions and Options}
 
-  Using \code{handle}, we can quickly go between these functions. Given 
+  Using \code{handle}, we can quickly go between these functions. Given
   \code{f}, as previously described, we define \code{f_opt : t1 -> t2} as:
   \begin{codeblock}
     fun f_opt x = (SOME (f x)) handle _ => NONE
@@ -694,7 +694,7 @@
   \pause
   \vspace{\fill}
 
-  \customBox{Check your understanding}{\, Why did we have to surround \code{f x} 
+  \customBox{Check your understanding}{\, Why did we have to surround \code{f x}
   with \code{SOME}? What would happen to the type if we didn't?}
 
   \pause
@@ -720,9 +720,9 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    fun f x = 
-      ("Divided to " ^ Int.toString x) 
-      handle Div => "Divided by zero!" 
+    fun f x =
+      ("Divided to " ^ Int.toString x)
+      handle Div => "Divided by zero!"
   \end{codeblock}
 
   \pause
@@ -746,24 +746,24 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A \term{side effect} is an effect of an expression which is not just
+  \defBox{}{A \term{side effect} is an effect of an expression which is not just
   computing a value. For instance, reading from a file, printing to the console,
-  or raising an exception.\footnotemark}
+  or raising an exception.\footnote{
+    One can also consider infinite loops a side effect.
+  }}
 
   \pause
   \vspace{\fill}
 
   Side effects tend to make our definitions of equivalence fuzzy. For instance,
   with exceptions, we cannot freely exchange the order of unrelated
-  \code{val} bindings without possibly changing the behavior of the program:  
+  \code{val} bindings without possibly changing the behavior of the program:
   \begin{codeblock}
-    val _ = raise Bind 
-    val _ = raise Match 
-  \end{codeblock} 
-  These two bindings are unrelated, but the order in which they happen 
+    val _ = raise Bind
+    val _ = raise Match
+  \end{codeblock}
+  These two bindings are unrelated, but the order in which they happen
   matters! This can make mathematical reasoning annoying.
-
-  \footnotetext[2]{One can also consider infinite loops a side effect.}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -779,13 +779,13 @@
   \vspace{\fill}
 
   A fun fact that goes along with that is that, in a world with exceptions, it is
-  no longer true that \code{e1 + e2} $\eeq$ \code{e2 + e1}, where \code{e1, e2} are 
+  no longer true that \code{e1 + e2} $\eeq$ \code{e2 + e1}, where \code{e1, e2} are
   both expressions of type \code{int}.
 
   \pause
   \vspace{\fill}
-  
-  This is because \code{(raise Div) + (raise Bind)} raises \code{Div}, but 
+
+  This is because \code{(raise Div) + (raise Bind)} raises \code{Div}, but
   \code{(raise Bind) + (raise Div)} raises \code{Bind}! This is another reason
   why \textit{valuability} (and by extension, totality) is important.
 \end{frame}
@@ -814,38 +814,38 @@
   \pause
   \vspace{\fill}
 
-  Let's define \code{fact_exn}\footnotemark, which raises an exception on negative inputs!
+  Let's define \code{fact_exn}\footnote{
+    Labeling functions which possibly raise an exception
+    with the suffix \code{_exn} is a common practice in the OCaml language,
+    and in my opinion, a really good practice.
+  }, which raises an exception on negative inputs!
 
   \pause
   \vspace{\fill}
 
   ...But what exception should we raise?
-
-  \footnotetext[3]{Labeling functions which possibly raise an exception 
-  with the suffix \code{_exn} is a common practice in the OCaml language, 
-  and in my opinion, a really good practice.}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Raising an Arbitrary Exception}
 
-  We could define the following: 
+  We could define the following:
   \begin{codeblock}
     fun fact_exn 0 = 1
-      | fact_exn n = 
-          if n < 0 then 
+      | fact_exn n =
+          if n < 0 then
             raise Bind
           else
             n * fact_exn (n - 1)
   \end{codeblock}
-  
+
   \pause
   \vspace{\fill}
 
   But this isn't actually a case where we failed to produce a binding, which
   is what the \code{Bind} exception is supposed to be for. If we handled
   \code{Bind} elsewhere outside callers to this function, we might end up
-  in a handler we didn't mean to! 
+  in a handler we didn't mean to!
 
   \pause
   \vspace{\fill}
@@ -864,14 +864,17 @@
   \begin{codeblock}
     datatype exn = Match | Bind | Div | Fail of string | ...
   \end{codeblock}
-  it's actually more special than that! \code{exn} is the only 
-  \term{extensible type}.\footnotemark
+  it's actually more special than that! \code{exn} is the only
+  \term{extensible type}.\footnote{
+    In fact, some say that \code{exn} stands for \textit{extensible}.
+    Some people also say this is gaslighting, and it doesn't stand for that all, though.
+  }
 
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, An \term{extensible type} is one where constructors can be
-  added to it \textit{after the type is declared}. \code{exn} is the only 
+  \defBox{}{An \term{extensible type} is one where constructors can be
+  added to it \textit{after the type is declared}. \code{exn} is the only
   example of this in Standard ML.}
 
   \pause
@@ -882,22 +885,18 @@
     exception Fact
   \end{codeblock}
   to declare a new constructor \code{Fact : exn}, for the \code{exn} type.
-
-  \footnotetext[4]{In fact, some say that \code{exn} stands for \textit{extensible}.
-  Some people also say this is gaslighting, and it doesn't stand for that all, though.
-  }
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Raising a Custom Exception}
 
-  So now, we can define \code{fact_exn} better: 
+  So now, we can define \code{fact_exn} better:
   \begin{codeblock}
-    exception Fact 
+    exception Fact
 
     fun fact_exn 0 = 1
-      | fact_exn n = 
-          if n < 0 then 
+      | fact_exn n =
+          if n < 0 then
             raise Fact
           else
             n * fact_exn (n - 1)
@@ -921,8 +920,8 @@
     exception Error of string
 
     fun runProcess (f : unit -> string) : string =
-      ("OUTPUT: " ^ f ()) 
-      handle Error s => ("ERROR: " ^ s)  
+      ("OUTPUT: " ^ f ())
+      handle Error s => ("ERROR: " ^ s)
   \end{codeblock}
 
   \pause
@@ -934,7 +933,7 @@
   \pause
   \vspace{\fill}
 
-  and 
+  and
   \code{runProcess (fn () => raise Error "bad")} $\hookrightarrow$ \code{"ERROR: bad"}
 \end{frame}
 
@@ -957,12 +956,12 @@
   \vspace{\fill}
 
   With exceptions, we can go the other way and make our control flow even more implicit,
-  by relying on casing on exceptions are raised. 
+  by relying on casing on exceptions are raised.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Exceptional Control Flow}
-  
+
   For instance, let's do the \code{search} function using exceptions:
 
   \pause
@@ -978,21 +977,21 @@
 \begin{frame}[fragile]
   \frametitle{Exceptional Control Flow}
   \begin{codeblock}
-    exception NotFound 
-    
-    fun searchEHS p Empty = raise NotFound 
-      | searchEHS p (Node (L, x, R)) = 
+    exception NotFound
+
+    fun searchEHS p Empty = raise NotFound
+      | searchEHS p (Node (L, x, R)) =
           if p x then
             x
           else
-            (searchEHS p L) handle NotFound => searchEHS p R 
+            (searchEHS p L) handle NotFound => searchEHS p R
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
   In this case, we handle the \code{NotFound} exception, which should be raised
-  by our specification \textit{only} in the case where we fail to find a 
+  by our specification \textit{only} in the case where we fail to find a
   satisfying element in that subtree.
 
   \pause
@@ -1012,9 +1011,9 @@
     fun searchCPS p Empty `sc fc` = `fc ()`
       | searchCPS p (Node (L, x, R)) `sc fc` =
           if p x then
-            `sc` x 
+            `sc` x
           else
-            searchCPS p L 
+            searchCPS p L
               `(fn res => sc res)`
               `(fn () =>` searchCPS p R `sc fc)`'
   \end{codeblock}
@@ -1038,7 +1037,7 @@
   \vspace{\fill}
 
   This is largely because exceptions are a nightmare to debug. Nonlocal control
-  flow transfer introduces precisely the problem that \code{goto} statements 
+  flow transfer introduces precisely the problem that \code{goto} statements
   had, which is a lack of transparency!
 
   \pause
@@ -1087,12 +1086,12 @@
 
   \begin{codeblock}
     exception NoMax
-    exception Max of int 
+    exception Max of int
 
-    fun listmax_exn []  = raise NoMax 
+    fun listmax_exn []  = raise NoMax
       | listmax_exn [x] = raise (Max x)
       | listmax_exn (x::xs) =
-          (listmax_exn xs) handle 
+          (listmax_exn xs) handle
             Max y => raise (Max (Int.max (x, y)))
   \end{codeblock}
 
@@ -1115,7 +1114,7 @@
   When dealing with cases where preconditions really are very clear, it is not
   wrong to use functions which can possibly be exception-raising, \textit{so
   long as to do otherwise would be a significant detriment}. Clean code comes
-  first, but not at the risk of compromising the safety of our software! 
+  first, but not at the risk of compromising the safety of our software!
 
   \pause
   \vspace{\fill}
@@ -1126,15 +1125,16 @@
 \end{frame}
 
 
-\begin{frame}[plain]
-	\begin{center} Thank you! \end{center}
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
 
-	\begin{center} 
-    {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSf7yaK02wbqwWgBHUMDapwgQYGXkhFVuivS6GdToCJ11zUCrQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
-    \vspace{5pt}
-    \includegraphics[scale=0.035]{qr_june22}
-  \end{center}
-\end{frame}
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLSf7yaK02wbqwWgBHUMDapwgQYGXkhFVuivS6GdToCJ11zUCrQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_june22}
+%   \end{center}
+% \end{frame}
+
+\thankyou
 
 \end{document}
-
