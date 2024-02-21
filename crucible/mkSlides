@@ -2,9 +2,19 @@
 
 dateString=$(date '+%Y%m%d')
 
+cd /Users/brandonspark/teaching/150lectureNotes/crucible
+
 cp img/$1.png img/title.png
 
 ./slice $1
-make pdf "SRC=slides/$1.tex" "PREFIX=$1" "NUM=$1"
 
-rm -f img/title.png 
+if test -f slides/$1.m4; then
+  echo "has an m4 file"
+  m4 slides/$1.m4 slides/$1.tex > slides/$1-intermediate.tex
+  make pdf "SRC=slides/$1-intermediate.tex" "PREFIX=$1" "NUM=$1"
+  rm slides/$1-intermediate.tex
+else
+  make pdf "SRC=slides/$1.tex" "PREFIX=$1" "NUM=$1"
+fi
+
+rm -f img/title.png

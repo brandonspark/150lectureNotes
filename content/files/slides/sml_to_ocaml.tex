@@ -1,0 +1,1641 @@
+% Brandon Wu
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=169, handout]{beamer}
+
+% Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+\newif\ifcolorlambda
+\colorlambdafalse % DEFAULT: false
+
+% Use auxcolor for syntax highlighting
+\newif\ifuseaux
+\useauxfalse % DEFAULT: false
+
+% Color settings
+\useauxtrue
+
+\newcommand{\auxColor}{fc7703}     % the color of note boxes and stuff
+\newcommand{\presentColor}{FFBD5A} % the primary color of the slide borders
+\newcommand{\bgColor}{fff3e0}      % the color of the background of the slide
+\newcommand{\darkBg}{8b98ad}
+\newcommand{\lambdaColor}{\auxColor}
+
+\colorlambdatrue
+
+\usepackage{comment} % comment blocks
+\usepackage{soul} % strikethrough
+\usepackage{listings} % code
+\usepackage{makecell}
+\usepackage{tcolorbox}
+\usepackage{amssymb}% http://ctan.org/pkg/amssymb
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\usepackage[outline]{contour}
+\usepackage{ stmaryrd }
+
+\setbeamertemplate{itemize items}[circle]
+% \setbeameroption{show notes on second screen=right}
+
+\usepackage{lectureSlides}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{From SML to OCaml} % TODO
+\subtitle{From one functional language to another} % TODO
+\date{18 January 2024} % TODO
+\author{Brandon Wu} % TODO
+
+
+\def\checkmark{\tikz\fill[green, scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
+\contourlength{.08em}% default is 0.03em
+\newcommand{\cmark}{{\color{green!80!black}\ding{51}}}
+\newcommand{\xmark}{{\color{red}\ding{55}}}
+
+\graphicspath{ {./img/} }
+
+\usepackage{fancyvrb}
+
+\newsavebox{\smlCode}
+\newsavebox{\ocamlCode}
+
+\newenvironment{mywrapper}{%
+  % Code to be executed before the environment starts
+  \begin{codeblock}
+}{%
+  % Code to be executed after the environment ends
+  \end{codeblock}
+}
+
+\newcommand{\smlBlock}[1]{
+  \begin{tikzpicture}
+    \node (A) {
+      \begin{codeblock}
+        #1
+      \end{codeblock}
+    };
+    \node[draw, anchor=west, rectangle, fill=codeBackground] (B) at
+    (A.south west) {SML};
+  \end{tikzpicture}
+}
+
+\newcommand{\ocamlBlock}[1]{
+  \begin{tikzpicture}
+    \node (A) {
+      \begin{codeblock}
+        #1
+      \end{codeblock}
+    };
+    \node[draw, anchor=west, rectangle, fill=codeBackground] (B) at (A.south
+    west) {OCaml};
+  \end{tikzpicture}
+}
+
+\colorlet{bgBlue}{hlBlue!130}
+\colorlet{bgOrange}{hlOrange}
+\colorlet{fgBlue}{fgCodeBlue}
+\colorlet{fgGreen}{fgCodeGreen}
+\colorlet{fgRed}{fgCodeRed}
+\colorlet{fgOrange}{fgCodeOrange}
+
+\colorlet{codeBackground}{background_color}
+
+\colorlet{hlset}{fgBlue}
+
+\definecolor{bgPurple}{HTML}{dbc7ff}
+\definecolor{bgRed}{HTML}{fcaea9}
+\definecolor{bgYellow}{HTML}{fffeb5}
+\definecolor{bgGreen}{HTML}{b4ffb3}
+
+\definecolor{fgOrange}{HTML}{fcae4e}
+\definecolor{fgYellow}{HTML}{ffbe0a}
+
+\definecolor{unknownPink}{HTML}{e0fff6}
+
+\usetikzlibrary{positioning}
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{decorations.pathreplacing,calligraphy}
+\usetikzlibrary{decorations.markings}
+
+% DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+    %\begin{frame}[fragile]
+    %\begin{codeblock}
+    %fun fact 0 = 1
+    %  | fact n = n * fact(n-1)
+    %\end{codeblock}
+    %\end{frame}
+
+% INCLUDING codefile:
+    % 1. In some file under code/NN (where NN is the lecture id num), include:
+%       (* FRAGMENT KK *)
+%           <CONTENT>
+%       (* END KK *)
+
+%    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+    %  2. On the slide where you want code fragment K
+            % \smlFrag[color]{KK}
+    %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+%  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+            % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+\renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+\colorlambdatrue
+\titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+\frametitle{Lesson Plan}
+
+\tableofcontents
+\end{frame}
+
+\sectionSlide{1}{Overview}
+
+\begin{frame}[fragile]
+  \frametitle{Language Learning}
+
+  Learning a programming language is usually an arduous task, requiring
+  understanding of a brand new toolbox of tools and tricks to program
+  with.
+
+  \vspace{\fill}
+
+  One might struggle for quite a while to even conceptualize the basics of
+  a new programming language, particularly one with a novel structure.
+
+  \vspace{\fill}
+
+  Luckily, as students of 15-150 at Carnegie Mellon University, you already
+  know this one. You just haven't realized it yet.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Languages by Comparison}
+  \term{Standard ML} is the language of choice taught in Carnegie Mellon's 15-150
+  course. It is a
+  {\color{blue}\href{https://smlfamily.github.io/sml97-defn.pdf}{formally
+  specified}}, mostly \term{pure} language which adheres to a functional style, and
+  supports algebraic datatypes, full type inference, and a powerful module system.
+
+  \vspace{\fill}
+
+  \term{OCaml} (short for \term{O}bjective \term{CAML}\footnote{Which itself
+  stands for "Categorical Abstract Machine Language". Funnily enough, this means
+  that this ML does not mean the same thing as SML's ML, which stands for "Meta
+  Language".}) is an industrial-strength language used in static analysis,
+  compilers, proof assistants, and at least one quantitative trading firm. It is
+  a somewhat\footnote{This is another way of saying "not".} specified, mostly
+  \term{pure} language which adheres to a functional style, and supports
+  algebraic datatypes, full type inference\footnote{Pedantry requires I insert
+  an asterisk here. I refuse to elaborate on why, though.}, and a powerful
+  module system.
+
+  \vspace{\fill}
+
+  Go figure.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Why OCaml?}
+
+  There are some things we need to clear up before proceeding, chief of which is
+  why it is valuable to learn OCaml in the first place. If you've seen my prior
+  lectures\footnote{Graciously hosted at
+  {\color{blue}\href{https://brandonspark.github.io/150/}{https://brandonspark.github.io/150/}}},
+  you know that I am a firm believer that it is the concepts behind the language
+  that matter most. Why learn a similar language?
+
+  \vspace{\fill}
+
+  The truth is that Standard ML is a more academically oriented language, and
+  while a language should be able to be measured solely by its own virtues, in
+  practice that is not how programming languages work. There are considerations
+  of ecosystem, culture, and community, and OCaml has far better \term{tooling}
+  and developer friendliness.
+
+  \vspace{\fill}
+
+  In short, 15-150 was to teach you how to program better. Now, this lecture is
+  to teach you how to program better, better.\footnote{Once you finish
+  reading this lecture slide, you can even go so far as to put OCaml under your
+  list of programming languages on your resume. I believe in you.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Why OCaml?}
+
+  Otherwise, the reasons for learning OCaml are going to be very similar to
+  the reasons for why you should learn Standard ML.
+
+  \vspace{\fill}
+
+  For scripting and small experiments, dynamically typed languages can be
+  perfectly fine. When maintaining and contributing to a project which will last
+  for years and years, the health and overall tech debt of the project will
+  matter far, far more than whether or not you could get out a feature out a
+  day or two faster (and possibly with bugs).
+
+  \vspace{\fill}
+
+  OCaml, like many other functional languages, is \term{safe}, first and foremost.
+  It is incredibly important that you learn to use a language which prevents you
+  from shooting yourself in the foot. I'm here to translate your skills from 150
+  into the real world\footnote{Not to be confused with the {\color{blue} \href{https://dev.realworldocaml.org/}{real world.}}}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{OCaml Fun Facts}
+  I can't resist waxing on about some OCaml fun facts, so I'll give you some
+  bullet points.
+
+  \begin{itemize}
+    \item OCaml is a French language. As in, the French pretty much invented it.\footnote{I'm not joking.}
+    \item OCaml was the original implementation language of the Rust compiler.
+    That means that by learning OCaml, you're one step ahead of the zeitgeist.
+    \item OCaml is used by a few formal methods/static analysis projects, one of
+    them being my workplace, {\color{blue}\href{https://semgrep.dev/}{Semgrep}}! This means that
+    all the advice I am giving you is as a professional\footnote{As
+    in, they pay me money. Too much, actually.} OCaml programmer.
+    \item Once, Facebook literally reskinned OCaml and presented it to the world
+    as "ReasonML", a definitely not scary language for web developers,
+    point right point left emojis. It worked distressingly well.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Road Ahead}
+
+  The hope is that at the end of this lecture, you will be not only
+  approximately as proficient in OCaml as you were in Standard ML, but you will
+  be aware of all of the cool new things that OCaml adds, that can make your
+  programming experience a lot more convenient.
+
+  \vspace{\fill}
+
+  If you ever want to write a useful, programming language-based personal project,
+  such as a compiler, pretty printer, formatter, debugger, or static analyzer,
+  I believe that there is no better language than OCaml. We'll also talk about
+  where it stands with respect to some other languages.
+\end{frame}
+
+\sectionSlide{2}{Concrete Syntax}
+
+\begin{frame}[fragile]
+  \frametitle{Declarations}
+
+  First off, let's start with declarations.
+
+  \vspace{\fill}
+
+  Basic top-level declarations in SML and OCaml look quite similar, the only
+  difference being the usage of the \code{let} keyword instead of \code{val}.
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  val x = (2, 3 + 5)
+>>>,
+<<<
+  `let` x = (2, 3 + 5)
+>>>)
+
+  \vspace{\fill}
+
+  We also replace the \code{fun} keyword here, in OCaml. Instead, we use the keywords
+  \code{let rec}, which signifies a \code{let} binding which is recursive.
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  fun f x y = f x (y - 1)
+>>>,
+<<<
+  `let rec` f x y = f x (y - 1)
+>>>)
+
+  \vspace{\fill}
+
+  Incredible.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Nested Declarations}
+
+  SML and OCaml both have \code{let} bindings, but the SML one allows for many
+  declarations at once, whereas an OCaml let binding only allows a single
+  declaration. They have the form of:
+
+  \vspace{\fill}
+
+__compare(
+<<<
+  let
+    $\langle declarations\rangle$
+  in
+    $\langle expression\rangle$
+  end
+>>>,
+<<<
+  let $\langle pattern\rangle$ = $\langle expression\rangle$ in
+  $\langle expression\rangle$
+>>>)
+
+  \vspace{\fill}
+
+  Note that the OCaml version does not have an \code{end}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Nested Declarations}
+
+  These do not look so different in the case of a single local declaration,
+  but let's look at an example with more than one:
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+let
+  val x = 1
+  val y = 2
+in
+  x + y
+end
+>>>,
+<<<
+let x = 1 in
+let y = 2 in
+x + y
+>>>)
+
+  \vspace{\fill}
+
+  In OCaml, it looks almost as if the \code{in} serves like a semicolon in other
+  languages, which delimits the \code{let} binding from the rest of the
+  expression.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lists and Tuples}
+
+  Lists and tuples also look a little bit different.
+
+  \vspace{\fill}
+
+  Lists delimit their items with semicolons instead of commas:
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+val x = [1, 2, 3]
+>>>,
+<<<
+let x = [1`;` 2`;` 3]
+>>>)
+
+  \vspace{\fill}
+
+  Tuples also do not \textit{always} require parentheses around them, as
+  they do in SML. This means that lists of tuples can look quite strange,
+  in OCaml:
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  val x = [(1, 2), (3, 4)]
+>>>,
+<<<
+  let x = [1, 2; 3, 4]
+>>>)
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Matching}
+
+  Pattern matching also has an alternative syntax.
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  case x of
+    0 => 1
+  | _ => 2
+>>>,
+<<<
+  `match` x `with`
+  `|` 0 `->` 1
+  | _ `->` 2
+>>>)
+
+  Not only have a few words and symbols been swapped around, but you can now
+  put a bar before the very first case in a \ocamlcode{match} expression.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, OCaml also has first-class syntax for "when clauses", which
+  combine pattern matching with conditionals. So for instance:}
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  case x of
+    [] => 1
+  | x::xs =>
+      if f x then 2 else 3
+>>>,
+<<<
+  match x with
+  | [] -> 1
+  | x::xs `when f x` -> 2
+  | x::xs -> 3
+>>>)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functions}
+
+  OCaml does not have a notion of function clauses. Functions which case upon
+  their arguments are usually written as explicitly naming their arguments,
+  then cased upon with a \ocamlcode{match} expression.
+
+  __compare(
+<<<
+  fun fact 0 = 1
+    | fact n = n * fact (n - 1)
+>>>,
+<<<
+  let rec fact n =
+    match n with
+    | 0 -> 1
+    | n -> n * fact (n - 1)
+>>>)
+
+  \vspace{\fill}
+
+  Note that it is possible to write an OCaml function without the \code{rec}!
+  Thus, it is possible to write a function with just a single \code{let}, meaning
+  \code{let rec} is not a perfect analogue to \code{fun}. For instance, we could
+  write:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    let f x y = x + y
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lambdas}
+
+  For lambdas, we actually get more functionality out of OCaml.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, Whereas SML has a single kind of lambda expression (or \code{fn} expression),
+  OCaml has two! One uses the \code{fun} keyword\footnote{Confusingly.}, and
+  the other uses the slighter longer \ocamlcode{function} keyword. For instance,
+  the following expressions are exactly the same:}
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  fun x -> x + 1
+>>>,
+<<<
+  function x -> x + 1
+>>>)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{OCaml: Kinds of Lambdas}
+
+  They have different strengths, however! A \code{fun} lambda expression allows
+  shorthand for multiple curried arguments, and a \ocamlcode{function} lambda expression
+  allows pattern matching. For instance:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    let f : int -> int -> int -> int =
+      fun a b c -> a + b + c
+  \end{codeblock}
+  \begin{ocamlcodeblock}
+    let rec fact = function
+      | 0 -> 1
+      | n -> n * fact (n - 1)
+  \end{ocamlcodeblock}
+
+  \vspace{\fill}
+
+  It is idiomatic that functions which case upon their last arguments will use a
+  \ocamlcode{function} expression, instead of naming the argument explicitly!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Datatypes}
+
+  In OCaml, the \code{type} keyword is overloaded for both declaring a datatype
+  and declaring a type alias.
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  datatype tree =
+      Empty
+    | Node of tree * int * tree
+>>>,
+<<<
+  `type` tree =
+    `|` Empty
+    | Node of tree * int * tree
+>>>)
+
+  \vspace{\fill}
+
+  However, the following code is valid in both languages:
+  \vspace{\fill}
+  \begin{codeblock}
+    type t = int
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \customBox{Remark}{\, It's also worth noting that constructors in OCaml
+  \textit{must} begin with a capital letter. Correspondingly, identifiers must
+  begin with a lowercase letter\footnote{In practice, this actually turns
+  out to be remarkably useful when reading OCaml code, as it lets you easily
+  differentiate them.}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Small Remarks}
+
+  And finally, here are some miscellaneous notes:
+
+  \begin{itemize}
+    \item Values of the \code{'a option} type are now \ocamlcode{None} and \ocamlcode{Some e},
+    rather than \code{NONE} and \code{SOME e}.
+    \item Tuples evaluate right to left, rather than left to right. This will almost
+    never matter, but the more you know.
+    \item OCaml has \ocamlcode{float}s instead of \code{real}s.
+    \item \code{+} and other arithmetic operators are not overloaded to work on both
+    \code{int}s and \code{real}s (\ocamlcode{float}s)
+    \item Constructors are not truly identifiers, and can't be passed in as functions.
+    For instance, you cannot write \ocamlcode{map Some [1; 2]}, it would need to be
+    \ocamlcode{map (fun x -> Some x) [1; 2]}
+  \end{itemize}
+\end{frame}
+
+\sectionSlide{3}{Augmented Arguments}
+
+\begin{frame}[fragile]
+  \frametitle{Extra Power}
+
+  Now, we will talk about features that OCaml has that are \textit{not} present
+  in Standard ML, that provide a direct level of power and expressiveness to the
+  language.
+
+  \vspace{\fill}
+
+  Consider the \code{foldl} function.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun foldl f z [] = []
+      | foldl f z (x::xs) =
+          foldl f (f (x, z)) xs
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Order of Arguments}
+
+  One very common point of friction with using the \code{foldl} function is
+  remembering the order of the arguments. Is it the accumulating function first,
+  the accumulator, or the list?
+
+  \vspace{\fill}
+
+  This gets annoying fast, and can also produce more unwieldy code, especially
+  if you're trying to use pipes. For instance, you cannot pipe an expression into
+  \code{foldl} as the accumulator.
+
+  \vspace{\fill}
+
+  A nice feature from other languages is the idea of \term{named arguments},
+  which permit passing in arguments by an explicit name, rather than positionally.
+  This is a feature that OCaml supports.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Named Arguments}
+
+  So, in OCaml, we could instead write the \code{foldl} function like this:\footnote{
+    The \code{$\sim$f:f} written above can actually be shortened to just
+    \code{$\sim$f}, which implicitly is the same. It just uses the existing binding
+    of \code{f}, instead of explicitly having to name it twice.
+  }
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    let rec foldl `~f` `~acc` l =
+      match l with
+      | [] -> []
+      | x::xs ->
+          foldl ~f:f ~acc:(f (x, acc)) xs
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  The tildes denote that the arguments are not positional arguments
+  that are then bound to the names \code{f} or \code{acc}, but named arguments
+  with the names \code{f} and \code{acc}.
+
+  \vspace{\fill}
+
+  Note that we use the syntax of \code{$\sim$argname:expr} to denote that we are
+  passing in the expression \code{expr} as the argument with name \code{argname}.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Named Arguments: Usage}
+
+  What's the point? It means that now, when using the \code{foldl} function,
+  we do not need to remember which argument comes first, but instead just the
+  names of the arguments that it takes in.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    foldl ~acc:0 ~f:(fun (x, acc) -> x + acc) [1; 2]
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  In fact, we could also put the named arguments behind the list, if we wanted.
+  This grants us a great deal of flexibility when it comes to structuring our code.
+
+  \vspace{\fill}
+
+  When working with functions with many arguments, or functions whose call-sites
+  are given undescriptive arguments, named arguments can be very helpful for writing
+  clearer code.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Having Patients}
+
+  Consider the problem of trying to create records of patients in a hospital.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    type patient =
+      string (* name *)
+      * int  (* patient id *)
+      * string option (* insurance *)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  To that end, we might want a function which can construct values of this
+  type, in case we ever modify it in the future.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun mk_patient name insurance_opt =
+      (name, new_id (), insurance_opt)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  (assuming that we had a \code{new_id : unit -> int} that just used and
+  updated a global ref of patient IDs)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Having Patients}
+
+  But, this can be inconvenient to use! This means that any time we have a
+  patient whose insurance is unknown, we will need to explicitly pass in a
+  \code{NONE}:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    mk_patient name NONE
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Even worse, sometimes patients do not have names -- for instance, when
+  an unknown person is treated. So the call-site for the function would
+  look like:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    mk_patient "John Doe" NONE
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Optional Arguments}
+
+  This is kind of gross, especially if we wanted to change the default, or
+  change what arguments the function takes in. Put in another way, the information
+  having to do with the function's defaults is distributed across all of its call-sites,
+  instead of at the function itself.
+
+  \vspace{\fill}
+
+  Fortunately, OCaml has \term{optional arguments}, which allow functions to specify
+  arguments that do not \textit{have} to be given to the function.
+
+  \vspace{\fill}
+
+  So instead, we could write\footnote{The extra \code{()} argument is because
+  optional arguments must be \term{erasable}, meaning that it must be clear
+  which arguments a partial application is treating as optional. This makes
+  it explicitly so optional args must be given before the unit.}:
+  \begin{codeblock}
+    fun mk_patient `?(name = "John Doe")` `?(insurance = None)` `()` =
+      (name, new_id (), insurance)
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Optional Arguments: Usage}
+
+  This ends up being far more convenient, because this means that optional
+  arguments can be omitted at their call-sites, if the information is not
+  available.
+
+  \vspace{\fill}
+
+  Thus, we could instead have our call-sites as, in the case where we have
+  no insurance, and no name and no insurance, respectively:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    mk_patient name ()
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    mk_patient ()
+  \end{codeblock}
+\end{frame}
+
+\sectionSlide{4}{Records}
+
+\begin{frame}[fragile]
+  \frametitle{On Tuples and Product Types}
+
+  The next most salient way that OCaml diverges from SML is in its treatment of
+  records. First, we will require an introduction to records, which is not a
+  topic that is often covered in 15-150.
+
+  \vspace{\fill}
+
+  In Standard ML and OCaml, we can use tuples, or \term{product types}, to organize
+  multiple values into one. We see that the type of a tuple is merely a summary of
+  the constituent types it contains -- a tuple of two integers is simply given the
+  self-explanatory type \code{int * int}.
+
+  \vspace{\fill}
+
+  This can become quite inconvenient. For instance, take the type signature of a
+  function which computes the number of days between two dates:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    daysBetweenDates : int * int * int -> int * int * int -> int
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Ambiguous Type}
+
+  This is clearly an incredibly undescriptive type. There are seven instances of
+  integers, and depending on where the user originates from, it might be unclear
+  which integer denotes the month, day, or year!
+
+  \vspace{\fill}
+
+  For instance, the American convention is MM/DD/YYYY, but the European convention
+  is DD/MM/YYYY. That can make using this API confusing at best, and dangerous
+  at worst.
+
+  \vspace{\fill}
+
+  So, what can we do? The problem is that tuples are not descriptive as to what
+  each component of the tuple means. Records will solve this issue.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{SML: Record Types}
+
+  \defBox{\, A \term{record} is a value that contains multiple values, like a tuple,
+  but each value corresponds to a name, called a \term{field}}.
+
+  \vspace{\fill}
+
+  So for instance, we might define a \code{date} type as a record, which gives
+  specific names to each of its fields:
+
+  \vspace{10pt}
+
+__sml(
+<<<
+  type date = {
+    year  : int,
+    month : int,
+    date  : int
+  }
+>>>
+)
+
+  \vspace{\fill}
+
+  We can simply construct a record using similar notation, with curly braces:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    val new_year : date = { year: 2024, month: 1, date: 1 }
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{OCaml: Record Types}
+
+  In OCaml, the notation is similar, but with the semicolons for delimiters that
+  OCaml favors:
+
+  \vspace{\fill}
+
+__ocaml(
+<<<
+  type date = {
+    year  : int`;`
+    month : int`;`
+    date  : int
+  }
+>>>
+)
+
+  \vspace{\fill}
+
+  With values being constructed analogously:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    let new_year : date = { year = 2024`;` month = 1`;` date = 1 }
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Anonymous and Declared Records}
+
+  Given these small changes, it may not seem like OCaml records deserve special
+  note. The main difference between SML and OCaml records is that SML records
+  are \term{anonymous}, whereas OCaml records must be declared.
+
+  \vspace{\fill}
+
+  By anonymous, I mean that SML records are anonymous in the same way as tuples.
+  For example, the tuple type \code{int * int} is anonymous, as it doesn't need to
+  be explicitly given a name, to be a type that can be used. It just exists.
+
+  \vspace{\fill}
+
+  Thus, with no prior type declarations, only the following SML code compiles, and
+  infers the type of \code{x} to be \code{\{a : int, b : string\}}:
+
+  \vspace{\fill}
+
+__sml(
+<<<
+val x = {a = 1, b = "hi"}
+>>>)
+
+  \vspace{\fill}
+__ocaml(
+<<<
+let x = {a = 1; b = "hi"}
+>>>)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{OCaml: Records and Type Inference}
+
+  In the presence of a type declaration, OCaml will be able to infer the type
+  of the record safely. In the below example, the type of \code{x} is correctly
+  inferred to be \code{t}:
+
+  \vspace{\fill}
+
+__ocaml(
+<<<
+type t = {a : int, b : string}
+let x = {a = 1; b = "hi"}
+>>>)
+
+  \vspace{\fill}
+
+  This means that, in order for OCaml records to be used effectively, it must
+  always be clear which type that a given record should be inferred to.
+
+  \vspace{\fill}
+
+  \customBox{Remark}{\, In the above example, since there was a type with field
+  \code{a} in scope, \code{x} was inferred correctly to be of that type, with no
+  annotations. If \code{t} were instead in a separate module, however, we would
+  need to help out the type system a bit and tell it what module the record's
+  type is from.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{SML: Record Access}
+
+  In SML, record fields must be accessed using either the record access operator,
+  or by pattern matching. For instance, the following are both legal ways to
+  extract out the field \code{a}:
+
+  \vspace{\fill}
+
+__sml(
+<<<
+  val x = {a = 1, b = "hi"}
+  val 1 = #a x
+  val {a = num, ...} = x
+>>>)
+
+  \vspace{\fill}
+
+  The second line conjures a function \code{#a}, which is inferred to have type
+  \code{\{a : int, b : string\} -> int}, in this context.
+
+  \vspace{\fill}
+
+  The third line deconstructs the record \code{x}, binding its field \code{a} to
+  the name \code{num}. It then uses an ellipsis to denote that it wildcards out
+  the rest of the fields of the record.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{OCaml: Record Access}
+
+  In OCaml, this looks slightly different. The record access operator is instead
+  achieved by taking the record, and using a dot operator, followed by the name
+  of the field to be accessed\footnote{This seems small, but this is actually
+  an incredibly convenient quality of life change for writing OCaml code. A small
+  change like making record access postfix makes it so much easier to use.}. So this is translated to:
+
+  \vspace{\fill}
+
+__ocaml(
+<<<
+  type t = { a : int, b : string }
+  let x = {a = 1; b = "hi"}
+  let 1 = `x.a`
+  let {a = num`; _`} = x
+>>>)
+
+  \vspace{\fill}
+
+  In addition, instead of an ellipsis, we use the wildcard symbol \code{_} to denote that we
+  don't care about the rest of the fields.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functional Record Updates}
+
+  \customBox{Feature}{\, OCaml also boasts the ability to create a copy of an
+  existing record, with one or more fields changed. This is called a
+  \term{functional record update}.}
+
+  \vspace{\fill}
+
+  For instance, suppose we have the following record:
+  \begin{codeblock}
+    type t = {a : int, b : string, c : bool}
+    let x = {a = 1; b = "hi"; c = true}
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  If we wanted to produce a copy of \code{x} with only the field \code{a} changed,
+  we could use the following terse syntax:
+
+  \vspace{\fill}
+
+__ocaml(
+<<<
+  let y = {x with a = 2}
+>>>)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functional Record Updates}
+
+  In SML, you would have no choice but to state every field of the record again:
+
+  \vspace{\fill}
+
+__sml(
+<<<
+  val y = {a = 2, b = #b y, c = #c y}
+>>>)
+
+  \vspace{\fill}
+
+  This quickly becomes hugely untenable, especially for records which have many
+  fields.\footnote{This is one reason for why, as much as I love SML, I avoid records
+  in many cases, because the convenience of using it is so low. In OCaml, records
+  are very easy to use.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Records in Review}
+
+  In summary, records are an enhancement of tuples that equips them with named
+  fields. They are extremely useful, especially for writing descriptive code
+  which remains clear to future maintainers, so it is advisable to be familiar
+  with them.
+
+  \vspace{\fill}
+
+  In OCaml, they are much more convenient to use, in many respects, which
+  partly contributes to why OCaml feels better to use, as a developer.
+\end{frame}
+
+\sectionSlide{5}{Metaprogramming}
+
+\begin{frame}[fragile]
+  \frametitle{Programming Languages and Metaprogramming}
+
+  \defBox{\, \term{Metaprogramming} is the technique of writing programs which
+  themselves modify programs. In programming languages, it usually refers to the
+  practice of being able to generate code from within the language itself.}
+
+  \vspace{\fill}
+
+  There are many ways to metaprogram, including methods external to the language
+  itself. For instance, you could keep a script that prepends all relevant files
+  with certain frequently-used declarations, and call that a kind of
+  metaprogramming.\footnote{The C language's famous preprocessor can be used to
+  do this, for instance.}
+
+  \vspace{\fill}
+
+  For an example of how metaprogramming is useful, consider the simple problem
+  of trying to print out a list.
+
+  \vspace{\fill}
+
+  In SML, this is a non-trivial problem, because there is the \code{print}
+  function, but it has type \code{string -> unit}. This means that, somehow, to
+  print an \code{int list}, you must be able to convert an \code{int list} into
+  a \code{string}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Printing Lists}
+
+  The code for printing out an \code{int list} is not so involved.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun show_int_list l = "[" ^ aux l ^ "]"
+    and aux [] = ""
+      | aux [x] = Int.toString x
+      | aux (x::xs) = Int.toString x ^ ", " ^ aux xs
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  In fact, we can even HOF-ize this, to print out arbitrary \code{'a list}s:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun show_list f l = "[" ^ aux `f` l ^ "]"
+    and aux `f` [] = ""
+      | aux `f` [x] = `f` x
+      | aux `f` (x::xs) = `f` x ^ ", " ^ aux `f` xs
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Printing Trees}
+
+  This code was annoying to write, though. It's nothing more than boilerplate,
+  simple code which just wastes time to write. It's not even in the standard
+  library.
+
+  \vspace{\fill}
+
+  What if we want to print out a tree? Well, now we need to write a new function:
+  \begin{codeblock}
+    fun show_tree f Empty = "Empty"
+      | show_tree f (Node (L, x, R)) =
+          "Node("
+            ^ show_tree f L
+            ^ ", "
+            ^ f x
+            ^ ", "
+            ^ show_tree f R
+            ^ ")"
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This function is just plain ugly.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Excess of Boilerplate}
+
+  Now imagine doing this for every single type that you declare, because none
+  of them come with their own printing functions.
+
+  \vspace{\fill}
+
+  A similar problem comes with if you want to declare a type that is used as a
+  key in some kind of dictionary.
+
+  \vspace{\fill}
+
+  There are two ways of doing this -- you can either hash the key values and use
+  a hash dictionary, or come up with a total ordering function for the type, and
+  use a search tree of some kind. Both of these ways are rather involved, and
+  involve an immense amount of boilerplate.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Type-Directed Code Generation}
+
+  The key insight into solving the previously described issues is to see that
+  it comes right out of the type.
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    datatype tree =
+      Empty
+    | Node of tree * int * tree
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Just by looking at the type definition of a \code{tree}, it is
+  very obvious how to print it -- case on the constructors, and recurse on the
+  components until you reach the end.
+
+  \vspace{\fill}
+
+  Thus, a sophisticated enough program should be able to read the type definition
+  of a \code{tree}, and generate the corresponding code, a function of type
+  \code{tree -> string} which pretty-prints a value of type \code{tree}.
+
+  \vspace{\fill}
+
+  This is precisely what \code{ppx} does. Let's see how it works.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{ppx} and Printing}
+
+  OCaml's \code{ppx} is a preprocessor framework, which allows for preprocessor
+  libraries to be written, which each implement a different kind of code
+  generation. In this case, we are interested in \code{ppx_deriving}, which
+  includes the \code{show} plugin.
+
+  \vspace{\fill}
+
+__ocaml(
+<<<
+  type tree =
+    Empty
+  | Node of tree * int * tree [@@deriving show]
+>>>)
+
+  \vspace{\fill}
+
+  The source text only needs an \code{[@@deriving show]} annotation to be
+  added to the type definition, which then tells the OCaml compiler to invoke
+  the plugin\footnote{This also requires that the file being compiled is actively
+  built with the \code{ppx_deriving.show} preprocessor, or the annotation will
+  mean nothing.}. The plugin will then generate two functions, named \code{show_tree}
+  and \code{tree_show}, both of which of type \code{tree -> string}.
+
+  \vspace{\fill}
+
+  It's just that easy.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More on \code{ppx}}
+
+  If this type definition were in a module ascribing to a given signature, you
+  would also attach the \code{[@@deriving show]} annotation to the signature,
+  as well.
+
+  \vspace{\fill}
+
+__ocaml(
+<<<
+  type tree [@@deriving show]
+>>>)
+
+  \vspace{\fill}
+
+  In this case, suppose that the signature were to leave the \code{tree} type
+  abstract. Here, we are just saying that because we have derived the \code{show}
+  function, the signature also exposes the \code{show_tree} and \code{tree_show}
+  functions.
+
+  \vspace{\fill}
+
+  It's worth noting that deriving dependencies are transitive. If you are deriving
+  \code{show} on a type which uses another type, it will rely on having previously
+  derived \code{show} for the used type, as well.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Deriving Deeper}
+
+  We can do the same for a few other plugins, as well.
+
+  \vspace{\fill}
+
+__ocaml(
+<<<
+  type t = A | B of int | C of string * int list
+    [@@deriving show, ord, hash]
+>>>)
+
+  \vspace{\fill}
+
+  This demonstrates an arbitrary type \code{t}, which derives \code{show} for
+  pretty-printing, but also \code{ord}, which produces a function \code{compare}
+  \footnote{It's \code{compare} and not \code{compare_t}, because this is how it
+  is hard-coded to behave on types named \code{t}.}, which is a total comparison
+  function on values of type \code{t}. This makes it suitable for usage for
+  using values of type \code{t} as keys into a binary search tree, for instance.
+
+  \vspace{\fill}
+
+  We also derive \code{hash}, which derives a hash function for values of type
+  \code{t}. This is useful if we wanted to use these values as keys into a
+  hash table.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Conclusion}
+
+  \code{ppx} is a very powerful framework for writing cleaner, simpler code
+  through preprocessor libraries, and in the case of \code{ppx_deriving}, it
+  is an incredibly useful labor-saving device.
+
+  \vspace{\fill}
+
+  Other languages like Rust and Haskell have similar mechanisms for deriving
+  traits and typeclasses, respectively, in a similar way to \code{ppx_deriving}.
+
+  \vspace{\fill}
+
+  You can also use \code{ppx} to write custom preprocessing libraries, so
+  the sky is the limit. This ends up providing a great deal of power in writing
+  more expressive programs.
+
+\end{frame}
+
+\sectionSlide{6}{Binding Operators}
+
+\begin{frame}[fragile]
+  \frametitle{An Introduction to Monads}
+
+  Functional languages always end up making a big hubbub about monads
+  \footnote{This is not unfair, given that monads are extremely useful. However,
+  commonly it is made out to be far more complicated than it is.}.
+
+  \vspace{\fill}
+
+  Recall the signature of monads, a type class of a parametric type:
+
+  {\small
+  \begin{codeblock}
+    signature MONAD =
+      sig
+        type 'a t
+        val return : 'a -> 'a t
+        val bind : 'a t -> ('a -> 'b t) -> 'b t
+      end
+  \end{codeblock}
+  }
+
+  \vspace{\fill}
+
+  We say that a structure implementing \code{MONAD} is a monad if
+  it satisfies some laws:
+  \begin{itemize}
+    \item \code{bind (return x) f} $\eeq$ \code{f x}
+    \item \code{bind m return} $\eeq$ \code{m}
+    \item \code{bind (bind m f) g} $\eeq$ \code{bind m (fn x => bind (f x) g)}
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{The Option Monad}
+
+  Take the simplest useful monad, which is the \code{option} monad. We might
+  implement it in SML as:
+
+  \vspace{\fill}
+
+  {\small
+  \begin{codeblock}
+    structure OptionMonad : MONAD =
+      struct
+        type 'a t = 'a option
+
+        val return = SOME
+        fun bind opt f =
+          case opt of
+            NONE   => NONE
+          | SOME x => f x
+      end
+  \end{codeblock}
+  }
+
+  \vspace{\fill}
+
+  This monad is incredibly useful when dealing with several functions which might
+  return an \code{option}.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Piping Functions}
+
+  For our example, let's just assume we have functions \code{f : t1 -> t2 option},
+  \code{g : t2 -> t3 option}, and \code{h : t3 -> t4 option}.
+
+  \vspace{\fill}
+
+  Then, we could write the following code:
+  \begin{codeblock}
+    fun pipeline (x : t1) : t4 option =
+      bind (bind (bind x f) g) h
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Or, if we define an infix function \code{>>=} that has type
+  \texttt{'a t * ('a -> 'b t) -> 'b t},
+  essentially a tupled version of \code{bind}:
+
+  \begin{codeblock}
+    fun pipeline (x : t1) : t4 option =
+      x >>= f >>= g >>= h
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  which looks much cleaner.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Explicit Naming}
+
+  This is not so bad, but this doesn't give an explicit name to any intermediate
+  result of the pipeline. This is not always what we want, since we might want to
+  use it at a later point, for instance:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun computation (file : string) (student: string) =
+      parse file
+      >>= (fn (_, gradesheet) => lookup student gradesheet)
+      >>= (fn grades =>
+        SOME ((sum grades) div (List.length grades))
+      )
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  (assuming \code{parse : string -> (attendance * grades) option}, \code{lookup : string -> int list option}, \code{sum : int list -> int})
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Haskell and Syntactic Sugar}
+
+  This is not so complicated to read, but the lambda and extra parentheses are not
+  helping. This can quickly become hugely untenable, given a lot of \code{bind}s.
+
+  \vspace{\fill}
+
+  The Haskell programming language is quite fond of monads, and has its own
+  special syntax for using them in a neater way. The above example would instead
+  be written as:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    do
+      (_, gradesheet) <- parse file
+      grades <- lookup student gradesheet
+      return ((sum grades) / (length grades))
+    end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  This looks quite similar, but avoids a level of parentheses (and indentation)
+  by moving the binding of the \code{grades} variable to before the computation it
+  is binding, as opposed to after. This is a huge readability win.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{OCaml: Custom Binding Operators}
+
+  In OCaml, you can do something similar, by defining custom \term{binding operators}.
+
+  \vspace{\fill}
+
+  There are no \code{do} blocks in OCaml, but a \code{do} block is really just a spicy
+  list of declarations. A binding operator will just be an enhanced \code{let}-binding:
+
+  \vspace{\fill}
+
+{\small
+__ocaml(
+<<<
+  let (let*) = OptionMonad.bind
+
+  let computeAverage (file : string) (student: string) =
+    let* _, gradesheet = parse file in
+    let* grades = lookup student gradesheet in
+    Some (sum grades / (List.length grades))
+>>>)
+}
+
+  \vspace{\fill}
+
+  Here, we use the \code{let*} binding operator, which we have defined to be the
+  same as \code{OptionMonad.bind}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Binding Operator Translation}
+
+  Concretely, if we say that \code{let*} is defined to be the same as some
+  function \texttt{f : 'a -> ('b -> 'c) -> 'd}, then the following are equivalent:
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    let* x = e in
+    e2
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  and
+
+  \begin{codeblock}
+    f e (fun x -> e2)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Basically, \code{let*} implicitly calls the equivalent function, and implicitly
+  put the rest of the code after the \code{in} into a lambda, which is passed
+  to it.
+\end{frame}
+
+\sectionSlide{6}{Conclusions}
+
+\begin{frame}[fragile]
+  \frametitle{OCaml in Review}
+
+  Overall, OCaml ends up being a language which is very similar to Standard ML,
+  but with just a few things that make it feel much better to use.
+
+  \vspace{\fill}
+
+  Despite seeming inconsequential, these small improvements add up, from a
+  developer's perspective! Two features, functional record updates and postfix
+  record access, are really all that is necessary to make OCaml records much
+  more usable than SML records.
+
+  \vspace{\fill}
+
+  Aside from language features, OCaml's ecosystem also boasts some other nice
+  accommodations, including a debugger\footnote{Though there's {\color{blue}
+  \href{https://github.com/brandonspark?tab=repositories}{one now for SML.}}},
+  a package manager, a testing framework, and several open-source libraries.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Simplicity and OCaml}
+
+  There are far more differences between the two languages that I neglected to
+  write about (polymorphic variants, first-class modules, objects and classes,
+  variance, applicative functors, GADTs, etc...). This was intentional.
+
+  \vspace{\fill}
+
+  My belief is that OCaml occupies a valuable niche in programming languages
+  where it is broad, but all of the breadth is \textbf{opt-in}. That means that,
+  while complex language features exist, they are discouraged, and you don't
+  ever have to deal with them if you don't want to.
+
+  \vspace{\fill}
+
+  I regularly say that when writing OCaml code, I only use around seven distinct
+  language features, or forms of syntax. While naysayers believe functional code to
+  be more complicated, it does not need to be at all. I believe that OCaml is
+  a very easy language to write simple code in.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Languages and Complexity}
+
+  There are respected languages like Haskell and Rust, which are themselves
+  functional in nature as well. Unfortunately, they occupy a niche where they
+  remain \textit{complicated by default}.
+
+  \vspace{\fill}
+
+  In Haskell, extensive monad usage and excessive abstraction (to the point of
+  convolution) are the norm, and Rust code requires understanding of lifetimes
+  and memory management, making writing code more complicated. These are baseline
+  thresholds which cannot be lowered -- they are always present.
+
+  \vspace{\fill}
+
+  Like with mutability, we should leave complexity as an opt-in feature. Complexity
+  is only as complexity is warranted.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More OCaml Resources}
+
+  Further resources that can help with learning OCaml include:
+
+  \vspace{\fill}
+
+  \begin{itemize}
+
+    \item the {\color{blue}\href{https://v2.ocaml.org/learn/tutorials/99problems.html}{99
+    problems}} provided on
+    the OCaml website, with solutions included.
+    \item the book {\color{blue}\href{https://dev.realworldocaml.org/}{Real World OCaml}}, which
+    recently came out with a new edition
+    \item CS3110's {\color{blue}\href{https://cs3110.github.io/textbook/cover.html}{online course materials}} on OCaml
+  \end{itemize}
+
+  \vspace{\fill}
+
+  I am also going to be working on a lecture series for OCaml programming, hopefully
+  to debut in 2024. Feel free to {\color{blue}\href{https://twitter.com/onefiftyman}{follow me on Twitter}}
+  or {\color{blue}\href{https://brandonspark.github.io/}{check my website}} to keep up with material as I release it.\footnote{I have not yet set up a mailing list.}
+
+\end{frame}
+
+\thankyou
+
+\end{document}

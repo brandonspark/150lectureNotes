@@ -110,95 +110,30 @@
     }%
     \end{center}%
 }
-%%%%%%%%%%%%%%%%%%%%%%
-%% Code Environment %%
-%%%%%%%%%%%%%%%%%%%%%%
-% code style
-\RequirePackage{listings}
-\RequirePackage{lstautogobble}
-\RequirePackage{xcolor}
 
-\newlength{\MaxSizeOfLineNumbers}%
-\settowidth{\MaxSizeOfLineNumbers}{99}% Adjust to maximum number of lines
-\addtolength{\MaxSizeOfLineNumbers}{.5ex}%
-
-\definecolor{background_color}{RGB}{225, 225, 225}
-\definecolor{string_color}    {RGB}{180, 156,   0}
-\definecolor{keyword_color}   {RGB}{ 64, 100, 255}
-\definecolor{comment_color}   {RGB}{  140, 140, 140}
-\definecolor{number_color}    {RGB}{ 84,  84,  84}
-\lstdefinestyle{15150code}{
-    basicstyle=\ttfamily,
-    numberstyle=\tiny\ttfamily\color{number_color},
-    backgroundcolor=\color{background_color},
-    stringstyle=\color{string_color},
-    keywordstyle=\color{keywordColor},
-    commentstyle=\color{comment_color},
-    numbers=left,
-    frame=shadowbox,
-    rulesepcolor=\color{darkBg},
-    linewidth=\textwidth,
-    columns=fixed,
-    tabsize=2,
-    xleftmargin=\MaxSizeOfLineNumbers,
-    breaklines=true,
-    keepspaces=true,
-    showstringspaces=false,
-    captionpos=b,
-    autogobble=true,
-    mathescape=true,
-    literate={~}{{$\thicksim$}}1
-             {~=}{{$\eeq$}}1
-}
-\lstdefinelanguage{sml}{
-    language=ML,
-    morestring=[b]",
-    morecomment=[s]{(*}{*)},
-    morekeywords={
-        bool, char, exn, int, real, string, unit, list, option,
-        EQUAL, GREATER, LESS, NONE, SOME, nil,
-        andalso, orelse, true, false, not,
-        if, then, else, case, of, as,
-        let, in, end, local, val, rec,
-        datatype, type, exception, handle,
-        fun, fn, op, raise, ref,
-        structure, struct, signature, sig, functor,
-        include, open, use, infix, infixr, o, print
-    }
-}
-
-\usepackage[T1]{fontenc}
-
+%%%%%%%%%%%%
+%% Colors %%
+%%%%%%%%%%%%
 
 \definecolor{hlBlue}{HTML}{aedcfc}
 \definecolor{hlOrange}{HTML}{ffca8a}
 \colorlet{hlYellow}{yellow!45}
 \colorlet{hlRed}{red!45}
+\definecolor{hlGreen}{HTML}{94ff97}
+\definecolor{hlPink}{HTML}{ffa3ed}
 
-\colorlet{fgCodeBlue}{keywordColor}
+\definecolor{fgCodeBlue}{HTML}{266df0}
 \definecolor{fgCodeOrange}{HTML}{ffa51f}
 \definecolor{fgCodeRed}{HTML}{db3535}
 \definecolor{fgCodeGreen}{HTML}{2cad1d}
 
-\makeatletter
-\newenvironment{btHighlight}[1][]
-{\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
-{\end{lrbox}\bt@HL@box[bt@Highlight@par]{\@tempboxa}\endgroup}
+%%%%%%%%%%%%%%%%%%%%%%%%
+%% Code highlighting %%
+%%%%%%%%%%%%%%%%%%%%%%%%
 
-\newcommand\btHL[1][]{%
-  \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
-}
-\def\bt@HL@endenv{%
-  \end{btHighlight}%
-  \egroup
-}
-\newcommand{\bt@HL@box}[2][]{%
-  \tikz[#1]{%
-    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
-    \pgfusepath{use as bounding box}%
-    \node[anchor=base west, fill=hlYellow,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
-  }%
-}
+\usepackage[T1]{fontenc}
+
+\makeatletter
 
 \newenvironment{atHighlight}[1][]
 {\begingroup\tikzset{at@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
@@ -216,6 +151,25 @@
     \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
     \pgfusepath{use as bounding box}%
     \node[anchor=base west, fill=hlRed,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
+\newenvironment{btHighlight}[1][]
+{\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\bt@HL@box[bt@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\btHL[1][]{%
+  \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
+}
+\def\bt@HL@endenv{%
+  \end{btHighlight}%
+  \egroup
+}
+\newcommand{\bt@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlYellow,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
   }%
 }
 
@@ -257,9 +211,130 @@
     \node[anchor=base west, fill=hlOrange,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
   }%
 }
+\newenvironment{etHighlight}[1][]
+{\begingroup\tikzset{et@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\et@HL@box[et@Highlight@par]{\@tempboxa}\endgroup}
 
+\newcommand\etHL[1][]{%
+  \begin{etHighlight}[#1]\bgroup\aftergroup\et@HL@endenv%
+}
+\def\et@HL@endenv{%
+  \end{etHighlight}%
+  \egroup
+}
+\newcommand{\et@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlGreen,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
+\newenvironment{ftHighlight}[1][]
+{\begingroup\tikzset{ft@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\ft@HL@box[ft@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\ftHL[1][]{%
+  \begin{ftHighlight}[#1]\bgroup\aftergroup\ft@HL@endenv%
+}
+\def\ft@HL@endenv{%
+  \end{ftHighlight}%
+  \egroup
+}
+\newcommand{\ft@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlPink,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
 
 \makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Code Environment %%
+%%%%%%%%%%%%%%%%%%%%%%
+% code style
+\RequirePackage{listings}
+\RequirePackage{lstautogobble}
+\RequirePackage{xcolor}
+
+\newlength{\MaxSizeOfLineNumbers}%
+\settowidth{\MaxSizeOfLineNumbers}{99}% Adjust to maximum number of lines
+\addtolength{\MaxSizeOfLineNumbers}{.5ex}%
+
+\definecolor{background_color}{RGB}{225, 225, 225}
+\definecolor{string_color}    {RGB}{180, 156,   0}
+\definecolor{keyword_color}   {RGB}{ 64, 100, 255}
+\definecolor{comment_color}   {RGB}{  140, 140, 140}
+\definecolor{number_color}    {RGB}{ 84,  84,  84}
+
+\lstdefinestyle{yaml}{
+     basicstyle=\ttfamily,
+     numbers=left,
+     frame=shadowbox,
+    columns=fixed,
+    tabsize=2,
+    keywords={},
+    xleftmargin=\MaxSizeOfLineNumbers,
+ }
+\lstdefinestyle{15150code}{
+    basicstyle=\ttfamily,
+    numberstyle=\tiny\ttfamily\color{number_color},
+    backgroundcolor=\color{background_color},
+    stringstyle=\color{string_color},
+    keywordstyle=\color{keywordColor},
+    commentstyle=\color{comment_color},
+    numbers=left,
+    frame=shadowbox,
+    rulesepcolor=\color{darkBg},
+    linewidth=\textwidth,
+    columns=fixed,
+    tabsize=2,
+    xleftmargin=\MaxSizeOfLineNumbers,
+    breaklines=true,
+    keepspaces=true,
+    showstringspaces=false,
+    captionpos=b,
+    autogobble=true,
+    mathescape=true,
+    literate={~}{{$\thicksim$}}1
+             {~=}{{$\eeq$}}1
+}
+\lstdefinelanguage{sml}{
+    language=ML,
+    morestring=[b]",
+    morecomment=[s]{(*}{*)},
+    morekeywords={
+        bool, char, exn, int, real, string, unit, list, option,
+        EQUAL, GREATER, LESS, NONE, SOME, nil,
+        andalso, orelse, true, false, not,
+        if, then, else, case, of, as,
+        let, in, end, local, val, rec,
+        datatype, type, exception, handle,
+        fun, fn, op, raise, ref,
+        structure, struct, signature, sig, functor,
+        include, open, use, infix, infixr, o, print
+    },
+    moredelim=**[is][\color{fgCodeRed}]{<r}{r>}
+}
+
+\lstdefinelanguage{ocaml}{
+    language=ML,
+    morestring=[b]",
+    morecomment=[s]{(*}{*)},
+    morekeywords={
+        bool, char, exn, int, float, string, unit, list, option,
+        None, Some, nil,
+        true, false, not,
+        if, then, else, match, with, when, of, as,
+        let, in, end, local, val, rec,
+        type, exception, try,
+        function, fun, fn, op, raise, ref,
+        structure, struct, signature, sig, functor,
+        include, open, use, infix, o, print
+    }
+}
 
 % code inline
 \newrobustcmd{\code}[2][]{{\sloppy
@@ -269,22 +344,58 @@
     {\lstinline[language=sml,style=15150code,#1]`#2`}%
 \fi}}
 
+\newrobustcmd{\ocamlcode}[2][]{{\sloppy
+\ifmmode
+    \text{\lstinline[language=ocaml,style=15150code,#1]`#2`}
+\else
+    {\lstinline[language=ocaml,style=15150code,#1]`#2`}%
+\fi}}
 
 % code block
 \lstnewenvironment{codeblock}[1][]{\lstset{
   language=sml,style=15150code,numbers=none,#1,
   moredelim=**[is][\btHL]{`}{`},
   moredelim=**[is][\atHL]{&}{&},
-  moredelim=**[is][\ctHL]{/}{/},
-  moredelim=**[is][\dtHL]{?}{?},
+  % moredelim=**[is][\ctHL]{/}{/},
+  % moredelim=**[is][\dtHL]{?}{?},
+  moredelim=**[is][\color{fgCodeRed}]{<r}{r>},
+  moredelim=**[is][\color{fgCodeRed}]{<<r}{r>>},
+  moredelim=**[is][\color{fgCodeBlue}]{<b}{b>},
+  moredelim=**[is][\color{black}]{<bl}{bl>},
+  moredelim=**[is][\color{fgCodeGreen}]{<g}{g>},
+  moredelim=**[is][\color{fgCodeOrange}]{<p}{p>}
+}}{}
+\lstnewenvironment{yamlcodeblock}[1][]{\lstset{
+  style=15150code, style=yaml,numbers=none,#1,
+  moredelim=**[is][\btHL]{`}{`}, % yellow
+  moredelim=**[is][\atHL]{&}{&}, % red
+  moredelim=**[is][\ctHL]{/}{/}, % blue
+  moredelim=**[is][\dtHL]{?}{?}, % orange
+  moredelim=**[is][\etHL]{@}{@}, % green
+}}{}
+
+% Python code block
+\lstnewenvironment{pythoncodeblock}[1][]{\lstset{
+  language=python,style=15150code,numbers=none,#1,
+  moredelim=**[is][\btHL]{`}{`}, % yellow
+  moredelim=**[is][\atHL]{&}{&}, % red
+  moredelim=**[is][\ctHL]{/}{/}, % blue
+  moredelim=**[is][\dtHL]{?}{?}, % orange
+  moredelim=**[is][\etHL]{@}{@}, % green
+  moredelim=**[is][\ftHL]{!}{!}, % pink
+}}{}
+\lstnewenvironment{ocamlcodeblock}[1][]{\lstset{
+  language=ocaml,style=15150code,numbers=none,#1,
+  moredelim=**[is][\btHL]{`}{`},
+  moredelim=**[is][\atHL]{&}{&},
+  % moredelim=**[is][\ctHL]{/}{/},
+  % moredelim=**[is][\dtHL]{?}{?},
   moredelim=**[is][\color{fgCodeRed}]{<r}{r>},
   moredelim=**[is][\color{fgCodeBlue}]{<b}{b>},
   moredelim=**[is][\color{black}]{<bl}{bl>},
   moredelim=**[is][\color{fgCodeGreen}]{<g}{g>},
   moredelim=**[is][\color{fgCodeOrange}]{<p}{p>}
 }}{}
-% Python code block
-\lstnewenvironment{pythoncodeblock}[1][]{\lstset{language=python,style=15150code,numbers=none,#1}}{}
 % code file
 \newrobustcmd{\codefile}[2][]{\lstinputlisting[language=sml,style=15150code,frame=shadowbox,#1]{#2}}
 % Labelled fragment
@@ -304,10 +415,8 @@
     }%
     \codefile[#1]{../content/code/\LECTNUM/fragments/#2}%
 }
-\newrobustcmd{\thmBox}[2][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} Thm. #2}%
-    }%
+\newrobustcmd{\thmBox}[2]{\par%
+    \customBox{Thm. #1}{#2}%
 }
 \newrobustcmd{\customBox}[2][white]{\par%
     \tcbox[on line,
@@ -318,6 +427,20 @@
 \newrobustcmd{\defBox}[1]{\par%
     \customBox{Def}{#1}
 }
+
+\newrobustcmd{\lessonBox}[1]{\par%
+    \customBox{Lesson}{#1}
+}
+
+\newrobustcmd{\thankyou}{
+  \begin{frame}[plain]
+  \begin{center}
+    \huge\term{Thank you!}
+  \end{center}
+  \end{frame}
+
+}
+
 \newrobustcmd{\tgs}{
   \vspace{-20pt}
   \begin{tikzpicture}[remember picture,overlay]
@@ -382,38 +505,38 @@
 }
 
 \newrobustcmd{\menti}[1]{
-\begin{frame}[plain]
-  \begin{center}
-    {\huge \color{presentColor} \intermedium{Menti code: #1}}
-    \vspace{10pt}
+% \begin{frame}[plain]
+%   \begin{center}
+%     {\huge \color{presentColor} \intermedium{Menti code: #1}}
+%     \vspace{10pt}
 
-    \color{presentColor} \intermedium{Go to menti.com to ask anonymously!}
-  \end{center}
-\end{frame}
+%     \color{presentColor} \intermedium{Go to menti.com to ask anonymously!}
+%   \end{center}
+% \end{frame}
 }
 
 \newrobustcmd{\quizBreak}[1]{
-\begin{frame}[plain]
-  \begin{center}
-    {\huge \color{presentColor} \intermedium{Quiz time!}}
+% \begin{frame}[plain]
+%   \begin{center}
+%     {\huge \color{presentColor} \intermedium{Quiz time!}}
 
-    \vspace{10pt}
+%     \vspace{10pt}
 
-    \color{presentColor} \intermedium{Passcode: #1}
-  \end{center}
-\end{frame}
+%     \color{presentColor} \intermedium{Passcode: #1}
+%   \end{center}
+% \end{frame}
 }
 
 \newrobustcmd{\questionBreak}[1]{
-\begin{frame}[plain]
-  \begin{center}
-    {\huge \color{presentColor} \intermedium{Any questions?}}
+% \begin{frame}[plain]
+%   \begin{center}
+%     {\huge \color{presentColor} \intermedium{Any questions?}}
 
-    \vspace{10pt}
+%     \vspace{10pt}
 
-    \color{presentColor} \intermedium{Ask anonymously: menti.com with code #1}
-  \end{center}
-\end{frame}
+%     \color{presentColor} \intermedium{Ask anonymously: menti.com with code #1}
+%   \end{center}
+% \end{frame}
 }
 
 
@@ -423,30 +546,22 @@
 
 \newrobustcmd{\term}[1]{{\color{auxColor}\textbf{#1}}}
 
-\newrobustcmd{\lemmaBox}[2][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} Lemma #2}%
-    }%
+\newrobustcmd{\lemmaBox}[2]{\par%
+    \customBox{Lemma #1}{#2}
 }
 \newrobustcmd{\proofBox}[2][white]{\par%
     \colorbox{auxColor}{%
         {\color{#1} Proof #2}%
     }%
 }
-\newrobustcmd{\bcBox}[1][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} BC}%
-    }%
+\newrobustcmd{\bcBox}[1]{\par%
+    \customBox{BC}{#1}
 }
-\newrobustcmd{\isBox}[1][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} IS}%
-    }%
+\newrobustcmd{\isBox}[1]{\par%
+    \customBox{IS}{#1}
 }
-\newrobustcmd{\ihBox}[2][white]{\par%
-    \colorbox{auxColor}{%
-        {\color{#1} IH{#2}}%
-    }%
+\newrobustcmd{\ihBox}[2]{\par%
+    \customBox{IH #1}{#2}
 }
 
 \newrobustcmd{\closureBox}{\par%
@@ -471,4 +586,165 @@
         }%
     }%
     \othercodefile{../content/code/\LECTNUM/fragments/#2}{#3}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Tooltips         %%
+%%%%%%%%%%%%%%%%%%%%%%
+
+% Copy pasted from:
+% https://tex.stackexchange.com/questions/155518/tooltip-that-works-with-all-pdf-readers
+
+\usepackage{pdfbase}[2017/03/16]
+\usepackage{xparse,ocgbase}
+\usepackage{xcolor,calc}
+\usepackage{tikzpagenodes,linegoal}
+\usetikzlibrary{calc}
+\usepackage{tcolorbox}
+
+\ExplSyntaxOn
+\let\tpPdfLink\pbs_pdflink:nn
+\let\tpPdfAnnot\pbs_pdfannot:nnnn\let\tpPdfLastAnn\pbs_pdflastann:
+\let\tpAppendToFields\pbs_appendtofields:n
+\def\tpPdfXform{\pbs_pdfxform:nnnnn{1}{1}{}{}}
+\let\tpPdfLastXform\pbs_pdflastxform:
+\let\cListSet\clist_set:Nn\let\cListItem\clist_item:Nn
+\ExplSyntaxOff
+
+\makeatletter
+\NewDocumentCommand{\tooltip}{%
+  ssssO{\ifdefined\@linkcolor\@linkcolor\else blue\fi}mO{yellow!20}mO{0pt,0pt}%
+}{{%
+  \leavevmode%
+  \IfBooleanT{#2}{%
+    %for variants with two and more stars, put tip box on a PDF Layer (OCG)
+    \ocgbase@new@ocg{tipOCG.\thetcnt}{%
+      /Print<</PrintState/OFF>>/Export<</ExportState/OFF>>%
+    }{false}%
+    \xdef\tpTipOcg{\ocgbase@last@ocg}%
+    %prevent simultaneous visibility of multiple non-draggable tooltips
+    \ocgbase@add@ocg@to@radiobtn@grp{tool@tips}{\ocgbase@last@ocg}%
+  }%
+  \tpPdfLink{%
+    \IfBooleanTF{#4}{%
+      /Subtype/Link/Border[0 0 0]/A <</S/SetOCGState/State [/Toggle \tpTipOcg]>>
+    }{%
+      /Subtype/Screen%
+      /AA<<%
+        \IfBooleanTF{#3}{%
+          /E<</S/SetOCGState/State [/Toggle \tpTipOcg]>>%
+        }{%
+          \IfBooleanTF{#2}{%
+            /E<</S/SetOCGState/State [/ON \tpTipOcg]>>%
+            /X<</S/SetOCGState/State [/OFF \tpTipOcg]>>%
+          }{
+            \IfBooleanTF{#1}{%
+              /E<</S/JavaScript/JS(%
+                var fd=this.getField('tip.\thetcnt');%
+                if(typeof(click\thetcnt)=='undefined'){%
+                  var click\thetcnt=false;%
+                  var fdor\thetcnt=fd.rect;var dragging\thetcnt=false;%
+                }%
+                if(fd.display==display.hidden){%
+                  fd.delay=true;fd.display=display.visible;fd.delay=false;%
+                }else{%
+                  if(!click\thetcnt&&!dragging\thetcnt){fd.display=display.hidden;}%
+                  if(!dragging\thetcnt){click\thetcnt=false;}%
+                }%
+                this.dirty=false;%
+              )>>%
+            }{%
+              /E<</S/JavaScript/JS(%
+                var fd=this.getField('tip.\thetcnt');%
+                if(typeof(click\thetcnt)=='undefined'){%
+                  var click\thetcnt=false;%
+                  var fdor\thetcnt=fd.rect;var dragging\thetcnt=false;%
+                }%
+                if(fd.display==display.hidden){%
+                  fd.delay=true;fd.display=display.visible;fd.delay=false;%
+                }%
+               this.dirty=false;%
+              )>>%
+              /X<</S/JavaScript/JS(%
+                if(!click\thetcnt&&!dragging\thetcnt){fd.display=display.hidden;}%
+                if(!dragging\thetcnt){click\thetcnt=false;}%
+                this.dirty=false;%
+              )>>%
+            }%
+            /U<</S/JavaScript/JS(click\thetcnt=true;this.dirty=false;)>>%
+            /PC<</S/JavaScript/JS (%
+              var fd=this.getField('tip.\thetcnt');%
+              try{fd.rect=fdor\thetcnt;}catch(e){}%
+              fd.display=display.hidden;this.dirty=false;%
+            )>>%
+            /PO<</S/JavaScript/JS(this.dirty=false;)>>%
+          }%
+        }%
+      >>%
+    }%
+  }{{\color{#5}#6}}%
+  \sbox\tiptext{%
+    \IfBooleanT{#2}{%
+      \ocgbase@oc@bdc{\tpTipOcg}\ocgbase@open@stack@push{\tpTipOcg}}%
+    %\fcolorbox{black}{#7}{#8}%
+    \tcbox[colframe=black,colback=#7,size=fbox,arc=1ex,sharp corners=southwest]{#8}%
+    \IfBooleanT{#2}{\ocgbase@oc@emc\ocgbase@open@stack@pop\tpNull}%
+  }%
+  \cListSet\tpOffsets{#9}%
+  \edef\twd{\the\wd\tiptext}%
+  \edef\tht{\the\ht\tiptext}%
+  \edef\tdp{\the\dp\tiptext}%
+  \tipshift=0pt%
+  \IfBooleanTF{#2}{%
+    %OCG-based (that is, all non-draggable) boxes should not extend beyond the
+    %current column as they may get overlaid by text in the neighbouring column
+    \setlength\whatsleft{\linegoal}%
+  }{%
+    \measureremainder{\whatsleft}%
+  }%
+  \ifdim\whatsleft<\dimexpr\twd+\cListItem\tpOffsets{1}\relax%
+    \setlength\tipshift{\whatsleft-\twd-\cListItem\tpOffsets{1}}\fi%
+  \IfBooleanF{#2}{\tpPdfXform{\tiptext}}%
+  \raisebox{\heightof{#6}+\tdp+\cListItem\tpOffsets{2}}[0pt][0pt]{%
+    \makebox[0pt][l]{\hspace{\dimexpr\tipshift+\cListItem\tpOffsets{1}\relax}%
+    \IfBooleanTF{#2}{\usebox{\tiptext}}{%
+      \tpPdfAnnot{\twd}{\tht}{\tdp}{%
+        /Subtype/Widget/FT/Btn/T (tip.\thetcnt)%
+        /AP<</N \tpPdfLastXform>>%
+        /MK<</TP 1/I \tpPdfLastXform/IF<</S/A/FB true/A [0.0 0.0]>>>>%
+        /Ff 65536/F 3%
+        /AA <<%
+          /U <<%
+            /S/JavaScript/JS(%
+              var fd=event.target;%
+              var mX=this.mouseX;var mY=this.mouseY;%
+              var drag=function(){%
+                var nX=this.mouseX;var nY=this.mouseY;%
+                var dX=nX-mX;var dY=nY-mY;%
+                var fdr=fd.rect;%
+                fdr[0]+=dX;fdr[1]+=dY;fdr[2]+=dX;fdr[3]+=dY;%
+                fd.rect=fdr;mX=nX;mY=nY;%
+              };%
+              if(!dragging\thetcnt){%
+                dragging\thetcnt=true;Int=app.setInterval("drag()",1);%
+              }%
+              else{app.clearInterval(Int);dragging\thetcnt=false;}%
+              this.dirty=false;%
+            )%
+          >>%
+        >>%
+      }%
+      \tpAppendToFields{\tpPdfLastAnn}%
+    }%
+  }}%
+  \stepcounter{tcnt}%
+}}
+\makeatother
+\newsavebox\tiptext\newcounter{tcnt}
+\newlength{\whatsleft}\newlength{\tipshift}
+\newcommand{\measureremainder}[1]{%
+  \begin{tikzpicture}[overlay,remember picture]
+    \path let \p0 = (0,0), \p1 = (current page.east) in
+      [/utils/exec={\pgfmathsetlength#1{\x1-\x0}\global#1=#1}];
+  \end{tikzpicture}%
 }
