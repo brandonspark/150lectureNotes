@@ -1,0 +1,943 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=169, handout]{beamer}
+
+% Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+\newif\ifcolorlambda
+\colorlambdafalse % DEFAULT: false
+
+% Use auxcolor for syntax highlighting
+\newif\ifuseaux
+\useauxfalse % DEFAULT: false
+
+% Color settings
+\useauxtrue
+
+\newcommand{\auxColor}{e0b45a}     % the color of note boxes and stuff
+\newcommand{\presentColor}{08A679} % the primary color of the slide borders
+\newcommand{\bgColor}{e1f2ea}      % the color of the background of the slide
+\newcommand{\darkBg}{8b98ad}
+\newcommand{\lambdaColor}{\auxColor}
+
+\colorlambdatrue
+
+\usepackage[pro]{fontawesome5}
+\usepackage{comment} % comment blocks
+\usepackage{soul} % strikethrough
+\usepackage{listings} % code
+\usepackage{makecell}
+\usepackage{tcolorbox}
+\usepackage{amssymb}% http://ctan.org/pkg/amssymb
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\usepackage[outline]{contour}
+\usepackage{ stmaryrd }
+
+\setbeamertemplate{itemize items}[circle]
+% \setbeameroption{show notes on second screen=right}
+
+\usepackage{lectureSlides}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{Finding Bugs and Scaling Your Security Program} % TODO
+\subtitle{Using Semgrep to take your security game to the next level} % TODO
+\date{16 June 2024} % TODO
+\author{Brandon Wu} % TODO
+
+
+\def\checkmark{\tikz\fill[green, scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
+\contourlength{.08em}% default is 0.03em
+\newcommand{\cmark}{{\color{green!80!black}\ding{51}}}
+\newcommand{\xmark}{{\color{red}\ding{55}}}
+
+\newcommand{\exerciseHeader}[2]{
+  \begin{minipage}[t][0.4in][t]{\textwidth}
+    \Large \term{Exercise:} #1
+  \end{minipage}
+  \begin{minipage}[t][2in][t]{\textwidth}
+    #2
+  \end{minipage}
+}
+
+\newenvironment{exercisePage}[1]{
+  \begin{minipage}[t][0.4in][t]{\textwidth}
+    \Large \term{Exercise:} #1
+  \end{minipage}
+  \begin{minipage}[t][2in][t]{\textwidth}
+}{
+  \end{minipage}
+}
+
+\definecolor{semgrepGreen}{HTML}{2ACFA6}
+
+\graphicspath{ {./img/} }
+
+
+\newcommand{\dollar}{\mbox{\textdollar}}
+
+
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+\colorlet{bgBlue}{hlBlue!130}
+\colorlet{bgOrange}{hlOrange}
+\colorlet{fgBlue}{fgCodeBlue}
+\colorlet{fgGreen}{fgCodeGreen}
+\colorlet{fgRed}{fgCodeRed}
+\colorlet{fgOrange}{fgCodeOrange}
+
+\colorlet{codeBackground}{background_color}
+
+\definecolor{bgPurple}{HTML}{dbc7ff}
+\definecolor{bgRed}{HTML}{fcaea9}
+\definecolor{bgYellow}{HTML}{fffeb5}
+\definecolor{bgGreen}{HTML}{b4ffb3}
+\definecolor{bgGray}{HTML}{bfbfbf}
+
+\definecolor{fgOrange}{HTML}{fcae4e}
+\definecolor{fgYellow}{HTML}{ffbe0a}
+
+\definecolor{unknownPink}{HTML}{e0fff6}
+
+\tikzset{
+  every path/.style={line width=0.25mm},
+  tok/.style={
+    font=\large,
+    align=center,
+    minimum height=3cm,
+  },
+  belowtok/.style={
+    font=\large,
+    align=center,
+    minimum height=3cm,
+  },
+  astNode/.style={
+    draw,
+    inner sep=2pt,
+    line width=0.4mm,
+    minimum size=0.6cm,
+    font=\large,
+    align=center,
+  },
+  hex/.style={
+    astNode,
+    signal,
+    signal to=east and west,
+    signal pointer angle=130,
+    fill=bgPurple,
+  },
+  box/.style={
+    astNode,
+    rectangle,
+    fill=green!20!white,
+  },
+  bbox/.style={
+    astNode,
+    rectangle,
+    fill=bgBlue,
+  },
+  circ/.style={
+    astNode,
+    circle,
+    minimum size=0.7cm,
+    fill=bgYellow
+  },
+  bhex/.style={
+    astNode,
+    signal,
+    inner sep=0.5pt,
+    signal to=east and west,
+    signal pointer angle=130,
+    fill=bgBlue,
+    minimum width=0.8cm,
+  },
+  unknown/.style={hex, draw=black, preaction={fill, unknownPink}, pattern=north east lines, pattern color=gray},
+  unknown2/.style={unknown, preaction={fill, bgYellow}},
+  highlight/.style={draw=fgYellow, line width=0.55mm},
+  highlight2/.style={draw=magenta, line width=0.55mm},
+  highlight3/.style={draw=blue, line width=0.55mm},
+  highlight4/.style={draw=orange, line width=0.55mm},
+  highlight5/.style={draw=green!70!white, line width=0.55mm},
+  hlbg/.style={fill=bgYellow},
+  inline/.style={anchor=base, baseline},
+  hledge/.style={thick, red},
+  between/.style args={#1 and #2}{
+    at = ($(#1)!0.5!(#2)$)
+  },
+}
+
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+% {
+% \begin{frame}[plain]
+%     \colorlambdatrue
+%     \titlepage
+% \end{frame}
+% }
+
+% \begin{frame}[fragile]
+%   \frametitle{Lesson Plan}
+
+%   \tableofcontents
+% \end{frame}
+
+% \sectionSlide{1}{Introduction}
+
+% TODO: community slack link
+% https://semgrep.slack.com/archives/C0770SP7WTZ
+
+\begin{frame}[fragile]
+  \frametitle{Staff}
+
+  \begin{center}
+    \begin{minipage}{0.65\textwidth}
+      My name is Brandon Wu, and I am a program analysis engineer working at {\color{semgrepGreen}\href{https://semgrep.dev/}{Semgrep}}.
+
+      \vspace{10pt}
+
+      I have been working at Semgrep for two years now, and I was educated in computer science
+      at Carnegie Mellon University, where I previously lectured on the subject of functional
+      programming.
+
+      \vspace{10pt}
+
+      Semgrep is a software security startup and application security platform that
+      helps developers find and fix security vulnerabilities in their code, at minimal
+      friction to their workflow.
+    \end{minipage}
+    \hspace{\fill}
+    \begin{minipage}{0.30\textwidth}
+      \begin{center}
+        \includegraphics[scale=0.4]{me_smaller.jpg}
+
+        \vspace{5pt}
+
+        \includegraphics[height=0.35cm]{twitter.png}
+        {\color{blue}\href{https://twitter.com/onefiftyman}{@onefiftyman}}
+
+        \vspace{5pt}
+
+        \includegraphics[height=0.35cm]{linkedin.png}
+        {\color{blue}\href{https://www.linkedin.com/in/brandon-wu-79935116b/}{LinkedIn}}
+
+        % TODO: punch up with funny link
+      \end{center}
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Introductions}
+
+  Some questions to get us started:
+
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item Is everyone here a security professional?
+    \item Who here has heard of Semgrep before?
+    \item Has anyone here written a Semgrep rule before?\footnote{"No" is an acceptable answer.}
+    \item Did anyone come to a previous Semgrep training?
+  \end{itemize}
+\end{frame}
+
+\sectionSlide{2}{Static Analysis Essentials}
+
+\begin{frame}[fragile]
+  \frametitle{Endgame}
+
+  We're here because we are interested in \term{software security}.
+
+  \vspace{5pt}
+
+  Broadly, we are interested in categories of undesirable behaviors in programs, and
+  in particular, we are interested in minimizing them wherever possible. These may
+  take the form of:
+
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item \textbf{logic errors} - passing an ill-typed argument to a function
+    \item \textbf{code smells} - using a deprecated utility function instead of a more
+    up-to-date one
+    \item \textbf{security vulnerabilities} - SQL injection, cross-site scripting, broken authentication
+  \end{itemize}
+
+  \vspace{5pt}
+
+  All of these are fair game for things that we want to find and fix. Our weapon of
+  choice for doing so is \term{static analysis}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What is static analysis?}
+
+  \defBox{}{\term{Static analysis} is the art of analyzing programs without ever running them.}
+
+  \vspace{5pt}
+
+  This is in contrast to \term{dynamic analysis}, which involves running the program and observing
+  its behavior at runtime. While an interesting field in its own right, dynamic analysis
+  has its own disadvantages, so it is out of scope for this workshop.
+
+  \vspace{10pt}
+
+  There are many static analysis tools out there which work for different languages, and
+  have varying degrees of effectiveness. Semgrep is one such tool.
+
+  \vspace{5pt}
+
+  Other tools may include Checkmarx, SonarQube, Coverity, CodeQL, etc.
+\end{frame}
+
+% TODO: more explanation of static analysis?
+
+\begin{frame}[fragile]
+  \frametitle{Goals in Static Analysis}
+
+  Static analysis should be:
+
+  \vspace{5pt}
+
+  \begin{enumerate}
+      \item \textbf{fast} - Scanning code with a static analysis solution should run
+      quickly, so that developers can get feedback and iterate as quickly as possible.
+      \item \textbf{fitting} - Static analysis should be customized to \textit{your}
+      use case. Teams, codebases, and organizations are \textit{not} one-size-fits-all.
+      You should be able to scan your code in a \textbf{way that works for you}.
+      \item \textbf{friendly} - Static analysis tools should be simple to use, for
+      both developers and security engineers. A tool which is not understood is a tool
+      which will be disabled.
+  \end{enumerate}
+
+  \vspace{\fill}
+
+  These are all things that Semgrep aims to achieve.
+\end{frame}
+
+\sectionSlide{3}{Static Analysis through Semgrep}
+
+\begin{frame}[fragile]
+  \frametitle{What is Semgrep?}
+
+  Here's some things about Semgrep that are cool:
+  \begin{itemize}
+    \item {\color{auxColor}\faBookOpen} \, \textbf{open-source}, with community-contributed language support and rules
+    \item {\color{auxColor}\faPen} \, \textbf{customizable} - Semgrep scans for code patterns that you define, and provide
+    as an argument to the tool. This means that Semgrep can be customized to your code
+    base's idioms, and tuned to your organization's security needs.
+    \item {\color{auxColor}\faFont} \, \textbf{multilingual} - Semgrep supports over 25+ languages
+    \item {\color{auxColor}\faTimes} \, \textbf{no building required}. Semgrep only needs source code to run, and doesn't
+    require that the code it is analyzing can build
+    \item {\color{auxColor}\faLightbulb} \, \textbf{No DSL}. Semgrep patterns look like code in the language you're targeting,
+    meaning no hours of browsing documentation and API references. All you need to be able
+    to do is read and write code.\footnote{This is really a killer, and will form the basis
+    of this workshop as we move into Semgrep rule-writing.}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Useful references}
+
+  Here are some useful Semgrep-related references, when it comes to utilizing the platform:
+
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item The {\color{blue}\href{https://formulae.brew.sh/formula/semgrep}{Semgrep brew formula}}, where you can
+    pull the Semgrep CLI to your computer via \code{brew install semgrep}
+    \item The {\color{blue}\href{https://marketplace.visualstudio.com/items?itemName=Semgrep.semgrep}{Semgrep VS Code Extension}},
+    which allows developers to scan code directory from their IDE, \textbf{before it is committed}.
+    \item The {\color{blue}\href{https://semgrep.dev/r}{Semgrep Rule Registry}}, which contains
+    all the pre-written rule packs from Semgrep's security research team, as well as community-contributed
+    rules
+    \item The {\color{blue}\href{https://semgrep.dev/docs/}Semgrep docs page}, which contains
+    information on how to run Semgrep in your CI/CD pipeline, how to write rules, and other
+    useful information\footnote{This is mostly here as a reference for \textit{after} the workshop. Leave
+    that link blue for now.}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What is Semgrep?}
+
+  \begin{minipage}[t][0.5in][t]{\textwidth}
+    \begin{center}
+      \begin{tikzpicture}[every node/.style={node distance=2in}]
+        \node[box, minimum width=2cm] (A) {code};
+        \node[box, right of=A, minimum width=2cm] (B) {AST};
+        \node[box, right of=B, minimum width=2cm] (C) {analysis};
+
+        \draw[-stealth] (A) -- (B);
+        \draw[-stealth] (B) -- (C);
+      \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+  \begin{minipage}[t][1.1in][t]{\textwidth}
+    \begin{center}
+    \begin{minipage}{0.32\textwidth}
+      \begin{center}
+        \begin{pythoncodeblock}
+          b = 1
+          def foo(a):
+            return a + b
+        \end{pythoncodeblock}
+      \end{center}
+    \end{minipage}
+    \begin{minipage}{0.32\textwidth}
+      \begin{center}
+      \begin{tikzpicture}
+        [level distance=8mm,
+        level 1/.style={sibling distance=16mm},
+        level 2/.style={sibling distance=8mm},
+        level 3/.style={sibling distance=4mm},
+        every node/.style={circle, inner sep=4pt, draw=black!80, thick, fill=black!20!white},
+        ]
+        \node {}
+          child{node {}
+            child{node {}}
+            child{node {}
+              child{node{}}
+              child[missing]
+            }
+          }
+          child{node {}
+            child{node{}
+              child[missing]
+              child[missing]
+            }
+            child[missing]
+        };
+      \end{tikzpicture}
+    \end{center}
+    \end{minipage}
+    \begin{minipage}{0.32\textwidth}
+      \begin{center}
+        \begin{itemize}
+          \item pattern matching
+          \item IL translation
+          \item taint analysis
+          \item constant propagation
+        \end{itemize}
+      \end{center}
+    \end{minipage}
+    \end{center}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Lifecycle of a Program}
+
+  Consider the simple program seen on the previous page. To analyze it, we could
+  look at the text directly, or we could notice that the shape of the program forms
+  a kind of hierarchical structure.
+
+  \vspace{5pt}
+
+  For instance, we note that the program is made of two statements, which could be
+  regarded as the children of a parent node.
+
+  \vspace{8pt}
+
+  \begin{minipage}[t][1in][t]{\textwidth}
+    \begin{minipage}{0.3\textwidth}
+      \begin{pythoncodeblock}
+        `b = 1`
+        |lr|def foo(a):|lr|
+        |lr|  return a + b|lr|
+      \end{pythoncodeblock}
+    \end{minipage}
+    \begin{minipage}{0.65\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[level 1/.style={sibling distance=3cm}]
+        \node[box, fill=bgGray] {\code{statements}}
+          child{node[box, fill=hlYellow] {
+            \code{b = 1}
+          }}
+          child{node [box, align=left, fill=hlLightRed] {
+            \code{def foo(a):} \\
+            \;\;\code{  return a + b}
+          }}
+        ;
+      \end{tikzpicture}
+    \end{center}
+    \end{minipage}
+  \end{minipage}
+
+  \vspace{8pt}
+
+  \customBox{Important}{\, We say that the AST nodes of the assignment to \code{b} and the definition of
+  the function \code{foo} have a \term{range}, which is the contiguous span of
+  text in the source file that it covers. These are highlighted in yellow and red.}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{The Lifecycle of a Program}
+
+  But, this isn't the farthest granularity we can go. We see that the assignment to
+  \code{b = 1}, for instance, is made up of parts also. We could regard the identifier
+  \code{b} and the literal \code{1} as children of yet another node, this time for
+  an assignment.
+
+  \vspace{5pt}
+
+  Our new tree will look like a more detailed version of the previous one:
+
+  \vspace{8pt}
+
+  \begin{minipage}[t][1.4in][t]{\textwidth}
+    \begin{minipage}{0.3\textwidth}
+      \begin{pythoncodeblock}
+        |g|b|g| = |b|1|b|
+        def |o|foo|o|(|lp|a|lp|):
+          return |lb|a + b|lb|
+      \end{pythoncodeblock}
+    \end{minipage}
+    \begin{minipage}{0.65\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[level distance=10mm, level 1/.style={sibling distance=4cm}, level 2/.style={sibling distance=1.5cm}]
+        \node[box, fill=bgGray] {\code{statements}}
+          child{node[box, fill=bgGray, draw=hlYellow] {\code{assignment}}
+            child{node[hex, fill=hlGreen, draw=hlYellow] {
+              \code{b}
+            }}
+            child{node[hex, fill=hlBlue, draw=hlYellow] {
+              \code{1}
+            }}
+          }
+          child{node[box, fill=bgGray, draw=hlLightRed] {\code{function}}
+            child{node[hex, fill=hlOrange, draw=hlLightRed]{\code{foo}}}
+            child{node[hex, fill=hlLightPurple, draw=hlLightRed] {\code{a}}}
+            child{node[box, fill=bgGray, xshift=0.5cm, draw=hlLightRed] {\code{return}}
+              child{node[hex, fill=hlLightBlue, draw=hlLightRed] {\code{a + b}}}
+            }
+          }
+        ;
+        \end{tikzpicture}
+      \end{center}
+    \end{minipage}
+  \end{minipage}
+
+  \vspace{8pt}
+
+  Keep in mind that the old assignment node still exists! It just comprises the entire
+  subtree of the assignment, which is now highlighted in yellow. The same is true of the
+  function node.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{What is Semgrep?}
+
+  % TODO: label nodes
+  \vspace{5pt}
+  \begin{minipage}[t][1.2in][t]{\textwidth}
+    \begin{minipage}{0.3\textwidth}
+      \begin{pythoncodeblock}
+        `b = 1`
+        |lr|def foo(a):|lr|
+        |lr|  return a + b|lr|
+      \end{pythoncodeblock}
+    \end{minipage}
+    \begin{minipage}{0.65\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[level 1/.style={sibling distance=3cm}]
+        \node[box, fill=bgGray] {\code{statements}}
+          child{node[box, fill=hlYellow] {
+            \code{b = 1}
+          }}
+          child{node [box, align=left, fill=hlLightRed] {
+            \code{def foo(a):} \\
+            \;\;\code{  return a + b}
+          }}
+        ;
+      \end{tikzpicture}
+    \end{center}
+    \end{minipage}
+  \end{minipage}
+  \hrule
+  \vspace{15pt}
+  \begin{minipage}[t][1.8in][t]{\textwidth}
+    \begin{minipage}{0.3\textwidth}
+      \begin{pythoncodeblock}
+        |g|b|g| = |b|1|b|
+        def |o|foo|o|(|lp|a|lp|):
+          return |lb|a + b|lb|
+      \end{pythoncodeblock}
+    \end{minipage}
+    \begin{minipage}{0.65\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[level distance=10mm, level 1/.style={sibling distance=4cm}, level 2/.style={sibling distance=1.5cm}]
+        \node[box, fill=bgGray] {\code{statements}}
+          child{node[box, fill=bgGray, draw=hlYellow] {\code{assignment}}
+            child{node[hex, fill=hlGreen, draw=hlYellow] {
+              \code{b}
+            }}
+            child{node[hex, fill=hlBlue, draw=hlYellow] {
+              \code{1}
+            }}
+          }
+          child{node[box, fill=bgGray, draw=hlLightRed] {\code{function}}
+            child{node[hex, fill=hlOrange, draw=hlLightRed]{\code{foo}}}
+            child{node[hex, fill=hlLightPurple, draw=hlLightRed] {\code{a}}}
+            child{node[box, fill=bgGray, xshift=0.5cm, draw=hlLightRed] {\code{return}}
+              child{node[hex, fill=hlLightBlue, draw=hlLightRed] {\code{a + b}}}
+            }
+          }
+        ;
+        \end{tikzpicture}
+      \end{center}
+    \end{minipage}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Patterns}
+
+  Semgrep is about \textbf{matching nodes} and \textbf{obtaining ranges}.
+
+  \vspace{\fill}
+
+  Suppose we were interested in matching calls to \code{print} in Python. We could
+  be concerned with the following program:
+
+  \vspace{5pt}
+
+  \begin{pythoncodeblock}
+    # this line will print
+    print("Hello, world!")
+
+    isprinted(true)
+
+    print("printing")
+  \end{pythoncodeblock}
+
+  \vspace{\fill}
+
+  We could use \code{grep} or \code{ctrl-f} to find these calls, but they won't
+  work properly!
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Patterns}
+
+  By \code{grep}ping for \code{print}, we would get the following:
+
+  \vspace{5pt}
+
+  % FRAGILE
+  \begin{codeblock}
+    # this line will |lr|print|lr|
+    |lr|print|lr|('Hello, world!')
+
+    is|lr|print|lr|ed(true)
+
+    |lr|print|lr|('|lr|print|lr|ing now')
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  We were interested in finding \textbf{calls} to \code{print}. We see
+  that we have two matches we didn't intend, one in a comment and one in
+  a string literal -- two \term{false positives}.
+
+  \vspace{\fill}
+
+  The reason is that \code{grep} is not aware of whether each contiguous \code{print}
+  is a call or not. It just operates purely based on characters. Put another way,
+  \code{grep} is not \term{semantic}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Patterns}
+
+  Semgrep stands for \term{semantic grep}. It is a code-searching tool that is aware
+  of the underlying structure of the code -- that is, the AST.
+
+  \vspace{\fill}
+
+  Consider the following example:
+
+  \vspace{5pt}
+
+__compare(
+<<<
+  print
+>>>,
+<<<
+    # this line will print
+    print("Hello, world!")
+    isprinted(true)
+    print("printing")
+>>>
+)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Patterns}
+
+  With Semgrep, we will match the two calls to \code{print}, and nothing else.
+
+  \vspace{\fill}
+
+__compare(
+<<<
+  print
+>>>,
+<<<
+    # this line will print
+    `print`("Hello, world!")
+    isprinted(true)
+    `print`("printing")
+>>>
+)
+
+  \vspace{\fill}
+
+  Note that it is not simply a matter of ignoring the comments and string literals -- we
+  also do not match the identifier \code{isprinted}, because it is not the same as the
+  identifier \code{print}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Patterns}
+
+  \begin{center}
+    \begin{minipage}{0.23\textwidth}
+
+  __pattern(<<<
+    print
+  >>>)
+
+    \end{minipage}
+    \hspace{10pt}
+    \begin{minipage}{0.72\textwidth}
+
+  __target(
+  <<<
+      # this line will print
+      print("Hello, world!")
+      isprinted(true)
+      print("printing")
+  >>>)
+
+    \end{minipage}
+  \end{center}
+
+  \vspace{\fill}
+
+  \begin{minipage}{0.3\textwidth}
+      \begin{center}
+      \begin{tikzpicture}
+        \node[hex] {\code{print}}
+          child[missing]
+          child[missing]
+        ;
+        \end{tikzpicture}
+      \end{center}
+  \end{minipage}
+  \begin{minipage}{0.65\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[level distance=10mm, level 1/.style={sibling distance=3.5cm}, level 2/.style={sibling distance=1.5cm}]
+        \node[box, fill=bgGray] {\code{statements}}
+          child{node[box, fill=bgGray] {\code{call}}
+            child{node[hex] {\code{print}}}
+            child{node[hex, fill=hlBlue, yshift=-1cm] {\code{"Hello, world!"}}}
+          }
+          child{node[box, fill=bgGray] {\code{call}}
+            child{node[hex, xshift=-0.6cm] {\code{isprinted}}}
+            child{node[hex, xshift=0.2cm, fill=hlGreen] {\code{true}}}
+          }
+          child{node[box, fill=bgGray] {\code{call}}
+            child{node[hex] {\code{print}}}
+            child{node[hex, fill=hlBlue, yshift=-1cm] {\code{"printing"}}}
+          }
+        ;
+        \end{tikzpicture}
+      \end{center}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Patterns}
+
+  \begin{center}
+    \begin{minipage}{0.23\textwidth}
+
+  __pattern(<<<
+    print
+  >>>)
+
+    \end{minipage}
+    \hspace{10pt}
+    \begin{minipage}{0.72\textwidth}
+
+  __target(
+  <<<
+      # this line will print
+      `print`("Hello, world!")
+      isprinted(true)
+      `print`("printing")
+  >>>)
+
+    \end{minipage}
+  \end{center}
+
+  \vspace{\fill}
+
+  \begin{minipage}{0.3\textwidth}
+      \begin{center}
+      \begin{tikzpicture}
+        \node[hex, highlight] {\code{print}}
+          child[missing]
+          child[missing]
+        ;
+        \end{tikzpicture}
+      \end{center}
+  \end{minipage}
+  \begin{minipage}{0.65\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[level distance=10mm, level 1/.style={sibling distance=3.5cm}, level 2/.style={sibling distance=1.5cm}]
+        \node[box, fill=bgGray] {\code{statements}}
+          child{node[box, fill=bgGray] {\code{call}}
+            child{node[hex, highlight] {\code{print}}}
+            child{node[hex, fill=hlBlue, yshift=-1cm] {\code{"Hello, world!"}}}
+          }
+          child{node[box, fill=bgGray] {\code{call}}
+            child{node[hex, xshift=-0.6cm] {\code{isprinted}}}
+            child{node[hex, xshift=0.2cm, fill=hlGreen] {\code{true}}}
+          }
+          child{node[box, fill=bgGray] {\code{call}}
+            child{node[hex, highlight] {\code{print}}}
+            child{node[hex, fill=hlBlue, yshift=-1cm] {\code{"printing"}}}
+          }
+        ;
+        \end{tikzpicture}
+      \end{center}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Patterns}
+
+  Semgrep works by doing three things:
+  \begin{enumerate}
+    \item parsing the \term{pattern} to an AST
+    \item parsing the \term{target} to an AST
+    \item \term{matching} both against each other
+  \end{enumerate}
+
+  % TODO? add a diagram
+
+  \vspace{\fill}
+
+  Since there are only two nodes on the right-hand side which look like the
+  \tikz[inline] \node[hex]{\code{print}}; node, they are the only ones which
+  end up being printed.
+
+  \vspace{\fill}
+
+  Note that the \tikz[inline] \node[hex]{\code{isprinted}}; node is \textbf{not}
+  matched, because it contains different text!
+\end{frame}
+
+\begin{frame}[fragile]
+  \exerciseHeader{Try it for yourself!}{
+    Try writing the pattern we just saw within the Semgrep playground.
+
+    \vspace{5pt}
+
+    You can access it at {\color{blue}\href{https://semgrep.dev/playground/r/lBU4AY2/semgrep.print-example?editorMode=structure}{this link}}.
+
+    \vspace{\fill}
+
+    \noteBox{}{
+    In the Playground page, you will see a couple of tabs, notably ones labeled \code{advanced}
+    and \code{taint}. Leave those alone for now.
+    }
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Test Annotations}
+
+  It's worth expanding on the strange comments that are present in the target source.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, In the Semgrep playground, you can add \term{test annotations} to your target,
+  which will tell the Playground whether a match is expected or not on the next line:}
+
+  \vspace{\fill}
+
+  \begin{pythoncodeblock}
+    # ruleid: rule-id-here
+    match_expected()
+    # ok: rule-id-here
+    match_unexpected()
+  \end{pythoncodeblock}
+
+  \vspace{\fill}
+
+  This is useful for verifying that your rule is working as expected. We must
+  obtain a match on line 2, and no match on line 4, or else the Playground will throw
+  an error and tell you that tests are failing. This is also useful for conveying
+  what you intend your rule to do!
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Enforcing secure defaults}
+    Let's try a real Java use case! {\color{blue}\href{https://semgrep.dev/playground/r/6JUvwkA/semgrep.java-secure-cookies}{Link to the playground}}.
+
+    \vspace{5pt}
+
+    {\footnotesize\begin{codeblock}[language=java]
+      import javax.servlet.http.Cookie;
+
+      class CookieExample {
+          public void SecureCookiesTest(){
+              Cookie c = new Cookie("name", "value");
+              //ok: java-secure-cookies
+              c.setSecure(true);
+
+              Cookie c2 = new Cookie("name", "value");
+              // ruleid: java-secure-cookies
+              c2.setSecure(false);
+          }
+      }
+    \end{codeblock}
+    }
+  \end{exercisePage}
+\end{frame}
+
+\thankyou
+
+\end{document}
