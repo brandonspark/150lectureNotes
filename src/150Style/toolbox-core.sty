@@ -123,7 +123,9 @@
 \definecolor{hlPink}{HTML}{ffa3ed}
 \definecolor{hlLightRed}{HTML}{ffaea8}
 \definecolor{hlLightBlue}{HTML}{a1fffa}
+\definecolor{hlFaintBlue}{HTML}{8fc4f2}
 \definecolor{hlLightPurple}{HTML}{e3baff}
+\definecolor{hlLightGreen}{HTML}{c2ffd8}
 
 \definecolor{fgCodeBlue}{HTML}{266df0}
 \definecolor{fgCodeOrange}{HTML}{ffa51f}
@@ -319,6 +321,43 @@
   }%
 }
 
+\newenvironment{lightGreenHighlight}[1][]
+{\begingroup\tikzset{lightGreen@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\lightGreen@HL@box[lightGreen@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\lightGreenHL[1][]{%
+  \begin{lightGreenHighlight}[#1]\bgroup\aftergroup\lightGreen@HL@endenv%
+}
+\def\lightGreen@HL@endenv{%
+  \end{lightGreenHighlight}%
+  \egroup
+}
+\newcommand{\lightGreen@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlLightGreen,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+\newenvironment{faintBlueHighlight}[1][]
+{\begingroup\tikzset{faintBlue@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\faintBlue@HL@box[faintBlue@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\faintBlueHL[1][]{%
+  \begin{faintBlueHighlight}[#1]\bgroup\aftergroup\faintBlue@HL@endenv%
+}
+\def\faintBlue@HL@endenv{%
+  \end{faintBlueHighlight}%
+  \egroup
+}
+\newcommand{\faintBlue@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlFaintBlue,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
 \newenvironment{templateHighlight}[1][]
 {\begingroup\tikzset{template@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
 {\end{lrbox}\template@HL@box[template@Highlight@par]{\@tempboxa}\endgroup}
@@ -430,6 +469,31 @@
     }
 }
 
+\newcommand\YAMLcolonstyle{\color{red}}
+\newcommand\YAMLkeystyle{\color{black}}
+\newcommand\YAMLvaluestyle{\color{blue}}
+
+\makeatletter
+
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null,y,n},
+  keywordstyle=\color{darkgray},
+  basicstyle=\YAMLkeystyle,                                 % assuming a key comes first
+  sensitive=false,
+  comment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\YAMLvaluestyle\ttfamily,
+  moredelim=[l][\color{orange}]{\&},
+  moredelim=[l][\color{magenta}]{*},
+  moredelim=**[il][\YAMLcolonstyle{:}\YAMLvaluestyle]{:},   % switch to value style at :
+  morestring=[b]',
+  morestring=[b]",
+  literate =    {>}{{\textcolor{red}\textgreater}}1
+                {|}{{\textcolor{red}\textbar}}1
+                {\ -\ }{{\mdseries\ -\ }}3,
+}
+
 % code inline
 \newrobustcmd{\code}[2][]{{\sloppy
 \ifmmode
@@ -455,7 +519,7 @@
   % moredelim=**[is][\dtHL]{?}{?},
 }}{}
 \lstnewenvironment{yamlcodeblock}[1][]{\lstset{
-  style=15150code, style=yaml,numbers=none,#1,
+  language=yaml, style=15150code, numbers=none,#1,
   moredelim=**[is][\btHL]{`}{`}, % yellow
   moredelim=**[is][\atHL]{&}{&}, % red
   moredelim=**[is][\ctHL]{/}{/}, % blue
@@ -488,6 +552,8 @@
   moredelim=**[is][\lightRedHL]{|lr|}{|lr|}, % light red
   moredelim=**[is][\lightPurpleHL]{|lp|}{|lp|}, % light purple
   moredelim=**[is][\lightBlueHL]{|lb|}{|lb|}, % light blue
+  moredelim=**[is][\faintBlueHL]{|fb|}{|fb|}, % faint blue
+  moredelim=**[is][\lightGreenHL]{|lg|}{|lg|}, % light blue
   moredelim=**[is][\ctHL]{|b|}{|b|}, % blue
   moredelim=**[is][\ctHL]{/}{/}, % blue
   moredelim=**[is][\dtHL]{|o|}{|o|}, % orange

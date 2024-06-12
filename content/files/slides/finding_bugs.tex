@@ -44,6 +44,8 @@
 \author{Brandon Wu} % TODO
 
 
+\usetikzlibrary{patterns}
+
 \def\checkmark{\tikz\fill[green, scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
 \contourlength{.08em}% default is 0.03em
 \newcommand{\cmark}{{\color{green!80!black}\ding{51}}}
@@ -53,7 +55,7 @@
   \begin{minipage}[t][0.4in][t]{\textwidth}
     \Large \term{Exercise:} #1
   \end{minipage}
-  \begin{minipage}[t][2in][t]{\textwidth}
+  \begin{minipage}[t][2.6in][t]{\textwidth}
     #2
   \end{minipage}
 }
@@ -62,10 +64,46 @@
   \begin{minipage}[t][0.4in][t]{\textwidth}
     \Large \term{Exercise:} #1
   \end{minipage}
+  \begin{minipage}[t][2.6in][t]{\textwidth}
+}{
+  \end{minipage}
+}
+
+\newenvironment{featurePage}[1]{
+  \begin{minipage}[t][0.4in][t]{\textwidth}
+    \Large \term{Feature:} #1
+  \end{minipage}
   \begin{minipage}[t][2in][t]{\textwidth}
 }{
   \end{minipage}
 }
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+
+\newcommand\blfootnote[1]{
+    \begingroup
+    \renewcommand\thefootnote{}\footnote{#1}
+    \addtocounter{footnote}{-1}
+    \endgroup
+}
+
+\newcommand\solutionLink[1]{
+  \blfootnote{\color{blue}\href{#1}{Solution}}
+}
+
+\newcommand\ellipsisLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/pattern-syntax\#ellipsis-operator}{ellipsis}}}
+\newcommand\metavariableLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/pattern-syntax\#metavariables}{metavariable}}}
+\newcommand\patternNotLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#pattern-not}{not}}}
+\newcommand\patternAllLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#patterns}{all}}}
+\newcommand\patternAnyLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#pattern-either}{any}}}
+\newcommand\literalEllipsisLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/pattern-syntax\#strings}{literal ellipsis}}}
+\newcommand\literalMetavariableLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/pattern-syntax\#literal-metavariables}{literal metavariable}}}
+\newcommand\focusLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#focus-metavariable}{focus}}}
+\newcommand\metavariableRegexLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#metavariable-regex}{metavariable regex}}}
+\newcommand\metavariableComparisonLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#metavariable-comparison}{metavariable comparison}}}
+
+% \renewcommand\blfootnote[1]{}
 
 \definecolor{semgrepGreen}{HTML}{2ACFA6}
 
@@ -114,6 +152,9 @@
 \definecolor{fgYellow}{HTML}{ffbe0a}
 
 \definecolor{unknownPink}{HTML}{e0fff6}
+
+\definecolor{sourceColor}{HTML}{8fc4f2}
+\definecolor{sinkColor}{HTML}{f77352}
 
 \tikzset{
   every path/.style={line width=0.25mm},
@@ -192,21 +233,23 @@
 
 \setbeamertemplate{itemize items}[circle]
 
+\begin{comment}
+
 % SOLID COLOR TITLE (see SETTINGS.sty)
-% {
-% \begin{frame}[plain]
-%     \colorlambdatrue
-%     \titlepage
-% \end{frame}
-% }
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
 
-% \begin{frame}[fragile]
-%   \frametitle{Lesson Plan}
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
 
-%   \tableofcontents
-% \end{frame}
+  \tableofcontents
+\end{frame}
 
-% \sectionSlide{1}{Introduction}
+\sectionSlide{1}{Introduction}
 
 % TODO: community slack link
 % https://semgrep.slack.com/archives/C0770SP7WTZ
@@ -340,7 +383,7 @@
   These are all things that Semgrep aims to achieve.
 \end{frame}
 
-\sectionSlide{3}{Static Analysis through Semgrep}
+\sectionSlide{3}{Basics: Conceptual Fundamentals}
 
 \begin{frame}[fragile]
   \frametitle{What is Semgrep?}
@@ -665,8 +708,7 @@
   \vspace{\fill}
 
   We were interested in finding \textbf{calls} to \code{print}. We see
-  that we have two matches we didn't intend, one in a comment and one in
-  a string literal -- two \term{false positives}.
+  that we have three matches we didn't intend -- three \term{false positives}.
 
   \vspace{\fill}
 
@@ -769,7 +811,7 @@ __compare(
         \node[box, fill=bgGray] {\code{statements}}
           child{node[box, fill=bgGray] {\code{call}}
             child{node[hex] {\code{print}}}
-            child{node[hex, fill=hlBlue, yshift=-1cm] {\code{"Hello, world!"}}}
+            child{node[hex, fill=hlBlue, yshift=-1cm, highlight] {\code{"Hello, world!"}}}
           }
           child{node[box, fill=bgGray] {\code{call}}
             child{node[hex, xshift=-0.6cm] {\code{isprinted}}}
@@ -868,13 +910,24 @@ __compare(
   matched, because it contains different text!
 \end{frame}
 
+\sectionSlide{4}{Basics: Patterns}
+
 \begin{frame}[fragile]
-  \exerciseHeader{Try it for yourself!}{
-    Try writing the pattern we just saw within the Semgrep playground.
+  \begin{exercisePage}{Try it for yourself!}
+    Try writing the pattern we just saw within the Semgrep playground. {\color{blue}\href{https://semgrep.dev/playground/r/lBU4AY2/semgrep.print-example?editorMode=structure}{Link}}
+    \solutionLink{https://semgrep.dev/playground/r/X5UQ0p0/semgrep.print-example-solution}
 
-    \vspace{5pt}
+    \vspace{\fill}
 
-    You can access it at {\color{blue}\href{https://semgrep.dev/playground/r/lBU4AY2/semgrep.print-example?editorMode=structure}{this link}}.
+    {\small\begin{pythoncodeblock}
+      # this line will print
+      # ruleid: print-example
+      print("Hello, world!")
+      isprinted(true)
+      # ruleid: print-example
+      print("printing")
+    \end{pythoncodeblock}
+    }
 
     \vspace{\fill}
 
@@ -882,7 +935,7 @@ __compare(
     In the Playground page, you will see a couple of tabs, notably ones labeled \code{advanced}
     and \code{taint}. Leave those alone for now.
     }
-  }
+  \end{exercisePage}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -910,33 +963,963 @@ __compare(
   obtain a match on line 2, and no match on line 4, or else the Playground will throw
   an error and tell you that tests are failing. This is also useful for conveying
   what you intend your rule to do!
-
 \end{frame}
 
 \begin{frame}[fragile]
-  \begin{exercisePage}{Enforcing secure defaults}
-    Let's try a real Java use case! {\color{blue}\href{https://semgrep.dev/playground/r/6JUvwkA/semgrep.java-secure-cookies}{Link to the playground}}.
+  \frametitle{Test Annotations}
+
+  Our solution has a bug in it, though! We only want to match \textbf{calls} to the
+  \textbf{print} function, not the identifier \code{print} itself.
+
+  \vspace{5pt}
+
+  This causes a bug in the following example:
+
+  \vspace{\fill}
+
+__compare_30(
+<<<
+  print
+>>>,
+<<<
+  # this code should be matched...
+  `print`("a call to print")
+  # but we also produce a match here!
+  alias = `print`
+>>>
+)
+
+  \vspace{\fill}
+
+  Recall the mantra of Semgrep: \textbf{patterns look like code}. To write a pattern
+  which matches call expressions, we will write a pattern which itself looks like a
+  Python call.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Ellipses}
+
+  To do this, we will need to somehow vary our pattern over any argument to the
+  call. We do this with a special Semgrep syntax, the \term{ellipsis}.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, The \term{ellipsis} is a placeholder in a Semgrep pattern which matches
+    zero or more occurrences of some element, for instance parameters, arguments,
+    and statements.
+  }
+
+  \vspace{\fill}
+
+__compare_30(
+<<<
+  print(|lg|...|lg|)
+>>>,
+<<<
+  # this code should be matched...
+  `print("a call to print")`
+  # now, no more match here:
+  alias = print
+>>>
+)
+
+  \vspace{\fill}
+
+  \noteBox{}{The range has changed! Instead of matching just the identifier \code{print},
+  our match now covers the entire call.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Ellipses}
+
+  When put as arguments to a function call, ellipses allow you to match \textit{any number}
+  of arguments, even 0.
+
+  \vspace{\fill}
+
+  Behold the following example showcasing the mighty ellipsis, paired with an equally
+  mighty haiku\footnote{The slide author would like you to know this was not generated by GPT.}:
+
+  \vspace{\fill}
+
+__compare_30(
+<<<
+  print(|lg|...|lg|)
+>>>,
+<<<
+  # no matter the count
+  # when up against arguments
+  # ellipsis matches
+  `print("one")`
+  `print()`
+  `print("two", "args")`
+>>>
+)
+\end{frame}
+
+% THINK: important?
+\begin{frame}[fragile]
+  \frametitle{Nodes and Ranges}
+
+  It's worth clarifying why it is that Semgrep is producing these matches!
+
+  \vspace{\fill}
+
+  When compiled to their respective ASTs, the pattern and target look something like this:
+
+  \vspace{\fill}
+
+  \begin{minipage}{0.3\textwidth}
+    \begin{center}
+    \begin{tikzpicture}[level 1/.style={sibling distance=2cm}]
+      \node[box, fill=bgGray] {\code{call}}
+        child{node[hex] {\code{print}}}
+        child{node[circ, unknown] {\code{...}}}
+      ;
+      \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+  \begin{minipage}{0.65\textwidth}
+    \begin{center}
+    \begin{tikzpicture}[level distance=10mm, level 1/.style={sibling distance=3cm}, level 2/.style={sibling distance=1.5cm}]
+      \node[box, fill=bgGray] {\code{statements}}
+        child{node[box, fill=bgGray, highlight] {\code{call}}
+          child{node[hex, highlight] {\code{print}}}
+          child{node[hex, fill=hlBlue, yshift=-1cm, highlight] {\code{"one"}}}
+        }
+        child{node[box, fill=bgGray, highlight, xshift=-1cm] {\code{call}}
+          child{node[hex, highlight] {\code{print}}}
+        }
+        child{node[box, fill=bgGray, highlight, xshift=-0.3cm] {\code{call}}
+          child{node[hex, highlight] {\code{print}}}
+          child{node[hex, fill=hlBlue, yshift=-1cm, highlight, xshift=-0.5cm] {\code{"two"}}}
+          child{node[hex, fill=hlBlue, yshift=-1cm, highlight] {\code{"args"}}}
+        }
+      ;
+      \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+
+  \vspace{\fill}
+
+  Here, we produce three matches, because the right tree has three subtrees which
+  look the same as the left tree. They look slightly different, but the ellipsis
+  node has special rules, and is able to match the rest of the call.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Nodes and Ranges}
+
+  It is also worth clarifying another point: the reason why the match has
+  expanded from just \code{print} to the entire call is because we match the
+  entire \code{call} node, which has a range comprising the entire call,
+  including the parentheses.
+
+  \vspace{\fill}
+
+  You don't need to be able to picture these trees in your head, you just need to know
+  that ultimately, all we are doing is matching nodes which have certain ranges.
+
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{nodes_and_ranges.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Marking banned, deprecated, or dangerous functions}
+    Let's try an example out using the ellipsis. {\color{blue}\href{https://semgrep.dev/playground/r/j2Ug0p4/semgrep.python-exec}{Link to the playground}}.
+    \solutionLink{https://semgrep.dev/playground/r/10UOwnr/semgrep.python-exec-solution}
 
     \vspace{5pt}
 
-    {\footnotesize\begin{codeblock}[language=java]
-      import javax.servlet.http.Cookie;
+    {\footnotesize\begin{codeblock}[language=python]
+      import exec as definitely_safe_function
 
-      class CookieExample {
-          public void SecureCookiesTest(){
-              Cookie c = new Cookie("name", "value");
-              //ok: java-secure-cookies
-              c.setSecure(true);
-
-              Cookie c2 = new Cookie("name", "value");
-              // ruleid: java-secure-cookies
-              c2.setSecure(false);
-          }
-      }
+      # ruleid: python-exec
+      definitely_safe_function(user_input)
+      # ruleid: python-exec
+      exec()
+      # ruleid: python-exec
+      exec("ls")
     \end{codeblock}
     }
+
+    \vspace{\fill}
+
+    Keywords: \ellipsisLink
   \end{exercisePage}
 \end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Dangerous keyword arguments}
+    Let's try an example out using the ellipsis. {\color{blue}\href{https://semgrep.dev/playground/r/j2Ug0p4/semgrep.python-exec}{Link to the playground}}.
+    \solutionLink{https://semgrep.dev/playground/r/10UOwnr/semgrep.python-exec-solution}
+
+    \vspace{5pt}
+
+    {\footnotesize\begin{codeblock}[language=python]
+      import exec as definitely_safe_function
+
+      # ruleid: python-exec
+      definitely_safe_function(user_input)
+      # ruleid: python-exec
+      exec()
+      # ruleid: python-exec
+      exec("ls")
+    \end{codeblock}
+    }
+
+    \vspace{\fill}
+
+    Keywords: \ellipsisLink
+  \end{exercisePage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Metavariables}
+
+  Sometimes, we are only interested in a single argument, though.
+
+  In these cases, ellipsis is too permissive.
+
+  \vspace{\fill}
+
+  We need a construct which denotes a single element in the program, kind of like
+  a placeholder. We will call this a \term{metavariable}.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, The \term{metavariable} is a placeholder in a Semgrep
+    pattern which matches exactly one occurrence of some element, for instance
+    an argument, expression, or identifier.
+  }
+
+  \vspace{\fill}
+
+  The syntax for a metavariable is a dollar sign prefixing a capital identifier,
+  for instance \code{$\dollar$X} or \code{$\dollar$EXPR}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Metavariables}
+
+  Using the ellipsis and metavariable we learned about earlier, we can try to write
+  a pattern which matches any Python function.
+
+  \vspace{\fill}
+
+  __compare(
+<<<
+  def |lg|$FUNC|lg|(|lg|...|lg|):
+    |lg|...|lg|
+>>>,
+<<<
+  `def foo():`
+  `  pass`
+
+  `def bar(a, b):`
+  `  return a + b`
+>>>
+  )
+  __useless($)
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Enforcing secure cookies}
+    Let's use our newfound knowledge to tackle a real use case -- determining if
+    a cookie's \code{setSecure} method was called with a \code{false} value.
+     {\color{blue}\href{https://semgrep.dev/playground/r/6JUvwkA/semgrep.java-secure-cookies}{Link to the playground}}.
+    \solutionLink{https://semgrep.dev/playground/r/yyURWzl/semgrep.java-secure-cookies-solution}
+
+    \vspace{5pt}
+
+    Remember: Semgrep patterns look like code!
+
+    \vspace{\fill}
+
+    Keywords: \metavariableLink
+  \end{exercisePage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Enforcing secure named arguments}
+    Finally, let's use the ellipsis operator to look at examples of functions
+    called in an improper way.
+
+    \vspace{\fill}
+
+    In particular, we are concerned with the Python \code{requests.get} function,
+    which is a potential security concern if called with \code{verify=False}.
+    {\color{blue}\href{https://semgrep.dev/playground/r/r6UyJXW/semgrep.requests-get-verify}{Link to the playground}}.
+    \solutionLink{https://semgrep.dev/playground/r/NbU3pEw/semgrep.requests-get-verify-solution}
+
+    \vspace{\fill}
+
+    \begin{pythoncodeblock}
+      # ruleid: requests-get-verify
+      requests.get("https://example.com", verify=False)
+    \end{pythoncodeblock}
+
+    \vspace{\fill}
+
+    Keywords: \ellipsisLink
+  \end{exercisePage}
+\end{frame}
+
+\end{comment}
+
+\sectionSlide{5}{Basics: Pattern Operators}
+
+\begin{frame}[fragile]
+  \frametitle{Semgrep Rules}
+
+  \begin{minipage}{0.65\textwidth}
+    Now that we have seen basic Semgrep patterns, we can go on to constructing actual Semgrep rules.
+
+    \vspace{5pt}
+
+    A Semgrep rule is a YAML file which contains a Semgrep pattern, and a few other things:
+    {\small\begin{itemize}
+      \setlength\itemsep{-0.15em}
+      \item a \term{message}, which is a string which will be displayed when a match is found
+      \item a \term{severity} (\code{INFO}, \code{WARNING}, or \code{ERROR}), which describes
+      how severe findings from the rule are
+      \item a \term{rule id}, which is the name of the rule
+      \item a \term{languages} field, which specifies the languages the rule is written for
+    \end{itemize}
+    }
+
+    \vspace{\fill}
+
+    We will be using the Playground's
+    Structure Mode, which will generate the YAML for us from an interface. Note the
+    pattern in {\color{fgBlue}blue} and other fields in {\color{fgRed}red}.
+  \end{minipage}
+  \hspace{\fill}
+  \begin{minipage}{0.32\textwidth}
+    \begin{center}
+      \includegraphics[width=\textwidth]{structure.png}
+    \end{center}
+  \end{minipage}
+\end{frame}
+
+% TODO: mention that in the slides the rules are written in YAML,
+% but we will be using Structure Mode
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  Sometimes, when we are trying to match something, we are interested in combining
+  multiple matches in some way.
+
+  \vspace{\fill}
+
+  Usually, this we want to match something which is \textbf{one of
+  several things}, or \textbf{all of several things}.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, The \code{all} and \code{any} operators are patterns which
+  combine other patterns. \code{all} matches ranges where all of the children patterns
+  match, and \code{any} matches ranges where at least one of the children patterns match.}
+
+  \vspace{\fill}
+
+__rule(
+<<<
+    any:
+      - "exec(...)"
+      - "print(...)"
+>>>)
+
+  \vspace{\fill}
+
+  This pattern matches \textbf{both} calls to \code{exec} and calls to \code{print}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  We can use the corresponding \code{all} operator to match patterns when multiple
+  patterns match.
+
+  \vspace{\fill}
+
+__compare_rule(
+<<<
+  all:
+    - "exec(...)"
+    - "print(...)"
+>>>,
+<<<
+  # no matches here
+  print("hi")
+  exec("ls")
+>>>
+)
+
+  \vspace{\fill}
+
+  For instance, we could write the above rule, but it's not very useful -- \textbf{it will
+  match nothing}, because there is no way for a range to be both a call to
+  \code{exec} \textit{and} a call to \code{print}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  Instead, the \code{all} operator is most useful when combined with \code{not}.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, The \code{not} operator, when placed under an \code{all}, means
+  the result should be anything which \textit{does not} match the pattern under the
+  \code{not}.}
+
+  \vspace{\fill}
+
+  With this, we can express complementary logic, such as "all calls which are not
+  the print function".
+
+__compare_rule(
+<<<
+  all:
+    - $FUNC(...)
+    - not: print(...)
+>>>,
+<<<
+  print("hi")
+  `foo()`
+  `exec("ls")`
+>>>
+)
+  __useless($)
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Order of API calls must be enforced}
+
+  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/QrUWj3A/semgrep.find-unverified-transactions-exercise}{Link to the playground}}.
+  \solutionLink{https://semgrep.dev/playground/r/4bURwNG/semgrep.find-unverified-transactions-exercise-solution}
+
+  \vspace{\fill}
+
+  In this example, we are working in a financial trading application where we need to
+  ensure that \code{verify_transaction} is called on any transaction, before we call
+  \code{make_transaction}.
+
+  \vspace{\fill}
+
+  \begin{codeblock}[language=java]
+    // ruleid: find-unverified-transactions-exercise
+    public void bad(Transaction t) {
+      make_transaction(t);
+    }
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Keywords: \ellipsisLink, \patternNotLink, \patternAllLink
+  \end{exercisePage}
+\end{frame}
+
+% TODO: add an exercise exhibiting both `all` and `any` and `not`
+
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Hardcoded secrets detection}
+
+  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/QrUWj3A/semgrep.find-unverified-transactions-exercise}{Link to the playground}}.
+  \solutionLink{https://semgrep.dev/playground/r/4bURwNG/semgrep.find-unverified-transactions-exercise-solution}
+
+  \vspace{\fill}
+
+  We want to catch initializations of a \code{PasswordAuthenticator}, imported
+  from a Python package \code{couchbase_core.cluster}. In particular, we are interested in
+  when the password passed to the function is a hardcoded literal string (but not the empty string).
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, A pattern of the form \code{"..."}, with the quotes, is a
+  \term{literal ellipsis}, and will match all instances of literal strings.}
+
+  \vspace{\fill}
+
+  \begin{codeblock}
+    # ruleid: python-couchbase-hardcoded-secret
+    PasswordAuthenticator('username', "password")
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Keywords: \literalEllipsisLink, \patternNotLink, \patternAllLink
+  \end{exercisePage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  So far, we have discussed four pattern operators in \code{pattern}, \code{not},
+  \code{all}, and \code{any}.
+
+  \vspace{\fill}
+
+  From the dropdown, we can see there are two more, \code{inside} and \code{regex}.
+  These form the fundamental six pattern operators which are used to produce ranges.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, The \code{inside} operator is used for when you want to
+  specify that a match should be found only when it is a subrange of the pattern
+  under the \code{inside}.}
+
+  \vspace{\fill}
+
+  {\small
+  __compare_rule(
+<<<
+    all:
+      - inside: |
+          def $FUNC(...):
+            ...
+      - pattern: |
+          structlog.get_logger()
+>>>,
+<<<
+  logger = structlog.get_logger()
+
+  def foo():
+    logger = `structlog.get_logger()`
+>>>)
+  }
+  __useless($)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  \customBox{Feature}{\, The \code{regex} operator matches ranges of \textbf{text}
+  which match the regular expression.}
+
+  \vspace{\fill}
+
+  The \code{regex} operator is the sole exception when it comes to patterns matching
+  AST nodes to obtain ranges. \code{regex} is like \code{grep}, and matches
+  purely the text. It's useful as an escape hatch, but usually isn't the best solution.
+
+  \vspace{\fill}
+
+  The following rule matches all instances of the string "import" within functions.
+
+  {\small
+  __compare_rule(
+<<<
+    all:
+      - regex: "import"
+      - inside: |
+          def $FUNC(...):
+            ...
+>>>,
+<<<
+  import structlog
+  import typing
+
+  def foo():
+    `import` re
+    `import`ed_function = re.match
+>>>)
+  }
+  __useless($)
+\end{frame}
+
+\sectionSlide{6}{Advanced: Conditions and Focusing}
+
+\begin{frame}[fragile]
+  \frametitle{A Note on Presentation}
+
+  Now that we've seen all the fundamental pattern operators, we can move on to
+  \term{conditions} and \term{focusing}, which let us alter and constrain
+  existing ranges.
+
+  \vspace{\fill}
+
+  Sometimes we don't care about just producing a match, we care about the specific
+  range that the match covers. For instance, we may want to match the name of a
+  function, rather than the function entirely.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, The \code{focus} operator "focuses" a range to that of
+  a metavariable it contains, making its range the same as what the metavariable
+  matches.}
+
+  \vspace{\fill}
+
+__compare_rule(
+<<<
+  pattern: |
+    def $FUNC(...):
+      ...
+  where:
+    - focus: $FUNC
+>>>,
+<<<
+  def `foo`():
+    pass
+
+  def `bar`():
+    pass
+>>>
+)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Note on Presentation}
+
+  To add a \code{focus} in the editor, click the filter button.
+
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{constraint.png}
+  \end{center}
+
+  \vspace{\fill}
+
+  This will open a new row where you can enter the metavariable you
+  want to focus on.
+
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{focus.png}
+  \end{center}
+\end{frame}
+
+% TODO: maybe better in place of password auth example
+\begin{frame}[fragile]
+  \begin{exercisePage}{Non-index routes should check fetch metadata}
+
+  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/0oULYkB/semgrep.secfetch-metadata}{Link to the playground}}.
+  \solutionLink{https://semgrep.dev/playground/r/KxUv69E/semgrep.secfetch-metadata-solution}
+
+  \vspace{\fill}
+
+  In this example, we are concerned with routes in a web application which do not
+  check fetch metadata. For routes which are not index routes, we want to ensure
+  that it has a parameter of type \code{SecFetchMetadata}.
+
+  \vspace{\fill}
+
+  Keywords: \ellipsisLink, \patternNotLink, \focusLink
+  \end{exercisePage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  Sometimes we want to constrain our matches to only ones which fulfill some conditions.
+  Usually this is based on specific parts of the pattern, such as metavariables.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, \term{Metavariable conditions} are conditions that may be
+  placed on a pattern, which filter out matches whose metavariables do not fulfill
+  the condition. They come in three varieties:}
+  \begin{itemize}
+    \item metavariable \code{pattern} constraints, which specify that a metavariable
+    must contain a specified pattern inside of it
+    \item metavariable \code{regex} constraints, which specify that a metavariable
+    must match a specific regex
+    \item metavariable \code{analyzer}s, which are specific kinds of validators
+    that check for things such as high-entropy strings and ReDoS regexes
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  To add a metavariable condition, we use the same drop-down that we would
+  select a \code{focus} from:
+
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.35\textwidth]{conditions.png}
+  \end{center}
+
+  \vspace{\fill}
+
+  Switching to \code{metavariable} will default to a metavariable \code{pattern}
+  constraint. The drop-down below will let you select from \code{pattern},
+  \code{regex}, and \code{analyzer}.
+
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{metavariable_pattern.png}
+  \end{center}
+\end{frame}
+
+% TODO: edit solutions to be in new syntax
+\begin{frame}[fragile]
+  \begin{exercisePage}{Enforcing controller coventions}
+
+  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/YGUpKG9/semgrep.ruby-inherit-appcontroller-fix-annotations}{Link to the playground}}.
+  \solutionLink{https://semgrep.dev/playground/r/zdUK0g2/semgrep.ruby-inherit-appcontroller-solution}
+
+  \vspace{\fill}
+
+  We want to catch Ruby controllers which do not inherit from \code{ApplicationController}
+  or \code{ActionController::Base}. The catch is that we don't necessarily know which
+  Ruby classes are controllers, so we need to use regex on the name of the class to
+  infer this.
+
+  \vspace{\fill}
+
+  \begin{codeblock}[language=ruby]
+    # Doesn't inherit from ApplicationController: warn!
+    class BarController < OtherController
+    end
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Keywords: \metavariableRegexLink, \patternNotLink
+  \end{exercisePage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  The final condition operator that we haven't talked about is \code{comparison},
+  which lets you verify that metavariables satisfy some programmatic condition.
+
+  \vspace{\fill}
+
+  \customBox{Feature}{\, The \code{comparison} operator lets you write a simple
+  Python expression, and only produces matches whose metavariables satisfy the
+  expression.}
+
+  \vspace{\fill}
+
+  % TODO: change syntax highlighting in target to terraform
+{\footnotesize
+__compare_rule(
+<<<
+  pattern: |
+    retention_in_days = $DAYS
+  where:
+    - comparison: $DAYS <= 365
+>>>,
+<<<
+  resource "aws_cloudwatch_log_group" "notifier" {
+    name = "notifier-${var.cluster_name}"
+    `retention_in_days = 30`
+  }
+>>>
+)
+}
+  __useless($)
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Flag weak RSA encryption keys}
+
+  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/j2Ug0eE/semgrep.use-of-weak-rsa-key}{Link to the playground}}.
+  \solutionLink{https://semgrep.dev/playground/r/9AUd9NK/semgrep.use-of-weak-rsa-key-solution}
+
+  \vspace{\fill}
+
+  We want to ensure that generated RSA keys are of a sufficient strength, in our case
+  greater than or equal to 2048. Let's write a Semgrep rule which can find instances
+  where RSA keys are too weak.
+
+  \vspace{\fill}
+
+  \begin{codeblock}[language=go]
+    // ruleid: use-of-weak-rsa-key-solution
+    pvk, err := rsa.GenerateKey(rand.Reader, 1024)
+    // ruleid: use-of-weak-rsa-key-solution
+    pvk, err := rsa.MultiPrimeKey(rand.Reader, 3, 1024)
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  Keywords: \metavariableComparisonLink, \patternAnyLink
+  \end{exercisePage}
+\end{frame}
+
+\sectionSlide{7}{Advanced: Taint Mode}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  Many of the problems in security are not quite so simple as can be phrased in
+  a regular search mode rule.
+
+  \vspace{\fill}
+
+  Many problems in security come from the simple idea of sensitive data reaching
+  a sensitive area, such as a network call or a file write. This problem is solvable
+  via a classic technique in static analysis called \term{dataflow analysis}.
+
+  \vspace{\fill}
+
+  \defBox{}{\term{Taint analysis} is a form of dataflow analysis which tracks whether
+  some specified form of data (called the \term{source}) is capable of reaching some
+  specified sensitive site (called the \term{sink}). We say that data which comes
+  from the source is \term{tainted}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  For instance, consider the following code snippet:
+
+  \begin{pythoncodeblock}[language=java]
+    public class DataflowExample {
+      public static void main(String |fb|args|fb|[]) throws IOException {
+        String cmd = args[0];
+        Runtime.getRuntime().exec(cmd);
+      }
+    }
+  \end{pythoncodeblock}
+
+  \vspace{\fill}
+
+  In this example, the input \code{args} to the program are a potential source of
+  user input, which is sensitive data!
+
+  \vspace{\fill}
+
+  If this user input is allowed to reach the \code{Runtime.exec} method, for instance,
+  an attacker could potentially cause dangerous arbitrary code execution.
+
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item common sources: URL parameters, cookies, user input
+    \item common sinks: SQL queries, shell commands
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  \begin{minipage}[t][1.6in][t]{\textwidth}
+    Let's trace the flow of taint through this code snippet:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |lb|args|lb|[]) throws IOException {
+          String cmd = args[0];
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    \begin{enumerate}
+      \item the source, the \code{args} argument to \code{main}
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  \begin{minipage}[t][1.6in][t]{\textwidth}
+    Let's trace the flow of taint through this code snippet:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
+          String cmd = |fb|args|fb|[0];
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    \begin{enumerate}
+      \item the source, the \code{args} argument to \code{main}
+      \item the expression \code{args[0]}
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  \begin{minipage}[t][1.6in][t]{\textwidth}
+    Let's trace the flow of taint through this code snippet:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
+          String |fb|cmd|fb| = |fb|args|fb|[0];
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    \begin{enumerate}
+      \item the source, the \code{args} argument to \code{main}
+      \item the expression \code{args[0]}
+      \item the newly declared variable \code{cmd}
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Pattern Operators}
+
+  \begin{minipage}[t][1.6in][t]{\textwidth}
+    Let's trace the flow of taint through this code snippet:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
+          String |fb|cmd|fb| = |fb|args|fb|[0];
+          Runtime.getRuntime().exec(|fb|cmd|fb|);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    \begin{enumerate}
+      \item the source, the \code{args} argument to \code{main}
+      \item the expression \code{args[0]}
+      \item the newly declared variable \code{cmd}
+      \item the usage of the tainted variable \code{cmd}
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+
+
+
+
+
+
+
+
+% \sectionSlide{8}{Advanced: Miscellaneous}
+
+% \begin{frame}[fragile]
+%   \begin{exercisePage}{Enforcing secure defaults}
+
+%   \end{exercisePage}
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \begin{exercisePage}{Enforcing secure defaults}
+%   \end{exercisePage}
+% \end{frame}
+
 
 \thankyou
 
