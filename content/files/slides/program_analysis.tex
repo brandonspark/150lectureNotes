@@ -1,0 +1,3537 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+    \documentclass[aspectratio=169, handout]{beamer}
+
+    % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+    \newif\ifcolorlambda
+    \colorlambdafalse % DEFAULT: false
+
+    % Use auxcolor for syntax highlighting
+    \newif\ifuseaux
+    \useauxfalse % DEFAULT: false
+
+    % Color settings
+    \useauxtrue
+
+    \newcommand{\auxColor}{2eab9e}     % the color of note boxes and stuff
+    \newcommand{\presentColor}{511CE8} % the primary color of the slide borders
+    \newcommand{\bgColor}{ebe3ff}      % the color of the background of the slide
+    \newcommand{\darkBg}{8b98ad}
+    \newcommand{\lambdaColor}{\auxColor}
+
+    \colorlambdatrue
+
+    \usepackage{comment} % comment blocks
+    \usepackage{soul} % strikethrough
+    \usepackage{listings} % code
+    \usepackage{makecell}
+    \usepackage{tcolorbox}
+    \usepackage{amssymb}% http://ctan.org/pkg/amssymb
+    \usepackage{pifont}% http://ctan.org/pkg/pifont
+    \usepackage[outline]{contour}
+    \usepackage{ stmaryrd }
+
+    \setbeamertemplate{itemize items}[circle]
+    % \setbeameroption{show notes on second screen=right}
+
+    \usepackage{lectureSlides}
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+    \title{Program Analysis} % TODO
+    \subtitle{Writing programs to analyze programs} % TODO
+    \date{06 December 2023} % TODO
+    \author{Brandon Wu} % TODO
+
+
+    \def\checkmark{\tikz\fill[green, scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
+    \contourlength{.08em}% default is 0.03em
+    \newcommand{\cmark}{{\color{green!80!black}\ding{51}}}
+    \newcommand{\xmark}{{\color{red}\ding{55}}}
+
+
+    \newcommand{\dollar}{\mbox{\textdollar}}
+
+    \graphicspath{ {./img/} }
+
+
+    \colorlet{bgBlue}{hlBlue!130}
+    \colorlet{bgOrange}{hlOrange}
+    \colorlet{fgBlue}{fgCodeBlue}
+    \colorlet{fgGreen}{fgCodeGreen}
+    \colorlet{fgRed}{fgCodeRed}
+    \colorlet{fgOrange}{fgCodeOrange}
+
+    \colorlet{codeBackground}{background_color}
+
+    \colorlet{hlset}{fgBlue}
+
+    \definecolor{bgPurple}{HTML}{dbc7ff}
+    \definecolor{bgRed}{HTML}{fcaea9}
+    \definecolor{bgYellow}{HTML}{fffeb5}
+    \definecolor{bgGreen}{HTML}{b4ffb3}
+
+    \definecolor{fgOrange}{HTML}{fcae4e}
+    \definecolor{fgYellow}{HTML}{ffbe0a}
+
+    \definecolor{unknownPink}{HTML}{e0fff6}
+
+    \usetikzlibrary{positioning}
+
+    \usetikzlibrary{positioning}
+    \usetikzlibrary{decorations.pathreplacing,calligraphy}
+    \usetikzlibrary{decorations.markings}
+
+    \usetikzlibrary{patterns}
+    \usetikzlibrary {calc}
+    \tikzset{
+      every path/.style={line width=0.25mm},
+      tok/.style={
+        font=\large,
+        align=center,
+        minimum height=3cm,
+      },
+      belowtok/.style={
+        font=\large,
+        align=center,
+        minimum height=3cm,
+      },
+      astNode/.style={
+        draw,
+        inner sep=2pt,
+        line width=0.4mm,
+        minimum size=0.6cm,
+        font=\large,
+        align=center,
+      },
+      hex/.style={
+        astNode,
+        signal,
+        signal to=east and west,
+        signal pointer angle=130,
+        fill=bgPurple,
+      },
+      box/.style={
+        astNode,
+        rectangle,
+        fill=green!20!white,
+      },
+      bbox/.style={
+        astNode,
+        rectangle,
+        fill=bgBlue,
+      },
+      circ/.style={
+        astNode,
+        circle,
+        minimum size=0.7cm,
+        fill=bgYellow
+      },
+      bhex/.style={
+        astNode,
+        signal,
+        inner sep=0.5pt,
+        signal to=east and west,
+        signal pointer angle=130,
+        fill=bgBlue,
+        minimum width=0.8cm,
+      },
+      unknown/.style={hex, draw=black, preaction={fill, unknownPink}, pattern=north east lines, pattern color=gray},
+      unknown2/.style={unknown, preaction={fill, bgYellow}},
+      highlight/.style={draw=fgYellow, line width=0.55mm},
+      highlight2/.style={draw=magenta, line width=0.55mm},
+      highlight3/.style={draw=blue, line width=0.55mm},
+      highlight4/.style={draw=orange, line width=0.55mm},
+      highlight5/.style={draw=green!70!white, line width=0.55mm},
+      hlbg/.style={fill=bgYellow},
+      hledge/.style={thick, red},
+      between/.style args={#1 and #2}{
+        at = ($(#1)!0.5!(#2)$)
+      },
+    }
+
+    % DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+        %\begin{frame}[fragile]
+        %\begin{codeblock}
+        %fun fact 0 = 1
+        %  | fact n = n * fact(n-1)
+        %\end{codeblock}
+        %\end{frame}
+
+    % INCLUDING codefile:
+        % 1. In some file under code/NN (where NN is the lecture id num), include:
+    %       (* FRAGMENT KK *)
+    %           <CONTENT>
+    %       (* END KK *)
+
+    %    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+        %  2. On the slide where you want code fragment K
+                % \smlFrag[color]{KK}
+        %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+    %  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+                % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+\sectionSlide{1}{The State of Software}
+
+\begin{frame}[fragile]
+  \frametitle{Software and the World}
+
+  On August 20th, 2011, Silicon Valley venture capitalist and and
+  entrepreneur Marc Andreessen\footnote{Currently a board director for Meta Platforms.} published an essay entitled
+  "Software is eating the world".
+
+  \pause
+  \vspace{\fill}
+
+  This essay included a lot of business-oriented reasons for why software
+  was immensely disrupting each individual economic sector, for reasons of
+  ease of use, speed of execution, and reach of influence, among others.
+
+  \pause
+  \vspace{\fill}
+
+  Now, more than a decade after this article, it's an incredibly obvious fact that
+  software already has eaten the world. You cannot get away from it -- it is
+  everywhere, and it is everything.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The State of Software Engineering}
+
+  Part of what makes software engineering a lucrative profession is that there
+  is not, and will never be, a shortage of need for software engineers.
+
+  \pause
+  \vspace{\fill}
+
+  Regardless of if a company is a recruiting company, a think tank, a massage parlor,
+  or a pet food retailer, everyone needs software developers. Every business needs
+  a website, every business deals with data, and every business needs a way to
+  keep up with every other business, which is doing exactly the same.
+
+  \pause
+  \vspace{\fill}
+
+  Unfortunately, not all of them are Jonathan Werrett, and are well-informed on
+  the importance of writing safe code.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The State of Software Engineering}
+
+  One theme that crops up in the general practice of software engineering is to
+  try to produce as little code as possible, because any human writing any
+  amount of code has some probability of producing a bug.
+
+  \pause
+  \vspace{\fill}
+
+  The less code we write, the less possibility of writing a bug.
+
+  \pause
+  \vspace{\fill}
+
+  So what can we say about the immense volume of code produced by
+  the tens of millions of software developers around the world?
+
+  \pause
+  \vspace{\fill}
+
+  \textbf{Answer:} It is horribly, immensely buggy, and full of mistakes.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What's in an Error?}
+
+  When you write a mistake in your code, what does it often look like?
+
+  \pause
+  \vspace{\fill}
+
+  Maybe you made a typo:
+
+  \begin{center}
+    \begin{minipage}[t][1.0in][t]{\textwidth}
+      \begin{minipage}{0.2\textwidth}
+        \centering
+        \vspace{\fill}
+        {\huge\xmark}
+        \vspace{\fill}
+      \end{minipage}
+      \vspace{\fill}
+      \begin{minipage}{0.75\textwidth}
+        {\small
+        \begin{codeblock}[rulecolor=\color{red}, framerule=0.3mm, language=python]
+          def fact(n):
+            if n == 0:
+              return 1
+            return n * fac(n - 1)
+        \end{codeblock}
+        }
+      \end{minipage}
+    \end{minipage}
+    \pause
+    \begin{minipage}[t][1.0in][t]{\textwidth}
+      \begin{minipage}{0.2\textwidth}
+        \centering
+        \vspace{\fill}
+        {\huge\cmark}
+        \vspace{\fill}
+      \end{minipage}
+      \vspace{\fill}
+      \begin{minipage}{0.75\textwidth}
+        {\small
+        \begin{codeblock}[rulecolor=\color{green!80!black}, framerule=0.3mm, language=python]
+          def fact(n):
+            if n == 0:
+              return 1
+            return n * `fact`(n - 1)
+        \end{codeblock}
+        }
+      \end{minipage}
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What's in an Error?}
+
+  Or maybe you declared a variable, and then forgot to use it:
+
+  \pause
+  \begin{center}
+    \begin{minipage}[t][0.9in][t]{\textwidth}
+      \begin{minipage}{0.2\textwidth}
+        \centering
+        \vspace{\fill}
+        {\huge\xmark}
+        \vspace{\fill}
+      \end{minipage}
+      \begin{minipage}{0.75\textwidth}
+        {\small
+          \begin{codeblock}[rulecolor=\color{red}, framerule=0.3mm, language=python]
+            fun compoundInterest(n, rate):
+              amountToAdd = n * rate
+              return n
+          \end{codeblock}
+          }
+        \end{minipage}
+    \end{minipage}
+    \pause
+    \begin{minipage}[t][0.9in][t]{\textwidth}
+      \begin{minipage}{0.2\textwidth}
+        \centering
+        \vspace{\fill}
+        {\huge\cmark}
+        \vspace{\fill}
+      \end{minipage}
+      \begin{minipage}{0.75\textwidth}
+        {\small
+        \begin{codeblock}[rulecolor=\color{green!80!black}, framerule=0.3mm, language=python]
+          fun compoundInterest(n, rate):
+            amountToAdd = n * rate
+            return `n + amountToAdd`
+        \end{codeblock}
+        }
+      \end{minipage}
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What's in an Error?}
+
+  Or maybe you just have a simple type error:
+
+  \pause
+  \begin{center}
+    \begin{minipage}[t][1.1in][t]{\textwidth}
+      \begin{minipage}{0.2\textwidth}
+        \centering
+        \vspace{\fill}
+        {\huge\xmark}
+        \vspace{\fill}
+      \end{minipage}
+      \begin{minipage}{0.75\textwidth}
+        {\small
+          \begin{codeblock}[rulecolor=\color{red}, framerule=0.3mm, language=python]
+            def initialize(data):
+              d = {}
+              for s in data:
+                d[s.strip] = None
+              return d
+          \end{codeblock}
+          }
+        \end{minipage}
+    \end{minipage}
+    \pause
+    \begin{minipage}[t][1.1in][t]{\textwidth}
+      \begin{minipage}{0.2\textwidth}
+        \centering
+        \vspace{\fill}
+        {\huge\cmark}
+        \vspace{\fill}
+      \end{minipage}
+      \begin{minipage}{0.75\textwidth}
+        {\small
+        \begin{codeblock}[rulecolor=\color{green!80!black}, framerule=0.3mm, language=python]
+            def initialize(data):
+              d = {}
+              for s in data:
+                d[s.strip`()`] = None
+              return d
+        \end{codeblock}
+        }
+      \end{minipage}
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Machine Learning Parable}
+
+  For most of these errors, they can seem innocent enough. Most are able to be
+  identified and fixed before code ever sees the light of day.
+
+  \pause
+  \vspace{\fill}
+
+  Not all are so lucky, however. Imagine that you are a machine learning engineer.
+
+  \pause
+  \vspace{\fill}
+
+  You have spent the past six months working on a state of the art large
+  language model\footnote{Henceforth referred to as "NoCapGPT"}, and finally you are ready to put it to the test. You just
+  make a few adjustments (mostly adding comments and clarifying names),
+  before you run the model and then decide to go on a vacation to France for
+  two weeks.
+
+  \pause
+  \vspace{\fill}
+
+  When you return from your vacation, you discover that your model failed
+  with:
+  {\small
+  \begin{lstlisting}[style=15150code, numbers=none]
+    NameError: name 'modle' is not defined. Did you mean: 'model'?
+  \end{lstlisting}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  This can actually happen.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Explosive Repercussions}
+
+  What's the point? A computer program can be compared to a loaded pistol.
+
+  \pause
+  \vspace{\fill}
+
+  To know whether a pistol is defective, we could just shoot it, and see whether
+  or not it blows up. This is analogous to detecting an error at \term{runtime},
+  when actually running a given program.
+
+  \pause
+  \vspace{\fill}
+
+  Or, we could be a little more thorough about it, and inspect the pistol for
+  damage, or if someone put .50 AE into a 9mm pistol\footnote{I had to look this
+  up. Basically, big ammo goes in small gun.}.
+
+  \pause
+  \vspace{\fill}
+
+  Obviously, the solution which ends up with the gun not exploding in our hands is
+  the preferable one.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Better Way}
+
+  This is just another way of saying that we need a better method than just
+  running into errors blindly, when running code in real environments. Discovering
+  a bug in the Curiosity rover before it takes off is a miracle. Discovering a bug
+  in the Curiosity rover \textit{after} it takes off is a failure.
+
+  \pause
+  \vspace{\fill}
+
+  This is the basic principle behind \term{shift left}, which means evaluating
+  our programs by some criteria as far \textit{before} runtime as possible, or
+  farther left, chronologically.
+
+  \pause
+  \vspace{\fill}
+
+  To do this, we will need a better way of catching these errors, of analyzing
+  whether the programs we write contain code smells, fatal errors, or even
+  security vulnerabilities.
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{The Cost of Mistakes}
+
+  What's the point? \textbf{Programmers make mistakes}.
+
+  \pause
+  \vspace{\fill}
+
+  There are many programmers in the world. Programs that make these kinds of
+  silly, one-off mistakes happen millions of times in a single day. For every
+  mistake which is caught before reaching a sensitive application, there are
+  millions more waiting to be uncovered. We need to build tools, compilers, and
+  programming languages that can guard against these mistakes because the
+  cost of allowing them is too high.
+
+  \pause
+  \vspace{\fill}
+
+  Tony Hoare once referred to his invention of the null pointer\footnote{A
+  programming idiom which has led to countless mistakes.} as his
+  \textit{billion-dollar mistake}. We are talking about fighting a war upon
+  which rests not only billions upon billions of dollars across every
+  conceivable industry, but upon which rests the security and continued
+  operation of our society.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Battling Software}
+
+  How can we prevent these bugs? How do we make sure that,
+  for the prodigious, gargantuan, and overflowing deluge of software
+  that is pumped out every day, it is as safe and as correct as possible?
+  The alternative is a reality that is horrifying to contemplate.
+  \footnote{I highly recommend the book \textit{This Is How They Tell Me
+  the World Ends: The Cyberweapons Arms Race} by Nicole Perlroth.}
+
+  \pause
+  \vspace{\fill}
+
+  Software is eating the world.
+
+  \pause
+  \vspace{\fill}
+
+  It's time to bite back.
+\end{frame}
+
+\sectionSlide{2}{Program Analysis}
+
+\begin{frame}[fragile]
+  \frametitle{What is Program Analysis?}
+
+  \defBox{}{\term{Program analysis} is the art of discovering undesirable
+  behaviors in programs, usually by automated, programmatic means.}
+
+  \pause
+  \vspace{\fill}
+
+  These undesirable behaviors may include correctness, performance,
+  security, and legibility. Ultimately, it encompasses any property
+  which is worth testing, of a program.
+
+  \pause
+  \vspace{\fill}
+
+  In essence, program analysis entails \textbf{writing programs to
+  analyze programs}.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{figure}
+  \begin{codeblock}[language=python]
+    def analyze(program):
+      if programIsBad(program):
+        dont()
+  \end{codeblock}
+    \caption{Figure 1: An extremely simplified view of the entire \code{semgrep} repository.}
+  \end{figure}
+\end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Refresher: Interpreted and Compiled Languages}
+
+%   The lifecycle of a program is varied, however. When should this analysis take place?
+
+%   \pause
+%   \vspace{\fill}
+
+%   As a refresher, recall the notion of programming languages as \term{interpreted} or \term{compiled}.
+
+%   \pause
+%   \vspace{\fill}
+
+%   A program is a text file written in some kind of programming language. Some languages
+%   are written in \term{interpreted languages}, meaning that they can be executed (or \textit{run})
+%   immediately.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Other languages are \term{compiled languages}, meaning that an executable version of
+%   the program must first be obtained by running a separate program called the
+%   \term{compiler}.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{An Americentric Analogy}
+
+%   For an Americentric analogy, you can think of a program in an interpreted language as
+%   a recipe written in English, which the average American can follow just by reading.
+%   A program in a compiled language is written in French, which, for the average American,
+%   must first be translated to English before using.
+
+%   \pause
+%   \vspace{\fill}
+
+%   \begin{center}
+%     \begin{tikzpicture}
+%       \node[hex, minimum size=1cm] (A) {English recipe};
+%       \node[hex, right of=A, node distance=2in, minimum size=1cm, fill=red!30!white] (B) {food};
+
+%       \draw[-stealth] (A) -- (B) node[midway, above] {cooking};
+%     \end{tikzpicture}
+
+%     \vspace{\fill}
+
+%     \begin{tikzpicture}
+%       \node[box, minimum size=1cm, fill=orange!40!white] (A) {French recipe};
+%       \node[hex, minimum size=1cm, right of=A, node distance=2.5in] (B) {English recipe};
+%       \node[hex, right of=B, node distance=2.5in, minimum size=1cm, fill=red!30!white] (C) {food};
+
+%       \draw[-stealth] (A) -- (B) node[midway, above] {translation};
+%       \draw[-stealth] (B) -- (C) node[midway, above] {cooking};
+%     \end{tikzpicture}
+%   \end{center}
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Refresher: Interpreted and Compiled Languages}
+
+%   \begin{center}
+%     \begin{tikzpicture}
+%       \node[hex, minimum size=1cm] (A) {program};
+%       \node[hex, right of=A, node distance=2in, minimum size=1cm, fill=red!30!white] (B) {result};
+
+%       \draw[-stealth] (A) -- (B) node[midway, above] {execution};
+%     \end{tikzpicture}
+
+%     \vspace{\fill}
+
+%     \begin{tikzpicture}
+%       \node[box, minimum size=1cm, fill=orange!40!white] (A) {program};
+%       \node[hex, minimum size=1cm, right of=A, node distance=2.5in] (B) {compiled program};
+%       \node[hex, right of=B, node distance=2.5in, minimum size=1cm, fill=red!30!white] (C) {result};
+
+%       \draw[-stealth] (A) -- (B) node[midway, above] {compilation};
+%       \draw[-stealth] (B) -- (C) node[midway, above] {execution};
+%     \end{tikzpicture}
+%   \end{center}
+% \end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Flavors of Program Analysis: Dynamic}
+
+  Program analysis generally comes in one of two flavors:
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\term{Dynamic program analysis} has to do with figuring
+  out program behavior by observing its behavior at run-time.}
+
+  \pause
+  \vspace{\fill}
+
+  This can include things like \term{fuzzing}, which involves running
+  the program on a wide range of random inputs, \term{profiling}, which
+  involves measuring the run-time of a program on some inputs, and even
+  the simple act of writing tests.
+
+  \pause
+  \vspace{\fill}
+
+  Dynamic program analysis is useful, and goes straight to the source in terms
+  of the program's actual behavior, but it is limited in some other ways.
+  Notably, if the target program loops forever or takes a really long time, then
+  dynamic program analysis will do the same.
+
+  \pause
+  \vspace{\fill}
+
+  Another is that this doesn't necessarily stop the code from being written or
+  committed\footnote{"uploaded", essentially.} in the first place. We want something
+  even farther "left", if possible.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Flavors of Program Analysis: Static}
+
+  \defBox{}{\term{Static program analysis} concerns ascertaining properties
+  of programs \textbf{without ever running the program}.}
+
+  \pause
+  \vspace{\fill}
+
+  This has the advantage that it can happen before code ever leaves the programmer's
+  computer.
+
+  \pause
+  \vspace{\fill}
+
+  This will be our focus for today. Specific applications of this analysis include:
+  \pause
+  \begin{itemize}
+    \item \term{static application security testing} (or SAST), which is
+    the process of applying static program analysis to code for security purposes \pause
+    \item syntax highlighting, which looks at a (possibly incomplete) program
+    and tries to color it, as its being written \pause
+    \item autoformatting, which looks at a program and tries to make it adhere to
+    a certain stylistic convention \pause
+    \item type-checking, which looks at a program and ascertains what type its
+    constituent parts have (if any)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Minor Issue}
+
+  This is the mission we have ahead of us. Before we can dive into more
+  technical details, however, we have one small issue before us:
+
+  \pause
+  \vspace{\fill}
+
+  \textbf{Program analysis is inherently impossible}.
+
+  \pause
+  \vspace{\fill}
+
+  {\color{blue}\href{https://en.wikipedia.org/wiki/Rice%27s_theorem}{Rice's
+  Theorem}} is a mathematical theorem in computability theory\footnote{The field
+  of computability theory is kind of similar to forum posts speculating on what
+  would happen in a fight between Batman and Goku. It's just nerds getting
+  together and thinking about increasingly more complicated levels of
+  impossibility.} which states:
+  \begin{quote}
+    All non-trivial semantic properties of programs are undecidable.
+  \end{quote}
+
+  \pause
+  \vspace{\fill}
+
+  In English:
+  \begin{quote}
+   It is impossible to definitively answer yes or no for any property of a
+   program's behavior, in a finite amount of time.
+  \end{quote}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Halting Problem}
+
+  This is a corollary of the
+  {\color{blue}\href{https://en.wikipedia.org/wiki/Halting_problem}{Halting
+  Problem}}, which states that it is impossible to write a program to tell if a
+  program loops forever or not.\footnote{Note that these claims of impossibility
+  are \textit{in general}. For instance, I can look at the program \code{def
+  loop(): loop()} with my eyes and tell you that it loops forever, but we cannot
+  write a program which does that for \textit{every} program.} The reason why
+  this is impossible come out of asking a simple question: what should the
+  following function return?
+
+  \pause
+  \vspace{\fill}
+
+  {\small
+  \begin{codeblock}[language=python]
+    def foo():
+      if halts(foo):
+        loop()
+      else:
+        return
+  \end{codeblock}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  This ends up producing a paradox, in much the same way as the
+  {\color{blue}\href{https://en.wikipedia.org/wiki/Liar_paradox}{liar's paradox}}.
+
+  \pause
+  \vspace{\fill}
+
+  Because any program can loop forever, this ends up tainting every other
+  question that program analysis could answer, meaning that all of them are inherently
+  impossible.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Battling Impossibility}
+
+  Well, that sucks. So then, with this knowledge, is this talk over?
+
+  \pause
+  \vspace{\fill}
+
+  No, because \textbf{it only sucks if you're a quitter.}
+
+  \pause
+  \vspace{\fill}
+
+  Generally, when solving a hard problem, it's usually either a sign that we
+  are not working hard enough, or our expectations are too high.
+  \pause
+  \vspace{\fill}
+
+  Well, in this case, this problem's impossibility is a mathematical truth, so
+  it's not a skill issue in terms of our ability to implement. That's not the
+  problem here.
+
+  \pause
+  \vspace{\fill}
+
+  So let's lower our expectations.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{quote}
+    It is impossible to definitively answer yes or no for any property of a
+    program's behavior, in a finite amount of time.
+  \end{quote}
+
+  \pause
+  \vspace{\fill}
+
+  The main innovation out of program analysis is -- \textit{it's only impossible if
+  you insist on being right all the time}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compilers and Program Analysis}
+
+  Generally, we want our tools to be trustworthy. The day that a pacemaker or
+  ladder stops working is the day that someone gets hurt. Nobody wants to use
+  something which only works \textit{some of the time}.
+
+  \pause
+  \vspace{\fill}
+
+  So, for most products, they must work \textit{all the time}. To do otherwise
+  would be sure way to head straight for bankruptcy in the free
+  marketplace.
+
+  \pause
+  \vspace{\fill}
+
+  Program analysis suffers from no such thing. Our goal will be to implement
+  analyses which always complete within a finite amount of time, albeit with
+  the caveat that sometimes they might be inaccurate or incomplete, or throw their
+  hands up and say "I don't know".
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Full Employment}
+
+  A funny corollary of this sentiment is something called the
+  {\color{blue}\href{https://en.wikipedia.org/wiki/Full-employment_theorem}{full-employment theorem}},
+  which essentially states that there will always be jobs in program analysis and
+  compiler-writing, i.e. employment is always ensured\footnote{Knock on wood.}.
+
+  \pause
+  \vspace{\fill}
+
+  This is because, due to the fact that the task is inherently impossible, it's
+  always possible to write a better analysis that covers more cases, or a
+  compiler which can produce better binaries. You just need more casework.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Program Analysis via Casework}
+
+  For instance, no one is stopping you from doing this:
+  \pause
+  \begin{codeblock}[language=python]
+    def halts(program: str) -> Optional[bool]:
+      if program == "x = 1":
+        return true
+      elif program == "x = 2":
+        return true
+      elif program == "def loop:\n loop()":
+        return false
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Far from the cutting edge, but it works. A team of monkeys at typewriters
+  could eventually churn out a more effective \code{halts} function than
+  exists anywhere else.
+
+  \pause
+  \vspace{\fill}
+
+  You might find this demoralizing. I find it motivating, somehow.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Resolution}
+
+  So, this is the scope of the task in front of us.
+
+  \pause
+  \vspace{\fill}
+
+  We have finite resources and finite time to solve a problem which is
+  impossible to solve.
+
+  \pause
+  \vspace{\fill}
+
+  And still, software is eating the world. The cost of failing is too high.
+
+  \pause
+  \vspace{\fill}
+
+  Time to put in some elbow grease and get to work.
+\end{frame}
+
+\sectionSlide{3}{Doing the Impossible}
+
+\begin{frame}[fragile]
+  \frametitle{Type Checking}
+
+  Consider a more specific example of program analysis, namely that of
+  type-checking a program.
+
+  \pause
+  \vspace{\fill}
+
+  Consider a function \code{f} which adds two ints together. We might say that
+  it has the \term{type} of \code{(int, int) -> int} -- that is, it takes in
+  two integers and produces an integer. Automatically figuring this out is the
+  problem of type-checking.
+
+  \pause
+  \vspace{\fill}
+
+  Let's consider the problem of giving a type to a \code{div}, which
+  takes two integers and computes their integer division.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A More Accurate \code{div}}
+
+  We might say that it also has type \code{(int, int) -> int}, because it seems
+  to take two \code{int}s and return an integer.
+
+  \pause
+  \vspace{\fill}
+
+  There is one caveat, however. If we pass in \code{0} as the second parameter,
+  it will crash on us!
+
+  \pause
+  \vspace{\fill}
+
+  Well, this is a dynamic error. We want to catch such things before running
+  the program. Can we assign \code{div} a type, such that it will prevent us
+  from ever running code which passes \code{0} to \code{div}?
+
+  \pause
+  \vspace{\fill}
+
+  There are two properties that we would desire of such a type:
+  \begin{itemize}
+    \item we can ascertain it in a finite amount of time \pause
+    \item it says that a usage of \code{div} is ill-typed if and only if
+    we pass \code{0}, or a non-\code{int}, to it
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  \textbf{It is impossible to have both of these things at the same time.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sweaty Palms}
+
+  \begin{center}
+    \includegraphics[scale=0.3]{sweaty}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Dependent Types and Type A Analysis}
+
+  There is a class of languages which have very sophisticated type systems,
+  called \term{dependently typed} languages, where you can actually express
+  this.
+
+  \pause
+  \vspace{\fill}
+
+  The issue is that type-checking in such languages can take forever,
+  meaning we would get the second property, but not the first. We will
+  call this a \term{Type A program analysis}.
+
+  \pause
+  \vspace{\fill}
+
+  So the other track will be to get the first property, but not the second.
+  We will have to accept being wrong sometimes, and either rejecting
+  programs which do not divide by zero, or accepting programs which do.
+  We will call this \term{Type B program analysis}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Analogy for Type B Analysis}
+
+  Consider the following analogy.
+
+  \pause
+  \vspace{\fill}
+
+  You are in charge of security at an airport.
+
+  \pause
+  \vspace{\fill}
+
+  You are acutely aware of the fact that in the early 2000s, a man tried to set off
+  plastic explosives concealed in his shoes, during a transatlantic flight
+  from France to Florida.
+
+  \pause
+  \vspace{\fill}
+
+  The issue is that you don't have a good way of telling whether an arbitrary
+  individual might have explosives in their shoes, or not.
+
+  \pause
+  \vspace{\fill}
+
+  So, how do you minimize the chances?
+
+  \pause
+  \vspace{\fill}
+
+  This is the story of why everyone needs to take off their shoes in the airport.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Rough Approximation}
+
+  The parable of this story is that, while it may be difficult or impossible to
+  gather an \textit{exact} answer (who has explosives in their shoes), it's easy
+  to obtain an \textit{approximative} answer: assume that \textit{everyone} has
+  explosives in their shoes.
+
+  \pause
+  \vspace{\fill}
+
+  So just scan everybody's shoes. Problem solved.
+
+  \pause
+  \vspace{\fill}
+
+  So how can we tell which programs contain an unsafe call to \code{div}? Well,
+  if we don't mind being wrong sometimes...
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}[language=python]
+    def containsUnsafeDiv(program: str) -> bool:
+      return "div" in program
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Approximation in Practice}
+
+  Let's see how it behaves:
+
+  \begin{itemize}
+    \item \code{containsUnsafeDiv("x = 2")} returns \code{False}. \cmark \pause
+    \item \code{containsUnsafeDiv("div(1, 0)")} returns \code{True}. \cmark \pause
+    \item \code{containsUnsafeDiv("div(1, 1)")} returns \code{True}. \xmark \pause
+    \item \code{containsUnsafeDiv("// i like division!")} returns \code{True}. \xmark
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  We see that it works... sometimes.
+
+  \pause
+  \vspace{\fill}
+
+  But this is precisely what a Type B program analysis purports to do. We accept
+  that we might be wrong, sometimes, in exchange for the fact that this test always
+  completes in short order.
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Tradeoffs}
+
+  Which outcome is more preferred? Well, it turns out the answer is
+  "neither of them".
+
+  \pause
+  \vspace{\fill}
+
+  We are basically saying that, to be able to reject all programs which might
+  divide by zero, we can either accept infinitely looping compile times, or we
+  can reject every program which contains the characters \code{div} in its
+  source text.
+
+  \pause
+  \vspace{\fill}
+
+  Now, with more sophisticated techniques, we can do a little bit better than
+  rejecting every program containing \code{div}. But not by much.
+
+  \pause
+  \vspace{\fill}
+
+  It turns out, in practice, the right solution will be to simply not
+  care so much about the division by zero case. It's not worth the
+  trade-offs.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Downscoping and Type C Analysis}
+
+  We said it was impossible to have the virtues of Type A and Type B analysis at the
+  same time. That's true, if we fix the problem statement. We might say that
+  \term{Type C program analysis} is to both terminate and be correct, but at the cost of
+  simplifying the problem we are trying to solve.
+
+  \pause
+  \vspace{\fill}
+
+  Type-checking is usually an example of a Type C analysis. So, thus we end up
+  with not being able to statically catch division by zero errors. For the
+  question of "does this program divide by zero?", we decided the answer is "we
+  don't care".
+
+  \pause
+  \vspace{\fill}
+
+  What about the question of "does this program divide by a non-integer"?
+
+  \pause
+  \vspace{\fill}
+
+  It turns out, this is perfectly solvable in a terminating manner.\footnote{For the
+  purposes of this presentation, it's not actually important this problem is solvable.
+  Just know there are some program analysis problems which can be solved without
+  looping or approximating (but few).} The
+  reason why this is OK is that "non-integer" is an approximative query --
+  "zero" is specific.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Recap}
+
+  So let's recap for a second:
+  \pause
+  \begin{itemize}
+    \item we would like to answer specific questions about programs, which are
+    impossible to do in general. \pause
+    \item We need to give up one of guaranteed termination, perfect accuracy,
+    or solving that exact problem. Types A, B, and C analysis correspond to
+    giving up each of these things, respectively.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Specific examples include:
+  \begin{itemize}
+    \item dependent typechecking is a Type A analysis (can loop forever) \pause
+    \item rejecting all programs with \code{div} is a Type B analysis (rejects valid programs) \pause
+    \item regular typechecking is a Type C analysis (give up catching divide by zero)
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  For most practical program analysis tools, looping forever is not an option.\footnote{We
+  might call this "doubly impossible".} So for our purposes, we are generally
+  interested in Type B and Type C analysis.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Flavors of Program Analysis}
+
+  An easy way to remember program analysis is to envision it as three different kinds of people.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{minipage}{0.32\textwidth}
+    \begin{center}
+      \includegraphics[scale=0.2]{oldwoman.jpg}
+      Type A analysis is personified by an old person (they might take forever to answer)
+    \end{center}
+  \end{minipage}
+  \pause
+  \begin{minipage}{0.32\textwidth}
+    \begin{center}
+      \includegraphics[scale=0.1]{flatearther.jpg}
+  Type B analysis is personified by a flat earther (they sometimes spout nonsense)
+    \end{center}
+  \end{minipage}
+  \pause
+  \begin{minipage}{0.32\textwidth}
+    \begin{center}
+      \includegraphics[scale=0.8]{kid.jpg}
+  Type C analysis is personified by a literal child (they can only answer simple questions)
+    \end{center}
+  \end{minipage}
+\end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{On Incorrectness}
+
+   But, we still have significant problems left to answer.
+
+   \pause
+   \vspace{\fill}
+
+   Type-checking is only in the Type C category because of decades of work by type theorists
+   and language designers, to figure out what buckets of questions can be answered tractably
+   by machines, and to what extent.
+
+   \pause
+   \vspace{\fill}
+
+   For many other problems, such as code reachability, vulnerability to outside
+   attackers, and unsafe behavior, we have no such guarantees. In this case, our
+   approach will fall squarely into Type B, as looping forever is not an option.
+
+   \pause
+   \vspace{\fill}
+
+   So we need to accept being wrong sometimes. Let's see how.
+ \end{frame}
+
+ \sectionSlide{4}{Dataflow Analysis}
+
+ \begin{frame}[fragile]
+   \frametitle{Problems in Program Analysis}
+
+   What kinds of questions are we interested in answering with program analysis?
+
+   \pause
+   \vspace{\fill}
+
+   There are many, but a few that stand out are as follows:
+
+   \pause
+   \begin{itemize}
+    \item is it possible for data from some source to reach some function? \pause
+    \item is this code path unreachable? \pause
+    \item is some computation redundant? \pause
+    \item is an error state reachable?
+   \end{itemize}
+\end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Problems in Program Analysis: Taint Analysis}
+
+   The problem of \term{taint tracking} entails whether it is possible for data
+   from some source to reach a specified function.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{pythoncodeblock}
+      def foo():
+        x = `input()`
+        y = x.strip()
+        /eval(y)/
+   \end{pythoncodeblock}
+
+   In this code example, we see that data from the call to \code{input()}
+   goes through a \code{strip()}, which removes whitespace, and then reaches
+   the call to the sensitive \code{eval()} function.
+
+   \pause
+   \vspace{\fill}
+
+   In this case, we find that even though \code{input()} does not go
+   \textit{directly} to \code{eval()}, it's still a security risk!
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Problems in Program Analysis: Dead Code Elimination}
+
+   The problem of \term{dead code elimination} entails determining whether
+   there is some code which cannot be reached under any path of execution.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{codeblock}[language=python]
+      def foo():
+        return 2
+
+        `x = 4`
+        `return x`
+   \end{codeblock}
+
+   \pause
+   \vspace{\fill}
+
+   In this example, we find that everything highlighted is completely unreachable,
+   because there is a \code{return} statement above it that ends the function,
+   before it ever gets to it. In this case, this is \term{dead code}, and
+   can be eliminated.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Problems in Program Analysis: Subexpression Elimination}
+
+   The problem of \term{subexpression elimination} entails determining whether
+   we are computing some expression twice, redundantly.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{codeblock}[language=python]
+      def foo(n):
+        y = `2 * n`
+        z = y + `(2 * n)`
+        return z
+   \end{codeblock}
+
+   \pause
+   \vspace{\fill}
+
+   In this example, we take in a number \code{n} and then compute \code{4 * n}
+   in a really roundabout way. In particular, this is done by computing \code{2
+   * n} twice!
+
+   \pause
+   \vspace{\fill}
+
+   The code would be better rewritten as follows:
+
+   \begin{codeblock}[language=python]
+      def foo(n):
+        y = 2 * n
+        z = y + `y`
+        return z
+   \end{codeblock}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Problems in Program Analysis: Code Reachability}
+
+   The problem of \term{code reachability} has to do with determining whether or
+   not there is a given series of inputs that can cause some code path to execute.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{codeblock}[language=python]
+    def foo(person):
+      if isTaylorSwiftFan(person):
+        f()
+      elif isLame(person):
+        g()
+      else:
+        throw new Error("bad")
+   \end{codeblock}
+
+   \pause
+   \vspace{\fill}
+
+   In this case, we are interested in whether the \code{Error} can be reached.
+   It's not clear, but a sophisticated program analysis tool could know that not
+   being a Taylor Swift fan implies being a lame person, so the last condition is
+   not actually reachable.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Approximation}
+
+   These problems all come with their own hardships. Due to what was discussed
+   in the last section, they are all impossible to solve completely, but several
+   of them are actually solvable via a Type B (allowed to be wrong) analysis,
+   using the same method.
+
+   \pause
+   \vspace{\fill}
+
+   A classic technique used in program analysis to obtain \textit{approximative}
+   \footnote{Life hack: you can successfully replace "incorrect" with
+   "approximative" in so many different places that it's hilarious.} answers
+   in a finite amount of time is called \term{dataflow analysis}.
+
+   \pause
+   \vspace{\fill}
+
+   Before I can define it to you, I must give you an analogy.
+
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{An Analogy for Dataflow Analysis}
+
+   Suppose you have a query you would like to solve on programs, which has many
+   possible answers. Further suppose that the number of possible answers is finite.
+
+   \pause
+   \vspace{\fill}
+
+   Suppose that you line them all up, one next to the other.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{center}
+   \begin{tikzpicture}
+    \node[box, node distance=1in] (A) {answer 1};
+    \node[box, right of=A, node distance=1in] (B) {answer 2};
+    \node[box, right of=B, node distance=1in] (C) {answer 3};
+    \node[right of=C, node distance=1in] (D) {$\cdots$};
+    \node[box, right of=D, node distance=1in] (E) {answer $n$};
+   \end{tikzpicture}
+    \end{center}
+
+   \pause
+   \vspace{\fill}
+
+   Program analysis is hard because information can change a lot, infinitely much
+   in fact, over the course of a program's run-time. For instance, suppose that
+   the question is "how much memory is being used by the program?". You might pick an answer $n$,
+   then move to answer $n - 2$, then move to a different answer $k$ altogether. It's
+   possible to jump all around, in the limit of the program's execution.
+
+   \pause
+   \vspace{\fill}
+
+   An observation can be made that, if you can order your answer in a way such that,
+   over the course of your analysis, you only ever change your answer by moving
+   right, you will always eventually terminate.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Monotonicity}
+
+   This is a roundabout way of describing what is known as a \term{monotonic function},
+   which is a function which always "increases", according to some proper notion of
+   "increases". In this case, our monotonic function also has an upper limit, i.e.
+   a point beyond which it can no longer grow.
+
+   \pause
+   \vspace{\fill}
+
+   For dataflow analysis, we will make use of this kind of analysis to iterate over
+   our control-flow graph, constantly updating our answer, but only in a way that
+   "increases", and eventually caps out. If we can do that, then we will
+   guarantee that we will terminate.
+
+   \pause
+   \vspace{\fill}
+
+   This also usually makes our answers sometimes wrong, though.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Refresher: Control-flow Graphs}
+
+   To understand dataflow analysis, first we need a really quick refresher on
+   control-flow graphs.
+
+   \pause
+   \vspace{\fill}
+
+   A \term{control-flow graph} is a kind of structure which basically describes all
+   the paths that a program might take. When an instruction is \textit{always}
+   followed by another, then they appear in a single "block" together. When the
+   instructions might \textit{branch} (that is, go one place or another), then
+   arrows point towards the blocks that it might lead to.
+
+   \pause
+   \vspace{\fill}
+
+  \begin{center}
+    \begin{minipage}{0.35\textwidth}
+      \begin{pythoncodeblock}
+        /x = True/
+        /y = 2/
+
+        /if x:/
+          ?x = False?
+        else:
+          &y = 3&
+      \end{pythoncodeblock}
+    \end{minipage}
+    \pause
+    \begin{minipage}{0.6\textwidth}
+      \begin{center}
+      \begin{tikzpicture}
+          [every node/.style={rectangle, draw}]
+        \node[fill=bgBlue, text width=1.5in] (A) {
+          \code{x = True} \strut \\
+          \code{y = 2}\strut \\
+          \code{if x:}\strut
+        };
+        \node[below of=A, node distance=1in, xshift=0.2in, fill=bgOrange] (B) {
+          \code{x = False}\strut
+        };
+        \node[right of=B, node distance=1in, yshift=0.3in, fill=red!45] (C) {
+          \code{y = 3}\strut
+        };
+        \draw[-stealth] (A) to [out=270, in=160] (B.west);
+        \draw[-stealth] (A) to [out=270, in=180] (C);
+      \end{tikzpicture}
+      \end{center}
+    \end{minipage}
+  \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Refresher: Control-flow Graphs}
+
+   Note that control-flow graphs can get pretty massive and complicated.
+
+   \vspace{\fill}
+
+   The important takeaway here is that \textbf{control-flow graphs only predict
+   program behavior}, they do not dictate it. Because the arrows just show where
+   a program \textit{might} go, it doesn't actually tell us anything that the
+   original program didn't.
+
+   \vspace{\fill}
+
+   The second important takeaway is that \textbf{there is always a way to turn a
+   given program to a control-flow graph}. Let's not worry about how that happens.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Dataflow Example}
+
+   \begin{center}
+     \begin{minipage}{0.65\textwidth}
+       \raggedright
+       For instance, consider the following control-flow graph\footnotemark[13]:
+
+       \vspace{10pt}
+
+       We would like to perform an analysis known as \term{constant propagation}
+       on it, by noting which variables are \term{constant}, i.e. never changed over
+       the duration of the program.
+
+       \vspace{10pt}
+
+       How do we do this? We simply march forward through the CFG, and noting
+       down which variables are constant as we see them, starting with the
+       empty set.
+     \end{minipage}
+     \begin{minipage}{0.3\textwidth}
+       \centering
+       \begin{tikzpicture}[node distance=0.8in]
+         \node[box, text width=1in] (N1) {
+           \code{x = 1}\strut\\
+           \code{y = 2}\strut
+         };
+
+         \node[box, below of=N1] (N2) {
+           \code{x = x + 2}
+         };
+
+         \node[box, below of=N2] (N3) {
+           \code{return x}
+         };
+
+         \draw[-stealth] (N1) -- (N2);
+         \draw[-stealth] (N2.south west) to [out = 210, in=150, looseness=2] (N2.north west);
+         \draw[-stealth] (N2) -- (N3);
+       \end{tikzpicture}
+     \end{minipage}
+   \end{center}
+
+   \footnotetext[13]{
+Note that this
+       one has a self-loop. This can happen, for example, from a \code{while} loop.
+   }
+
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Dataflow Example}
+
+   \begin{center}
+     \begin{minipage}{0.55\textwidth}
+       \raggedright
+       So for instance, first we traverse the entering block,
+       by simply penciling in \code{x} and \code{y} as we see
+       them get assigned to constants.
+
+       \vspace{10pt}
+
+       Once we finish, we now have the \term{out-set} for the
+       first block, which we can then use to determine the other
+       blocks.
+     \end{minipage}
+     \hfill
+     \begin{minipage}{0.4\textwidth}
+       \centering
+       \begin{tikzpicture}[node distance=0.8in]
+         \node[box, text width=1in, hlbg] (N1) {
+           \code{x = 1}\strut\\
+           \code{y = 2}\strut
+         };
+
+         \node[above of=N1, node distance=0.5cm, xshift=1.2in] {$\{\}$};
+         \node[xshift=1.2in] at (N1) {$\{\code{x} \mapsto \code{1}\}$};
+         \node[below of=N1, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N1] (N2) {
+           \code{x = x + 2}
+         };
+
+         \node[box, below of=N2] (N3) {
+           \code{return x}
+         };
+
+         \draw[-stealth] (N1) -- (N2);
+         \draw[-stealth] (N2.south west) to [out = 210, in=150, looseness=2] (N2.north west);
+         \draw[-stealth] (N2) -- (N3);
+       \end{tikzpicture}
+     \end{minipage}
+   \end{center}
+
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Dataflow Example}
+
+   \begin{center}
+     \begin{minipage}{0.55\textwidth}
+       \raggedright
+       After following the highlighted edge, we end up at the second block. Since
+       we have some information about what variables are constant, we can carry that
+       information here.
+
+       \vspace{10pt}
+
+       Then, we see that \code{x} is incremented by two, and thus must be constant
+       at \code{3} at the conclusion of the block.
+
+     \end{minipage}
+     \hfill
+     \begin{minipage}{0.4\textwidth}
+       \centering
+       \begin{tikzpicture}[node distance=0.8in]
+         \node[box, text width=1in] (N1) {
+           \code{x = 1}\strut\\
+           \code{y = 2}\strut
+         };
+
+         \node[above of=N1, node distance=0.5cm, xshift=1.2in] {$\{\}$};
+         \node[xshift=1.2in] at (N1) {$\{\code{x} \mapsto \code{1}\}$};
+         \node[below of=N1, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N1, hlbg] (N2) {
+           \code{x = x + 2}
+         };
+
+         \node[above of=N2, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{2}\}$};
+         \node[below of=N2, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \code{3}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N2] (N3) {
+           \code{return x}
+         };
+
+         \draw[-stealth, hledge] (N1) -- (N2);
+         \draw[-stealth] (N2.south west) to [out = 210, in=150, looseness=2] (N2.north west);
+         \draw[-stealth] (N2) -- (N3);
+       \end{tikzpicture}
+     \end{minipage}
+   \end{center}
+
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Dataflow Example}
+
+   \begin{center}
+     \begin{minipage}{0.55\textwidth}
+       \raggedright
+
+       But, now we need to follow the self-loop! Something weird happens here.
+
+       \vspace{10pt}
+
+       There are two conflicting out-sets that are going in to the second block.
+       One is the one we just computed,
+       $\{\code{x} \mapsto \code{3}, \code{y} \mapsto \code{1}\}$, from the
+       output of the second block itself. The other is
+       $\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{1}\}$, from the
+       original out-set from the first block.
+
+       \vspace{10pt}
+
+       This means we have a conflict. \code{x} is constant, but at two
+       different values, coming in to the second block.
+     \end{minipage}
+     \hfill
+     \begin{minipage}{0.4\textwidth}
+       \centering
+       \begin{tikzpicture}[node distance=0.8in]
+         \node[box, text width=1in] (N1) {
+           \code{x = 1}\strut\\
+           \code{y = 2}\strut
+         };
+
+         \node[above of=N1, node distance=0.5cm, xshift=1.2in] {$\{\}$};
+         \node[xshift=1.2in] at (N1) {$\{\code{x} \mapsto \code{1}\}$};
+         \node[below of=N1, node distance=0.5cm, xshift=1.2in] {$\{{\color{hlset}\code{x} \mapsto \code{1}}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N1, hlbg] (N2) {
+           \code{x = x + 2}
+         };
+
+         \node[above of=N2, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{2}\}$};
+         \node[below of=N2, node distance=0.5cm, xshift=1.2in] {$\{{\color{hlset}\code{x} \mapsto \code{3}}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N2] (N3) {
+           \code{return x}
+         };
+
+         \draw[-stealth] (N1) -- (N2);
+         \draw[-stealth, hledge] (N2.south west) to [out = 210, in=150, looseness=2] (N2.north west);
+         \draw[-stealth] (N2) -- (N3);
+       \end{tikzpicture}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Dataflow Example}
+
+   \begin{center}
+     \begin{minipage}{0.55\textwidth}
+       \raggedright
+
+       This must mean that \code{x} is not constant after all.
+
+       \vspace{10pt}
+
+       So we set the value of \code{x} to instead be $\top$, which means
+       "not constant". Note that this is different than \code{x} not having
+       a value, which denotes not knowing if it is constant or not.
+     \end{minipage}
+     \hfill
+     \begin{minipage}{0.4\textwidth}
+       \centering
+       \begin{tikzpicture}[node distance=0.8in]
+         \node[box, text width=1in] (N1) {
+           \code{x = 1}\strut\\
+           \code{y = 2}\strut
+         };
+
+         \node[above of=N1, node distance=0.5cm, xshift=1.2in] {$\{\}$};
+         \node[xshift=1.2in] at (N1) {$\{\code{x} \mapsto \code{1}\}$};
+         \node[below of=N1, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N1, hlbg] (N2) {
+           \code{x = x + 2}
+         };
+
+         \node[above of=N2, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto {\color{hlset}\top}, \code{y} \mapsto \code{2}\}$};
+         \node[below of=N2, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto {\color{hlset}\top}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N2] (N3) {
+           \code{return x}
+         };
+
+         \draw[-stealth] (N1) -- (N2);
+         \draw[-stealth] (N2.south west) to [out = 210, in=150, looseness=2] (N2.north west);
+         \draw[-stealth] (N2) -- (N3);
+       \end{tikzpicture}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Dataflow Example}
+
+   \begin{center}
+     \begin{minipage}{0.55\textwidth}
+       \raggedright
+
+       Then, once we are assured that everything looks good, we can proceed
+       to the final block, where we observe that we return \code{x} at a
+       non-constant value.
+
+       \vspace{10pt}
+
+       This means that we cannot optimize the return value of this function
+       after all.
+
+       \vspace{10pt}
+
+       Different story if we had returned \code{y}!
+     \end{minipage}
+     \hfill
+     \begin{minipage}{0.4\textwidth}
+       \centering
+       \begin{tikzpicture}[node distance=0.8in]
+         \node[box, text width=1in] (N1) {
+           \code{x = 1}\strut\\
+           \code{y = 2}\strut
+         };
+
+         \node[above of=N1, node distance=0.5cm, xshift=1.2in] {$\{\}$};
+         \node[xshift=1.2in] at (N1) {$\{\code{x} \mapsto \code{1}\}$};
+         \node[below of=N1, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N1] (N2) {
+           \code{x = x + 2}
+         };
+
+         \node[above of=N2, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \top, \code{y} \mapsto \code{2}\}$};
+         \node[below of=N2, node distance=0.5cm, xshift=1.2in] {$\{\code{x} \mapsto \top, \code{y} \mapsto \code{2}\}$};
+
+         \node[box, below of=N2, hlbg] (N3) {
+           \code{return x}
+         };
+
+         \node[above of=N3, node distance=0.5cm, xshift=1.1in] {$\{\code{x} \mapsto \top, \code{y} \mapsto \code{2}\}$};
+         \node[below of=N3, node distance=0.5cm, xshift=1.1in] {$\{\code{x} \mapsto \top, \code{y} \mapsto \code{2}\}$};
+
+         \draw[-stealth] (N1) -- (N2);
+         \draw[-stealth] (N2.south west) to [out = 210, in=150, looseness=2] (N2.north west);
+         \draw[-stealth] (N2) -- (N3);
+       \end{tikzpicture}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Generality of Dataflow}
+
+   This is a contrived example, but the really interesting thing is that
+   dataflow analysis works for \textit{any} control-flow graph.
+
+   \pause
+   \vspace{\fill}
+
+   The process seemed somewhat silly, as we could determine with our eyes that
+   \code{x} was non-constant, but for very complicated control-flow graphs this
+   is not an obvious fact at all. Programmatically, we can still run this same
+   analysis, however.
+
+   \pause
+   \vspace{\fill}
+
+   This analysis is also guaranteed to terminate, due to the monotonic reasons
+   we stated earlier. The actual reason for this is that dataflow analysis
+   strictly traverses up a \term{lattice}.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Constant Definitions Lattice}
+
+   \begin{center}
+     \begin{tikzpicture}
+       \node[bhex, fill=bgOrange] (T) {$\{\code{x} \mapsto \top, \code{y} \mapsto \top \}$};
+       \node[bhex, fill=bgRed, below of=T, node distance=2.5in] (B) {$\{\}$};
+
+       \node[bhex, below of=T, node distance=0.625in, xshift=-1in] (U1)
+         {$\{\code{x} \mapsto n, \code{y} \mapsto \top\}$};
+       \node[bhex, fill=bgPurple, below of=T, node distance=1.25in] (U2)
+         {$\{\code{x} \mapsto n, \code{y} \mapsto n'\}$};
+       \node[bhex, below of=T, node distance=0.625in, xshift=1in] (U3)
+         {$\{\code{x} \mapsto \top, \code{y} \mapsto n' \}$};
+
+       \node[bhex, above of=B, node distance=1in, xshift=-1.5in] (L1)
+         {$\{\code{y} \mapsto \top\}$};
+       \node[bhex, above of=B, node distance=0.625in, xshift=-0.5in] (L2)
+         {$\{\code{x} \mapsto n\}$};
+       \node[bhex, above of=B, node distance=0.625in, xshift=0.5in] (L3)
+         {$\{\code{y} \mapsto n'\}$};
+       \node[bhex, above of=B, node distance=1in, xshift=1.5in] (L4)
+         {$\{\code{x} \mapsto \top \}$};
+
+       \draw[-stealth] (B) -- (L1);
+       \draw[-stealth] (B) -- (L2);
+       \draw[-stealth] (B) -- (L3);
+       \draw[-stealth] (B) -- (L4);
+
+       \draw[-stealth] (L1) -- (U1);
+
+       \draw[-stealth] (L4) -- (U3);
+
+       \draw[-stealth] (L2) -- (U2);
+
+       \draw[-stealth] (L3) -- (U2);
+
+       \draw[-stealth] (U1) -- (T);
+       \draw[-stealth] (U3) -- (T);
+
+       \draw[-stealth] (U2) -- (U1);
+       \draw[-stealth] (U2) -- (U3);
+
+       \draw[-stealth] (U2) -- (U1);
+       \draw[-stealth] (U2) -- (U3);
+
+       \draw[-stealth] (L3) to [out=150, in=-10] (L1);
+       \draw[-stealth] (L2) to [out=30, in=190] (L4);
+
+     \end{tikzpicture}
+   \end{center}
+ \end{frame}
+
+
+ \begin{frame}[fragile]
+   \frametitle{Climbing the Lattice}
+
+   The diagram looks scary, but the key thing is just that it
+   assigns each variable a value of either no value, any constant $n$ or
+   $n'$, or $\top$, which means "not constant".
+
+   \pause
+   \vspace{\fill}
+
+   \begin{center}
+   \begin{tikzpicture}
+    \node[box, node distance=1.8in, text width=1.5in] (A) {assigned 0 times};
+    \node[box, right of=A, node distance=1.8in, text width=1.5in] (B) {assigned once};
+    \node[box, right of=B, node distance=1.8in, text width=1.5in] (C) {assigned more than once ($\top$)};
+
+    \draw[-stealth] (A) -- (B);
+    \draw[-stealth] (B) -- (C);
+   \end{tikzpicture}
+    \end{center}
+
+
+
+   \pause
+   \vspace{\fill}
+
+   Edges go from sets to ones which have either added a new variable at
+   a constant, or that have upgraded a variable from a constant to the
+   not-a-constant symbol $\top$. This represents the gaining of information,
+   of either a variable being declared as a constant, or a variable being
+   discovered as not-a-constant.
+   \pause
+   \begin{itemize}
+     \item
+       For instance, we started at $\{\}$, and then
+       went to $\{ \code{x} \mapsto \code{1} \}$ when we read \code{x = 1}.
+       \pause
+     \item
+       Or, we went from
+         $\{\code{x} \mapsto \code{1}, \code{y} \mapsto \code{2}\}$
+       to
+         $\{\code{x} \mapsto \top, \code{y} \mapsto \code{2}\}$
+       upon seeing that \code{x} was set as two different constants, along
+       two different paths to the block.
+   \end{itemize}
+ \end{frame}
+
+
+
+ \begin{frame}[fragile]
+   \frametitle{Monotonicity in Constant Definitions}
+
+   The main thing to take away here is that \textit{every arrow goes up}.
+   We talked earlier about putting answers on a number line, which is
+   represented in terms of the lattice's height, here. No matter what
+   edge you pick, you go up some amount, which means we must terminate.
+
+   \pause
+   \vspace{\fill}
+
+   We can't go down, because it's impossible to update your worldview to
+   either remove a variable from the set, or to set a variable from not-constant
+   to constant. Once you know something about a variable, you can't go back.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Approximation of Dataflow}
+   \begin{center}
+     \begin{minipage}{0.65\textwidth}
+       \raggedright
+       I mentioned earlier that this analysis is necessarily wrong, however.
+
+       \vspace{10pt}
+
+       The reason comes out of the fact that the control-flow graph is just how
+       the execution of the program \textit{might} go. In reality, it's quite
+       possible that at runtime, we never enter the self-loop, meaning that
+       \code{x} really is constant.
+
+       \vspace{10pt}
+
+       But, without running the program, we have no way of knowing, so we
+       assume that \code{x} \textit{is} updated at some point. This makes
+       our knowledge necessarily possibly wrong, but a good approximation.
+     \end{minipage}
+     \begin{minipage}{0.3\textwidth}
+       \centering
+       \begin{tikzpicture}[node distance=0.8in]
+         \node[box, text width=1in] (N1) {
+           \code{x = 1}\strut\\
+           \code{y = 2}\strut
+         };
+
+         \node[box, below of=N1] (N2) {
+           \code{x = x + 2}
+         };
+
+         \node[box, below of=N2] (N3) {
+           \code{return x}
+         };
+
+         \draw[-stealth] (N1) -- (N2);
+         \draw[-stealth] (N2.south west) to [out = 210, in=150, looseness=2] (N2.north west);
+         \draw[-stealth] (N2) -- (N3);
+       \end{tikzpicture}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{On Dataflow Analysis}
+
+   This was a really simple example that I hoped you might be able to understand.
+
+   \pause
+   \vspace{\fill}
+
+   Dataflow analysis in general is a very powerful technique, however, and admits
+   many other analyses, many of which are quite useful. These include:
+   \pause
+   \begin{itemize}
+     \item \term{available expressions} - is there a definition of this exact
+     expression already at this program point? useful in optimizing away
+     redundant computations. \pause
+     \item \term{reaching definitions} - what definitions of a variable can
+     reach a given program point? useful in building use-def chains (i.e.
+     "goto definition" in IDEs) \pause
+     \item \term{liveness analysis} - what variables might actually be needed
+     in the future? useful in eliminating dead code. \pause
+     \item \term{taint tracking} - can data from undesirable sources reach
+     some sensitive program point? \textbf{very} useful in security applications.
+   \end{itemize}
+
+   \pause
+   \vspace{\fill}
+
+   The rabbit hole goes deep. This one is simple, but this is a bread-and-butter
+   technique in program analysis.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Dataflow Analysis and Semantics}
+
+   Dataflow analysis is a foundational technique that forms the bread and butter
+   of the program analysis toolbox.
+
+   \pause
+   \vspace{\fill}
+
+   In a sense, though, it can be viewed as a "lower level" analysis. We elided a lot
+   of details in this presentation, but a proper dataflow analysis often entails breaking
+   down a program into its most base representation. This tends to lose a lot of the
+   original structure of the code -- nobody writes a CFG when programming.
+
+   \pause
+   \vspace{\fill}
+
+   What if we could somehow stay at the level of the programmer when trying to do our
+   program analysis? What if we could preserve the semantics and structure of the
+   program while we look at it?
+
+   \pause
+   \vspace{\fill}
+
+   It turns out, this will be a pretty effective approach to program analysis.
+
+   \pause
+   \vspace{\fill}
+
+   This is the story of Semgrep.
+ \end{frame}
+
+ \sectionSlide{5}{Semgrep}
+
+\begin{comment}
+ \begin{frame}[fragile]
+   \frametitle{Flavors of Program Analysis}
+
+   It is difficult to give an accurate account of the state of cybersecurity within a
+   single lecture (while talking about other things), but the main important thing to
+   realize is that security is often the least concern of many developers.
+
+   Developers want to write code, and are judged upon, promoted due to, and attached
+   to the code that they write. This only makes the ultimate goal, the security of
+   software throughout all sectors, a hard one to accomplish.
+
+   There are engineers specifically hired to ensure the security of certain company's
+   code, there are departments dedicated towards that same practice. The cost of a
+   security breach is high, and nobody wants to be the next Yahoo.
+
+   What does that mean? It means that we are on an uphill slope of a slope which
+   is already upside-down.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Flavors of Program Analysis}
+
+   In the cybersecurity space, there are two big important aspects to any
+   code-scanning security tool (or \term{SAST tool}).
+
+   Firstly, it should terminate within a reasonable amount of time. Code is
+   usually scanned on each PR\footnote<2->{Meaning \term{pull request}, or a
+   potential contribution to a software project.}, and needs to fit within a
+   developer's normal workflow, meaning a longer scan time than a few minutes is
+   completely unreasonable.
+
+   Secondly, it should not be too noisy. Security tools are going to produce
+   matches that are wrong -- either false positives or false negatives. That's
+   a part of the job. But they can't be wrong \textit{too} often, or that
+   also marks an undesirable tool.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Flavors of Program Analysis}
+
+   To that end, security becomes an interesting game where the goal of a SAST
+   tool is to work, but almost invisibly. Nobody likes a noisy tool. When a
+   SAST tool pipes up, it had better be for a good reason.
+
+   \defBox{}{We call a reported error or region of interest from a code-scanning
+   tool a \term{finding}.}
+
+   But another component is that a SAST tool should try to work
+   \textit{with the developer}. It should be clear why a finding occurred,
+   how it can be fixed, and it should get in the developer's way as little
+   as possible. That's the game of security -- be functional, but frictionless.
+ \end{frame}
+\end{comment}
+
+ \begin{frame}[fragile]
+   \frametitle{Refresher: Abstract Syntax Trees}
+
+   Programs are text files. To seasoned practitioners, however, programs are trees
+   \footnote{To a viewer who is not familiar, there is not really much I can do to
+   catch someone up to speed on trees in minutes. Basically, they are a way of storing
+   data when the data might have multiple "descendants".}
+   \footnote{It's kind of similar to how light is both a particle and a wave.}.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{minipage}{0.65\textwidth}
+    For instance, consider simple arithmetic expressions, which are a subset of
+    programs. We might represent the arithmetic expression \code{(1 - 2) + 3} as:
+
+    When we write an expression like \code{(1 - 2) + 3} out on paper, we really
+    mean this tree-like thing. Our notation on paper is just a syntax to convey
+    the meaning, which we call an \term{abstract syntax tree}.
+   \end{minipage}
+   \hspace{\fill}
+   \begin{minipage}{0.3\textwidth}
+    \begin{center}
+      \begin{tikzpicture}
+        \node[circ] {\code{+}}
+          child{node[circ] {\code{-}}
+            child{node[hex] {\code{1}}}
+            child{node[hex] {\code{2}}}
+          }
+          child{node[hex] {\code{3}}}
+        ;
+
+      \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Refresher: Abstract Syntax Trees}
+
+  \begin{minipage}{0.35\textwidth}
+    \raggedright
+    For programs, this gets even more hardcore, actually. Consider the program:
+    \begin{pythoncodeblock}
+      if x == 3:
+        while(y):
+          pass
+      else:
+        return 2
+    \end{pythoncodeblock}
+  \end{minipage}
+  \pause
+  \hspace{\fill}
+  \begin{minipage}{0.6\textwidth}
+    \begin{center}
+      \begin{tikzpicture}
+        \node[box] {\code{if}}
+          child{node[circ, xshift=-0.5in] {\code{==}}
+            child{node[hex, fill=bgBlue] {\code{x}}}
+            child{node[hex] {\code{3}}}
+          }
+          child{node[box] {\code{while}}
+            child{node[hex, fill=bgBlue] {\code{y}}}
+            child{node[box] {\code{pass}\strut}}
+          }
+          child{node[box, xshift=0.5in] {\code{return}}
+            child{node[hex] {\code{2}}}
+          }
+        ;
+
+      \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+
+  \pause
+  \vspace{\fill}
+
+  We see that, if you squint at the left and right, you can see that the indentation
+  structure of the left program is actually reflected in the right tree.
+  For instance, the indented \code{while} and \code{return} appear as children to the
+  larger \code{if} node.
+\end{frame}
+
+
+ \begin{frame}[fragile]
+   \frametitle{Analysis at the ASTs}
+
+   Before we delve deeper, it's worth developing: why are we raving on about ASTs?
+   What's the point?
+
+   \pause
+   \vspace{\fill}
+
+   Semgrep as a technology makes heavy use of this idea of ASTs, by performing a
+   great deal of its analysis at the level of the tree, as opposed to going
+   further "down", to the level of the CFG. Our goal is to understand, at a high
+   level, what Semgrep is doing.
+
+  \pause
+  \vspace{\fill}
+
+  In this next section, we hope to go over some diagrams that can let you understand,
+  at the level of a picture, what the Semgrep engine does when it produces a finding.
+\end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Security and Software Engineering}
+
+  Before we proceed, it's also worth noting some things about security and software engineering.
+
+  \pause
+  \vspace{\fill}
+
+  \textbf{These things do not generally go together.}
+
+  \pause
+  \vspace{\fill}
+
+  Software engineers are paid to write code, are judged on their code, and spend
+  large amounts of time thinking about their code. What they are not necessarily,
+  however, is educated in the ways of safety. So this tends to take a back seat.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Being Wrong}
+
+   For most software, being wrong is a hellish scenario that is too horrifying
+   to even contemplate.
+
+   \pause
+   \vspace{\fill}
+
+   For a program analysis tool, being wrong is Tuesday.
+
+   \pause
+   \vspace{\fill}
+
+   Still, to the developers who are receiving security notifications on their
+   pull requests, as well as the security engineers that are constantly hovering
+   over their shoulders\footnote{This presentation was made on macOS Monterey, cry about it Jonathan.\footnotemark[16]}, it matters \textbf{how wrong} the tool
+   usually is.
+
+   \pause
+   \vspace{\fill}
+
+   The easier way to make change is not to preach at someone the right
+   way to do things, but to make them want to do things the right way. A
+   SAST tool needs to be fruitful, but frictionless.
+
+   \pause
+   \vspace{\fill}
+
+   Why am I mentioning this?
+
+   \footnotetext[16]{That's a joke.}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Deduplicating Efforts}
+
+   We want to be able to provide as little friction as possible, while producing
+   the best possible results. In the case of Semgrep, \textbf{staying primarily
+   at the language level provides numerous benefits}.
+
+   \pause
+   \vspace{\fill}
+
+   For most program-analyzing tools, they will have their own specific ASTs for
+   each language. A Python linter, for instance, will have a Python AST, a C compiler
+   will have a C AST, so on and so forth.
+
+   \pause
+   \vspace{\fill}
+
+   The usual workflow for this looks something like this:
+   \begin{center}
+   \begin{tikzpicture}
+    \node[box, node distance=2in, text width=1.1in] (A) {source text};
+    \node[box, right of=A, node distance=2in, text width=1.1in, fill=bgPurple] (B) {language-specific AST};
+    \node[box, right of=B, node distance=2in, text width=1.1in, fill=bgBlue] (C) {findings, data, etc};
+
+    \draw[-stealth] (A) -- (B) node[midway, above]{parsing} ;
+    \draw[-stealth] (B) -- (C) node[midway, above]{analysis };
+   \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Pipeline for Program Analysis}
+
+   So, for multiple language-specific program analysis tools, the picture looks like this:
+
+   \pause
+   \vspace{\fill}
+
+   \begin{center}
+     \begin{tikzpicture}
+       \node[box] (N1) {Java code\strut};
+       \node[box, right of=N1, node distance=1.5in] (N2) {Python code\strut};
+       \node[box, right of=N2, node distance=1.5in] (N3) {C code\strut};
+
+       \node[box, below of=N1, node distance=0.6in, fill=bgPurple] (M1) {Java AST};
+       \node[box, below of=N2, node distance=0.6in, fill=bgPurple] (M2) {Python AST\strut};
+       \node[box, below of=N3, node distance=0.6in, fill=bgPurple] (M3) {C AST};
+
+       \node[box, below of=M1, node distance=0.6in, fill=bgBlue] (L1) {Java analysis\strut};
+       \node[box, below of=M2, node distance=0.6in, fill=bgBlue] (L2) {Python analysis\strut};
+       \node[box, below of=M3, node distance=0.6in, fill=bgBlue] (L3) {C analysis\strut};
+
+       \draw[-stealth] (N1) -- (M1);
+       \draw[-stealth] (N2) -- (M2);
+       \draw[-stealth] (N3) -- (M3);
+
+       \draw[-stealth] (M1) -- (L1);
+       \draw[-stealth] (M2) -- (L2);
+       \draw[-stealth] (M3) -- (L3);
+     \end{tikzpicture}
+   \end{center}
+
+   \pause
+   \vspace{\fill}
+
+   This leads to a massive amount of duplicated efforts.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{The Essence of Programming Languages}
+
+   \begin{minipage}{0.55\textwidth}
+    \raggedright
+   For as much as people complain about programming languages\footnotemark[17], after some time with them you begin to realize that most of them look
+   quite similar.
+
+   \pause
+   \vspace{10pt}
+
+   The most controversial opinion to come out of this talk that
+   you didn't expect: \textbf{the distinctions between most programming
+   languages are pretty shallow}.
+   \end{minipage}
+   \begin{minipage}{0.43\textwidth}
+      \raggedright
+      \includegraphics[scale=0.25]{samepicture.png}
+   \end{minipage}
+
+   \footnotetext[17]{As have I.}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{It's All Just Code}
+
+   Concretely, many languages have for loops, and many languages have exception
+   raising and handling, and almost every language has functions, ways to define
+   variables, and ways to call functions.
+
+   \pause
+   \vspace{\fill}
+
+   Now, every language has its own miniscule idiosyncrasies which set them apart,
+   which makes writing something like a universal compiler a pipe dream. But what
+   if we're working in an application where being wrong in small ways doesn't really
+   matter?
+
+   \pause
+   \vspace{\fill}
+
+   For program analysis tools, being wrong is Tuesday.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Pipeline for Semgrep Analysis}
+
+   Semgrep is a code-scanning tool for over 24 language\footnote{Maybe over 22, once we
+   kill C/C++ and Elixir.}.
+
+   \pause
+   \vspace{\fill}
+
+   The way that it achieves this is that it turns every single language into the
+   same data type, called the Generic AST, which is a smörgåsbord union of all
+   the language features in pretty much every language.
+
+   \pause
+   \vspace{\fill}
+
+   This means that its pipeline looks remarkably simpler:
+
+   \begin{center}
+     \begin{tikzpicture}
+       \node[box] (N1) {Java code\strut};
+       \node[box, right of=N1, node distance=1.5in] (N2) {Python code\strut};
+       \node[box, right of=N2, node distance=1.5in] (N3) {C code\strut};
+
+       \node[hex, below of=N2, node distance=0.6in, fill=bgRed] (M) {Generic AST};
+
+       \node[box, below of=M, node distance=0.6in, fill=bgBlue] (L) {Analysis};
+
+       \draw[-stealth] (N1) -- (M);
+       \draw[-stealth] (N2) -- (M);
+       \draw[-stealth] (N3) -- (M);
+
+       \draw[-stealth] (M) -- (L);
+     \end{tikzpicture}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Picking Battles}
+
+   We see that staying at the AST level saves us work, which can be wrong at
+   times due to imperfect translation, but ultimately doesn't matter for a
+   program analysis tool. More importantly, it allows for cleaner code to
+   be written, which translates to a better tool.
+
+   \pause
+   \vspace{\fill}
+
+   When solving an impossible problem, you have to be pragmatic. Picking
+   battles that you can win is essential.
+
+   \pause
+   \vspace{\fill}
+
+   Semgrep takes a more "syntactic" approach to program analysis that gives
+   benefits in terms of its development velocity as a technology. It also lends an
+   advantage in its customizability and ease of use, which is the next thing to discuss.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Refresher: Interpreted and Compiled Languages}
+
+   It's worth also getting a picture of how Semgrep fits into the ecosystem of program analysis
+   tools. Why is this choice, to only work at the level of source text, and require no further
+   information, a competitive edge?
+
+   \pause
+   \vspace{\fill}
+
+   The lifecycle of a program is varied. As a refresher, recall the notion of
+   programming languages as \term{interpreted} or \term{compiled}.
+
+   \pause
+   \vspace{\fill}
+
+   A program is a text file written in some kind of programming language. Some languages
+   are written in \term{interpreted languages}, meaning that they can be executed (or \textit{run})
+   immediately.
+
+   \pause
+   \vspace{\fill}
+
+   Other languages are \term{compiled languages}, meaning that an executable version of
+   the program must first be obtained by running a separate program called the
+   \term{compiler}. This is also known as \term{compiling}, or \term{building} the program.
+ \end{frame}
+
+
+
+ \begin{frame}[fragile]
+   \frametitle{An Americentric Analogy}
+
+   For an Americentric analogy, you can think of a program in an interpreted language as
+   a recipe written in English, which the average American can follow just by reading.
+   A program in a compiled language is written in French, which, for the average American,
+   must first be translated to English before using.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{center}
+     \begin{tikzpicture}
+       \node[hex, minimum size=1cm] (A) {English recipe};
+       \node[hex, right of=A, node distance=2in, minimum size=1cm, fill=red!30!white] (B) {food};
+
+       \draw[-stealth] (A) -- (B) node[midway, above] {cooking};
+     \end{tikzpicture}
+
+     \vspace{\fill}
+
+     \begin{tikzpicture}
+       \node[box, minimum size=1cm, fill=orange!40!white] (A) {French recipe};
+       \node[hex, minimum size=1cm, right of=A, node distance=2.5in] (B) {English recipe};
+       \node[hex, right of=B, node distance=2.5in, minimum size=1cm, fill=red!30!white] (C) {food};
+
+       \draw[-stealth] (A) -- (B) node[midway, above] {translation};
+       \draw[-stealth] (B) -- (C) node[midway, above] {cooking};
+     \end{tikzpicture}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Refresher: Interpreted and Compiled Languages}
+
+   Interpreted and compiled languages work similarly. By analogy, the comparison should be
+   clear.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{center}
+     \begin{tikzpicture}
+       \node[hex, minimum size=1cm] (A) {program};
+       \node[hex, right of=A, node distance=2in, minimum size=1cm, fill=red!30!white] (B) {result};
+
+       \draw[-stealth] (A) -- (B) node[midway, above] {execution};
+     \end{tikzpicture}
+
+     \vspace{\fill}
+
+     \begin{tikzpicture}
+       \node[box, minimum size=1cm, fill=orange!40!white] (A) {program};
+       \node[hex, minimum size=1cm, right of=A, node distance=2.5in] (B) {compiled program};
+       \node[hex, right of=B, node distance=2.5in, minimum size=1cm, fill=red!30!white] (C) {result};
+
+       \draw[-stealth] (A) -- (B) node[midway, above] {compilation};
+       \draw[-stealth] (B) -- (C) node[midway, above] {execution};
+     \end{tikzpicture}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{The Multiplicity of Compiled Languages}
+
+   Let's put interpreted languages to the side, for the moment.
+
+   \pause
+   \vspace{\fill}
+
+   The picture is a nice one, but significantly simplified from reality. In truth, it's
+   not that there is a single arrow leading to a single compiled program -- there are
+   \textit{many} such arrows, depending on your particular compiler, build environment,
+   etc.
+
+   \pause
+   \vspace{\fill}
+
+   So the picture looks more like:
+   \pause
+  \begin{center}
+    \begin{tikzpicture}
+      \node[box, minimum size=0.6cm, fill=orange!40!white] (A) {program};
+      \node[hex, minimum size=0.6cm, right of=A, node distance=2.5in] (B) {compiled program B};
+      \node[hex, minimum size=0.6cm, above of=B, node distance=0.4in] (B1) {compiled program A};
+      \node[hex, minimum size=0.6cm, below of=B, node distance=0.4in] (B2) {compiled program C};
+      \node[above of=B1, node distance=0.4in, xshift=-1in] (B3) {\textellipsis};
+      \node[below of=B2, node distance=0.4in, xshift=-1in] (B4) {\textellipsis};
+      \node[hex, right of=B, node distance=2.5in, minimum size=0.6cm, fill=red!30!white] (C) {result B};
+      \node[hex, right of=B1, node distance=2.5in, minimum size=0.6cm, fill=red!30!white] (C1) {result A};
+      \node[hex, right of=B2, node distance=2.5in, minimum size=0.6cm, fill=red!30!white] (C2) {result C};
+
+      \draw[-stealth] (A) -- (B) node[midway, above] {compilation};
+      \draw[-stealth, postaction={decorate, decoration={markings, mark=at position 0.5 with {\node[above, xshift=0.15in] {\small compilation};}}}] (A.north) to [out=30, in=180] (B1.west);
+      \draw[-stealth, postaction={decorate, decoration={markings, mark=at position 0.5 with {\node[above, xshift=0.15in] {\small compilation};}}}] (A.south) to [out=330, in=180] (B2.west);
+      \draw[-stealth, postaction={decorate, decoration={markings, mark=at position 0.5 with {\node[above, xshift=-0.2in] {\small compilation};}}}] (A.north) to [out=60, in=180] (B3.west);
+      \draw[-stealth, postaction={decorate, decoration={markings, mark=at position 0.5 with {\node[below, xshift=-0.2in] {\small compilation};}}}] (A.south) to [out=300, in=180] (B4.west);
+      \draw[-stealth] (B) -- (C) node[midway, above] {\small execution};
+      \draw[-stealth] (B1) -- (C1) node[midway, above] {\small execution};
+      \draw[-stealth] (B2) -- (C2) node[midway, above] {\small execution};
+    \end{tikzpicture}
+  \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{SAST 1.0 and the Program Lifecycle}
+
+   For many of the SAST 1.0 tools, they operate in the stage of the pipeline that is \textit{during compilation}.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{center}
+   \includegraphics[scale=0.2]{sast1.0.png}
+   \end{center}
+
+   \pause
+   \vspace{\fill}
+
+   This means that they exist across \textit{all} of the different arrows of
+   different ways to compile, and the different configurations which might exist at that point.
+
+   \pause
+   \vspace{\fill}
+
+   This is not just a maintenance burden on the part of the tool, but also a burden on the
+   user of the tool, which needs to be able to "hook in" the tool to that user's specific
+   build concerns. This can be messy, error-prone, and intensive.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Semgrep and Shifting Left}
+
+   Semgrep operates slightly differently, by operating \textit{purely} upon the source
+   text of the program. No additional configuration is needed -- the only things that it takes in
+   are the program text, and what it should find.
+
+   \pause
+   \vspace{\fill}
+
+   \begin{center}
+   \includegraphics[scale=0.2]{semgrep!.png}
+   \end{center}
+
+   \pause
+   \vspace{\fill}
+
+   This means that Semgrep succeeds as a tool which is \textit{farther left}, in that it operates
+   at a stage of the program lifecycle that is \textit{chronologically before} that of other tools.
+
+   \pause
+   \vspace{\fill}
+
+   This lack of need for configuration and knowledge of build systems makes Semgrep incredibly easy
+   to just drop in, compared to other tools. This is one benefit that Semgrep gets from a more strictly
+   AST-based approach.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Source-Level Errors}
+
+   Many program errors aren't purely due to what happens
+   at the level of assembly. Many of them are apparent from the source code,
+   because they were written by a developer who was writing source code.
+
+   \pause
+   \vspace{\fill}
+
+   For instance, consider the following Python code, with a function that
+   has a default argument \code{to} set to \code{[]}:
+   \begin{pythoncodeblock}
+     def append_to(element, to=[]):
+       to.append(element)
+       return to
+   \end{pythoncodeblock}
+
+   \vspace{\fill}
+   \pause
+
+   What do you think this does?
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Default Dead Arguments}
+
+   \begin{pythoncodeblock}
+     def append_to(element, to=[]):
+       to.append(element)
+       return to
+   \end{pythoncodeblock}
+
+   \vspace{\fill}
+
+   It turns out that the first time you call \code{append_to(2)}, you will
+   get \code{[2]}. That's cool.
+
+   \pause
+   \vspace{\fill}
+
+   The second time you call \code{append_to(2)}, you will get \code{[2, 2]}.
+
+   \pause
+   \vspace{\fill}
+
+   Uh oh.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Errors at the Source}
+
+   It turns out this is due to the fact that Python default arguments are
+   instantiated at function definition time, and so if it is mutated, that
+   mutation persists through each call.
+
+   \pause
+   \vspace{\fill}
+
+   This is an error that would be very easy to catch in code review. Unfortunately,
+   there are tens of millions of developers in the world, and even a 99\%
+   review success rate has bad implications.
+
+   \pause
+   \vspace{\fill}
+
+   So at the end of the day, we might not \textit{need} to descend further down
+   than the AST. Let's see how we can fix such bugs while staying above ground.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Forms of Program Analysis}
+
+   It turns out that program analysis can take many forms. We might want to use
+   it for security purposes, we might want to use it for style checking, and we
+   might want to use it to automate code review for things like the error we just
+   saw.
+
+   \pause
+   \vspace{\fill}
+
+   A common theme in program analysis is simply finding certain things in your
+   source code. This might be something like an unused variable, a type error,
+   or even a function call which might lead to a security vulnerability. We
+   call such regions of interest a \term{finding}.
+
+   \pause
+   \vspace{\fill}
+
+   Semgrep is aimed at being customizable to all of these use cases. This means
+   that while that while some tools find security vulnerabilities, and some
+   tools find style errors, the answer to what Semgrep finds is \textit{whatever
+   you want}.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Semantic Grep}
+
+   {\color{blue}\href{https://semgrep.dev/}{Semgrep}} stands for \textit{semantic grep}.
+
+   \pause
+   \vspace{\fill}
+
+   If you've used the tool \code{grep} before, you know that it is really just a
+   no-nonsense precursor to what is now Ctrl-F in most browsers.\footnote{Such as Arc,
+   the browser that I am currently using.}
+
+   \pause
+   \vspace{\fill}
+
+   But, it's limited in some ways. Suppose we wanted to find all instances of
+   using the function \code{print} to debug, before we put the code up for
+   review. What do you think is going to happen when we search for every instance
+   of the literal substring "print"?
+
+   \pause
+   \vspace{\fill}
+
+   The answer: \textbf{We are going to be absolutely inundated with results.} We'll
+   find the string \code{print} if it occurs in comments, if it occurs in literal
+   strings, and even if it's part of a larger method name. That doesn't make it what
+   we were looking for, though!
+
+   \pause
+   \vspace{\fill}
+
+   In other words, \code{grep} doesn't understand the \textit{meaning} of what we're
+   looking for, it's just looking for sequences of characters. Semgrep does.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Tree Search and Semgrep}
+
+   How does Semgrep understand the semantics of the program? Recall that
+   the literal text in a program just serve as a proxy that indicates the underlying
+   tree of the program, which contains its real meaning.
+
+   \pause
+   \vspace{\fill}
+
+   Semgrep doesn't do text search, it does \textit{tree search}. This means that
+   instead of searching for a sequence of characters within a given program, it
+   searches for a \textit{matching subtree} within a program's AST.
+
+   \pause
+   \vspace{\fill}
+
+   This means that a user might specify a particular \term{pattern AST}, which refers
+   to the AST that they would like to search for, and then Semgrep will search the
+   \term{target AST} to find a subtree which matches it.
+
+   \pause
+   \vspace{\fill}
+
+   The key innovation of Semgrep is that, although it does AST matching, the user
+   doesn't need to be able to construct one, or even know what it is. Pattern ASTs
+   are derived from patterns written \textit{in the source language}, meaning
+   that they look like code.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Take 1}
+
+
+   \begin{center}
+     \begin{minipage}[t][0.1\textheight][t]{\textwidth}
+       {\color{blue}\href{https://semgrep.dev/playground/s/Pe9Dq}{So, our query might look like:}}
+     \end{minipage}
+     \begin{minipage}[t][0.6\textheight][t]{\textwidth}
+       \begin{minipage}{0.38\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[hex] (A) {\code[keywordstyle=\color{black}]{print}\strut};
+         \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.58\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[box] (N1) {\code{Assign}\strut}
+             child{node[circ, fill=bgRed, xshift=-0.3in] (N2) {\code{x}}}
+             child{node[bbox, xshift=0.3in] (N3) {\code{Call}}
+               child{node[hex, xshift=-1cm] (N4) {\code[keywordstyle=\color{black}]{print}\strut}}
+               child{node[bbox, xshift=1cm] (N5) {\code{"let's print!"}\strut}}
+             };
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.38\textwidth}
+         \centering
+         \begin{codeblock}
+           print
+         \end{codeblock}
+       \end{minipage}
+       \begin{minipage}{0.58\textwidth}
+         \begin{codeblock}
+           x = print("let's print!")
+         \end{codeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Take 1}
+
+   \begin{center}
+     \begin{minipage}[t][0.1\textheight][t]{\textwidth}
+       {\color{blue}\href{https://semgrep.dev/playground/s/Pe9Dq}{So, our query might look like:}}
+     \end{minipage}
+     \begin{minipage}[t][0.6\textheight][t]{\textwidth}
+       \begin{minipage}{0.38\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[hex, highlight] (A) {\code[keywordstyle=\color{black}]{print}\strut};
+         \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.58\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[box] (N1) {\code{Assign}\strut}
+             child{node[circ, fill=bgRed, xshift=-0.3in] (N2) {\code{x}}}
+             child{node[bbox, xshift=0.3in] (N3) {\code{Call}}
+               child{node[hex, xshift=-1cm, highlight] (N4) {\code[keywordstyle=\color{black}]{print}\strut}}
+               child{node[bbox, xshift=1cm] (N5) {\code{"let's print!"}\strut}}
+             };
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.38\textwidth}
+         \centering
+         \begin{codeblock}
+           print
+         \end{codeblock}
+       \end{minipage}
+       \begin{minipage}{0.58\textwidth}
+         \begin{codeblock}
+           x = `print`("let's print!")
+         \end{codeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Syntax Aware}
+
+   Notably, however, we avoid matching the instance of the literal string
+   of "print" inside of the string that is being passed to its namesake function.
+
+   \pause
+   \vspace{\fill}
+
+   This is because we are only matching at the granularity of nodes of the AST,
+   not of the constituent text. Regular expressions, for instance, would be fooled
+   by instances of "print" within comments or strings.
+
+   \pause
+   \vspace{\fill}
+
+   When it comes to minimizing instances of program analysis tools being flat-out
+   wrong, this is an invaluable help. Most program analysis tools are black-box
+   applications that perform some magic to produce matches, without necessarily
+   being understandable. The algorithm of Semgrep is really quite simple, and
+   still manages to avoid false positives.
+ \end{frame}
+
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Take 2}
+
+   \begin{center}
+     \begin{minipage}[t][0.21\textheight][t]{\textwidth}
+       \raggedright
+       {\color{blue}\href{https://semgrep.dev/playground/s/JDqJQ}{We can do a little more advanced of a query, too.}} Suppose that we were
+       interested in finding all of the examples of a call to the function
+       \code{ref}.
+
+       \vspace{5pt}
+
+       Well, we might write a pattern like \code{ref $\,\,\dollar$X}, which uses a
+       \textit{metavariable} to bind to any sub-AST.
+     \end{minipage}
+     \begin{minipage}[t][0.515\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[bbox] (N1) {\code{Call}}
+             child{node[bbox] (N2) {\code[keywordstyle=\color{black}]{foo}}}
+             child{node[unknown] (N3) {\texttt{\$}\code{X}}}
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[box] (N1) {\code{Assign}\strut}
+             child{node[circ, fill=bgRed, xshift=-0.3in] (N2) {\code{y}}}
+             child{node[bbox, xshift=0.3in] (N3) {\code{Call}}
+               child{node[hex, xshift=-1cm] (N4) {\code[keywordstyle=\color{black}]{foo}}}
+               child{node[bbox, xshift=1cm] (N5) {\code{2}}}
+             };
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{codeblock}
+           foo($\dollar$X)
+         \end{codeblock}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \begin{codeblock}
+           y = foo(2)
+         \end{codeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Take 2}
+
+   \begin{center}
+     \begin{minipage}[t][0.21\textheight][t]{\textwidth}
+       \raggedright
+       {\color{blue}\href{https://semgrep.dev/playground/s/JDqJQ}{Here, we bind
+       the metavariable}} \tikz[baseline] \node[unknown, scale=0.7, anchor=base] {\texttt{\$}\code{X}}; to the node of \tikz[baseline] \node[bbox, anchor=base, scale=0.7]{2};, and then
+       the entire pattern succeeds at matching the highlighted sub-tree of the
+       target.
+     \end{minipage}
+     \begin{minipage}[t][0.515\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[bbox, highlight] (N1) {\code{Call}}
+             child{node[bbox, highlight] (N2) {\code[keywordstyle=\color{black}]{foo}}}
+             child{node[unknown, highlight] (N3) {\texttt{\$}\code{X}}}
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[box] (N1) {\code{Assign}\strut}
+             child{node[circ, fill=bgRed, xshift=-0.3in] (N2) {\code{y}}}
+             child{node[bbox, xshift=0.3in, highlight] (N3) {\code{Call}}
+               child{node[hex, xshift=-1cm, highlight] (N4) {\code[keywordstyle=\color{black}]{foo}}}
+               child{node[bbox, xshift=1cm, highlight] (N5) {\code{2}}}
+             };
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{codeblock}
+           foo($\dollar$X)
+         \end{codeblock}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \begin{codeblock}
+           y = `foo(2)`
+         \end{codeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Take 3}
+
+   \begin{center}
+     \begin{minipage}[t][0.21\textheight][t]{\textwidth}
+       \raggedright
+       {\color{blue}\href{https://semgrep.dev/playground/s/5rW33}{We can also express more complicated queries.}} What if we want to find instances
+       of a useless comparison, such as testing if an expression is equal to itself?
+     \end{minipage}
+     \begin{minipage}[t][0.515\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[circ] (N1) {\code{==}}
+             child{node[unknown] (N2) {\code{$\dollar$X}}}
+             child{node[unknown] (N3) {\code{$\dollar$X}}}
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}[level distance=1cm]
+           \node[box] (N1) {\code{Assign}}
+             child{node[hex, xshift=-0.3in] (N2) {\code{b}}}
+             child{node[circ] (N3) {\code{==}}
+               child{node[bbox, xshift=-0.35in] (N4) {\code{Call}}
+                 child{node[hex] (N5) {\code{f}}}
+                 child{node[bbox] (N6) {\code{2}}}
+               }
+               child{node[bbox, xshift=0.35in] (N7) {\code{Call}}
+                 child{node[hex] (N8) {\code{f}}}
+                 child{node[bbox] (N9) {\code{2}}}
+               }
+             }
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{codeblock}
+           $\dollar$X == $\dollar$X
+         \end{codeblock}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \begin{codeblock}
+           b = (f(2) == f(2))
+         \end{codeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Take 3}
+
+   \begin{center}
+     \begin{minipage}[t][0.21\textheight][t]{\textwidth}
+       \raggedright
+       {\color{blue}\href{https://semgrep.dev/playground/s/GdR7n}{Here, because
+       we reuse the metavariable}} \tikz[baseline] \node[unknown, anchor=base, scale=0.7] {\code{$\dollar$X}}; twice, the two instances
+       \term{unify}, meaning that the ASTs that each binds to must be the same.
+       In this case, that works.
+     \end{minipage}
+     \begin{minipage}[t][0.515\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[circ] (N1) {\code{==}}
+             child{node[unknown] (N2) {\code{$\dollar$X}}}
+             child{node[unknown] (N3) {\code{$\dollar$X}}}
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}[level distance=1cm]
+           \node[box] (N1) {\code{Assign}}
+             child{node[hex, xshift=-0.3in] (N2) {\code{b}}}
+             child{node[circ, highlight] (N3) {\code{==}}
+               child{node[bbox, xshift=-0.35in, highlight] (N4) {\code{Call}}
+                 child{node[hex, highlight] (N5) {\code{f}}}
+                 child{node[bbox, highlight] (N6) {\code{2}}}
+               }
+               child{node[bbox, xshift=0.35in, highlight] (N7) {\code{Call}}
+                 child{node[hex, highlight] (N8) {\code{f}}}
+                 child{node[bbox, highlight] (N9) {\code{2}}}
+               }
+             }
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{codeblock}
+           $\dollar$X == $\dollar$X
+         \end{codeblock}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \begin{codeblock}
+           b = `(f(2) == f(2))`
+         \end{codeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Take 3}
+
+   \begin{center}
+     \begin{minipage}[t][0.21\textheight][t]{\textwidth}
+       \raggedright
+       {\color{blue}\href{https://semgrep.dev/playground/s/Rer0K}{But in this case}}, there would be no match, because the {\color{blue}blue} and
+       {\color{magenta}magenta} subtrees do not match. In particular, \tikz[baseline] \node[hex, scale=0.7, anchor=base] {\code{f}};
+       does not match \tikz[baseline] \node[hex, scale=0.7, anchor=base] {\code{g}};.
+
+     \end{minipage}
+     \begin{minipage}[t][0.515\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}
+           \node[circ] (N1) {\code{==}}
+             child{node[unknown] (N2) {\code{$\dollar$X}}}
+             child{node[unknown] (N3) {\code{$\dollar$X}}}
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{tikzpicture}[level distance=1cm]
+           \node[box] (N1) {\code{Assign}}
+             child{node[hex, xshift=-0.3in] (N2) {\code{b}}}
+             child{node[circ] (N3) {\code{==}}
+               child{node[bbox, xshift=-0.35in, highlight2] (N4) {\code{Call}}
+                 child{node[hex, highlight2] (N5) {\code{f}}}
+                 child{node[bbox, highlight2] (N6) {\code{2}}}
+               }
+               child{node[bbox, xshift=0.35in, highlight3] (N7) {\code{Call}}
+                 child{node[hex, highlight3] (N8) {\code{g}}}
+                 child{node[bbox, highlight3] (N9) {\code{2}}}
+               }
+             }
+           ;
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.48\textwidth}
+         \centering
+         \begin{codeblock}
+           $\dollar$X == $\dollar$X
+         \end{codeblock}
+       \end{minipage}
+       \begin{minipage}{0.48\textwidth}
+         \begin{codeblock}
+           b = (f(2) == g(2))
+         \end{codeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Default Analysis}
+
+   Let's apply this to a very concrete example -- the erroneous default list parameter we
+   saw earlier, in Python! A pattern for this might look like:
+
+   \pause
+   \vspace{\fill}
+
+   We can write a Semgrep query which checks for precisely that!
+
+   \pause
+   \vspace{\fill}
+
+   \begin{minipage}{0.45\textwidth}
+    \begin{pythoncodeblock}
+      def $\dollar$F(..., $\dollar$ARG=[], ...):
+        ...
+    \end{pythoncodeblock}
+   \end{minipage}
+   \pause
+    \begin{minipage}{0.53\textwidth}
+      \centering
+      \begin{tikzpicture}[level distance=1cm]
+        \node[bbox] (N1) {\code{Def}}
+          child{node[unknown, xshift=-0.25in] {\code{$\dollar$F}}}
+          child{
+            node[bbox, fill=bgRed, yshift=-0.1in] {\code{Args}\strut}
+              child{node[unknown2, xshift=-0.4in] {\code{...}}}
+              child{node[bbox, yshift=-0.1in] {\code{DefaultParam}}
+                child{node[unknown] {\code{$\dollar$ARG}}}
+                child{node[hex] {\code{[]}}}
+              }
+              child{node[unknown2, xshift=0.4in] {\code{...}}}
+          }
+          child{node[unknown2, xshift=0.25in] {\code{...}}}
+        ;
+      \end{tikzpicture}
+    \end{minipage}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Default Analysis}
+
+   \begin{center}
+    %  \begin{minipage}[t][0.21\textheight][t]{\textwidth}
+    %    \raggedright
+    %    {\color{blue}\href{https://semgrep.dev/playground/s/Rer0K}{But in this case}}, there would be no match, because the {\color{blue}blue} and
+    %    {\color{magenta}magenta} subtrees do not match. In particular, \tikz[baseline] \node[hex, scale=0.7, anchor=base] {\code{f}};
+    %    does not match \tikz[baseline] \node[hex, scale=0.7, anchor=base] {\code{g}};.
+
+    %  \end{minipage}
+     \begin{minipage}[t][0.65\textheight][t]{\textwidth}
+       \begin{minipage}{0.44\textwidth}
+         \centering
+          \begin{tikzpicture}[level distance=1cm]
+            \node[bbox] (N1) {\code{Def}}
+              child{node[unknown, xshift=-0.25in] {\code{$\dollar$F}}}
+              child{
+                node[bbox, fill=bgRed, yshift=-0.1in] {\code{Args}\strut}
+                  child{node[unknown2, xshift=-0.4in] {\code{...}}}
+                  child{node[bbox, yshift=-0.1in] {\code{DefaultParam}}
+                    child{node[unknown] {\code{$\dollar$ARG}}}
+                    child{node[hex] {\code{[]}}}
+                  }
+                  child{node[unknown2, xshift=0.4in] {\code{...}}}
+              }
+              child{node[unknown2, xshift=0.25in] {\code{...}}}
+            ;
+          \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.52\textwidth}
+         \centering
+          \begin{tikzpicture}[level distance=1cm]
+            \node[bbox] (N1) {\code{Def}}
+              child{node[hex, xshift=-0.4in, yshift=0.2in] {\code{append_to}}}
+              child{
+                node[bbox, fill=bgRed, yshift=-0.1in, xshift=-0.2in] {\code{Args}\strut}
+                  child{node[hex, xshift=-0.6in] {\code{element}}}
+                  child{node[bbox, yshift=-0.4in] {\code{DefaultParam}}
+                    child{node[hex] {\code{to}}}
+                    child{node[hex] {\code{[]}}}
+                  }
+              }
+              child{node[bbox, xshift=0.25in, yshift=0.2in] {\code{Seq}\strut}
+                child{node[bbox, xshift=-0.1in] {\code{Call}}
+                  child{node {\textellipsis}}
+                }
+                child{node[bbox, xshift=0.1in] {\code{Return}}
+                  child{node {\textellipsis}}
+                }
+              }
+            ;
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.44\textwidth}
+         \centering
+        \begin{pythoncodeblock}
+          def $\dollar$F(..., $\dollar$ARG=[], ...):
+            ...
+          $\quad$
+
+        \end{pythoncodeblock}
+       \end{minipage}
+       \begin{minipage}{0.52\textwidth}
+        \begin{pythoncodeblock}
+          def append_to(element, to=[]):
+            to.append(element)
+            return to
+        \end{pythoncodeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{A Default Analysis}
+
+   \begin{center}
+    %  \begin{minipage}[t][0.21\textheight][t]{\textwidth}
+    %    \raggedright
+    %    {\color{blue}\href{https://semgrep.dev/playground/s/Rer0K}{But in this case}}, there would be no match, because the {\color{blue}blue} and
+    %    {\color{magenta}magenta} subtrees do not match. In particular, \tikz[baseline] \node[hex, scale=0.7, anchor=base] {\code{f}};
+    %    does not match \tikz[baseline] \node[hex, scale=0.7, anchor=base] {\code{g}};.
+
+    %  \end{minipage}
+     \begin{minipage}[t][0.65\textheight][t]{\textwidth}
+       \begin{minipage}{0.44\textwidth}
+         \centering
+          \begin{tikzpicture}[level distance=1cm]
+            \node[bbox] (N1) {\code{Def}}
+              child{node[unknown, xshift=-0.25in, highlight2] {\code{$\dollar$F}}}
+              child{
+                node[bbox, fill=bgRed, yshift=-0.1in] {\code{Args}\strut}
+                  child{node[unknown2, xshift=-0.4in, highlight3] {\code{...}}}
+                  child{node[bbox, yshift=-0.1in] {\code{DefaultParam}}
+                    child{node[unknown, highlight5] {\code{$\dollar$ARG}}}
+                    child{node[hex] {\code{[]}}}
+                  }
+                  child{node[unknown2, xshift=0.4in] {\code{...}}}
+              }
+              child{node[unknown2, xshift=0.25in, highlight4] {\code{...}}}
+            ;
+          \end{tikzpicture}
+       \end{minipage}
+       \begin{minipage}{0.52\textwidth}
+         \centering
+          \begin{tikzpicture}[level distance=1cm]
+            \node[bbox] (N1) {\code{Def}}
+              child{node[hex, xshift=-0.4in, yshift=0.2in, highlight2] {\code{append_to}}}
+              child{
+                node[bbox, fill=bgRed, yshift=-0.1in, xshift=-0.2in] {\code{Args}\strut}
+                  child{node[hex, xshift=-0.6in, highlight3] {\code{element}}}
+                  child{node[bbox, yshift=-0.4in] {\code{DefaultParam}}
+                    child{node[hex, highlight5] {\code{to}}}
+                    child{node[hex] {\code{[]}}}
+                  }
+              }
+              child{node[bbox, xshift=0.25in, yshift=0.2in, highlight4] {\code{Seq}\strut}
+                child{node[bbox, xshift=-0.1in, highlight4] {\code{Call}}
+                  child{node {\textellipsis}}
+                }
+                child{node[bbox, xshift=0.1in, highlight4] {\code{Return}}
+                  child{node {\textellipsis}}
+                }
+              }
+            ;
+         \end{tikzpicture}
+       \end{minipage}
+     \end{minipage}
+     \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+       \begin{minipage}{0.44\textwidth}
+         \centering
+        \begin{pythoncodeblock}
+          def !$\dollar$F!(/.../, @$\dollar$ARG@=[], ...):
+            ?...?
+          $\quad$
+
+        \end{pythoncodeblock}
+       \end{minipage}
+       \begin{minipage}{0.52\textwidth}
+        \begin{pythoncodeblock}
+          def !append_to!(/element/, @to@=[]):
+            ?to.append(element)?
+            ?return to?
+        \end{pythoncodeblock}
+       \end{minipage}
+     \end{minipage}
+   \end{center}
+ \end{frame}
+
+
+%  \begin{frame}[fragile]
+%    \frametitle{A 150 Analysis}
+
+%    \begin{center}
+%      \begin{minipage}[t][0.1\textheight][t]{\textwidth}
+%        \raggedright
+
+%        {\color{blue}\href{https://semgrep.dev/playground/s/Abje4}{Let's see it in action:}}
+%      \end{minipage}
+%      \begin{minipage}[t][0.5\textheight][t]{\textwidth}
+%        \begin{minipage}{0.48\textwidth}
+%          \centering
+%          \begin{tikzpicture}
+%            \node[circ] (N3) {\code{@}}
+%              child{node[unknown, xshift=-0.35in] (N4) {\code{$\dollar$E1}}}
+%              child{node[bbox, xshift=0.35in] (N7) {\code{List}}
+%                child{node[unknown] (N8) {\code{$\dollar$E2}}}
+%              }
+%            ;
+%          \end{tikzpicture}
+%        \end{minipage}
+%        \begin{minipage}{0.48\textwidth}
+%          \centering
+%          \begin{tikzpicture}[level distance=1cm]
+%            \node[] (N1) {\textellipsis}
+%              child[missing]
+%              child{node[circ, highlight] (N3) {\code{@}}
+%                child{node[bbox, xshift=-0.35in, highlight] (N4) {\code{FuncCall}}
+%                  child{node[hex, highlight] (N5) {\code{rev}}}
+%                  child{node[hex, highlight] (N6) {\code{xs}}}
+%                }
+%                child{node[bbox, xshift=0.35in, highlight] (N7) {\code{List}}
+%                  child{node[hex, highlight] (N8) {\code{x}}}
+%                }
+%              }
+%            ;
+%          \end{tikzpicture}
+%        \end{minipage}
+%      \end{minipage}
+%      \begin{minipage}[t][0.3\textheight][t]{\textwidth}
+%        \begin{minipage}{0.48\textwidth}
+%          \centering
+%          \begin{pythoncodeblock}
+%            $\dollar$E1 @ [$\dollar$E2]
+%          \end{pythoncodeblock}
+%        \end{minipage}
+%        \begin{minipage}{0.48\textwidth}
+%          \begin{pythoncodeblock}
+%            fun rev [] = []
+%              | rev (x::xs) =
+%                  `rev xs @ [x]`
+%          \end{pythoncodeblock}
+%        \end{minipage}
+%      \end{minipage}
+%    \end{center}
+%  \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Matching, Generically}
+
+   Because Semgrep represents all programming languages in the same way,
+   matching only needs to be written once.
+
+   \pause
+   \vspace{\fill}
+   Essentially, we have a function of type:
+   \begin{codeblock}
+     match_exprs(expr, expr) -> finding list
+   \end{codeblock}
+
+   which can do matching for Java, for C, for OCaml, for Python, and many
+   other languages besides.
+ \end{frame}
+
+ \begin{frame}[fragile]
+   \frametitle{Semgrep and Semantics}
+
+   When it comes to program analysis, tree matching isn't necessarily enough.
+   Semgrep's main matching capability is at its core more of a Type C analysis,
+   but sometimes we want to be able to find more semantic bugs!
+
+   \pause
+   \vspace{\fill}
+
+   When it comes to tracking the flow of data, Semgrep uses the theory of
+   dataflow analysis as developed before to implement \term{taint tracking},
+   which allows you to specify certain sources of bad data, and sinks where that
+   data should not flow into, during the program's execution.
+
+   {\color{blue}\href{https://semgrep.dev/playground/s/D1wq}{Here's an example of taint tracking with Semgrep.}}
+
+   \pause
+   \vspace{\fill}
+
+   It can also perform constant propagation much in the same way that we did
+   earlier:
+   {\color{blue}\href{https://semgrep.dev/playground/s/4APL}{Here's an example.}}
+
+   \pause
+   \vspace{\fill}
+
+   Semgrep is aware of the semantics of the programming language that it scans,
+   meaning that it is not just a simple matching process. It's a
+   syntactically-based analysis that is supplemented by deeper semantic analysis.
+ \end{frame}
+
+ \sectionSlide{6}{Conclusions}
+
+ \begin{frame}[fragile]
+   \frametitle{Program Analysis at Large}
+
+   Program analysis is an extremely important field which aims to both
+   enforce that the code we write is safe, as well as supplement the process
+   of writing code by providing programmers with the information they need to
+   execute smoothly. Even in the face of mathematical impossibility, it
+   prevails.
+
+   \pause
+   \vspace{\fill}
+
+   Syntax highlighting, IDE warnings, type-checkers, and autoformatters are all
+   among the niceties that programmers enjoy, due to advances made in analyzing
+   and better making information available about programs.
+ \end{frame}
+
+\thankyou
+
+\end{document}
