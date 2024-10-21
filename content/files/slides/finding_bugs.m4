@@ -40,6 +40,20 @@ define(__target,
   \end{tikzpicture}
 ')
 
+define(__target_lang,
+`
+  \begin{tikzpicture}
+    \node (A) {
+\begin{pythoncodeblock}[mathescape=false, language=$2]$1\end{pythoncodeblock}
+    };
+    \node[draw, anchor=west, rectangle, fill=codeBackground, xshift=0.5pt,
+    fill=orange!30!white
+    ] (B) at
+    (A.south west) {\scriptsize Target};
+  \end{tikzpicture}
+')
+
+
 define(__compare,
 `
 \begin{center}
@@ -67,6 +81,23 @@ __rule(<<<$1>>>)
   \end{minipage}
   \hspace{10pt}
   \begin{minipage}{0.47\textwidth}
+
+__target(<<<$2>>>)
+
+  \end{minipage}
+\end{center}
+')
+
+define(__compare_rule_35,
+`
+\begin{center}
+  \begin{minipage}{0.35\textwidth}
+
+__rule(<<<$1>>>)
+
+  \end{minipage}
+  \hspace{10pt}
+  \begin{minipage}{0.59\textwidth}
 
 __target(<<<$2>>>)
 

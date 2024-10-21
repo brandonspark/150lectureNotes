@@ -14,7 +14,7 @@
 % Color settings
 \useauxtrue
 
-\newcommand{\auxColor}{e0b45a}     % the color of note boxes and stuff
+\newcommand{\auxColor}{6124e3}     % the color of note boxes and stuff
 \newcommand{\presentColor}{08A679} % the primary color of the slide borders
 \newcommand{\bgColor}{e1f2ea}      % the color of the background of the slide
 \newcommand{\darkBg}{8b98ad}
@@ -32,16 +32,19 @@
 \usepackage{pifont}% http://ctan.org/pkg/pifont
 \usepackage[outline]{contour}
 \usepackage{ stmaryrd }
+\usepackage{multimedia}
+\usepackage{media9}             %pdflatex, latex+dvips+ps2pdf, xelatex
+\usepackage{wrapfig}   % For wrapping text around figures
 
 \setbeamertemplate{itemize items}[circle]
 % \setbeameroption{show notes on second screen=right}
 
 \usepackage{lectureSlides}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
-\title{Finding Bugs and Scaling Your Security Program} % TODO
-\subtitle{Using Semgrep to take your security game to the next level} % TODO
-\date{16 June 2024} % TODO
-\author{Brandon Wu} % TODO
+\title{Finding Bugs and Scaling Your Security Program}
+\subtitle{Using Semgrep to take your security game to the next level}
+\date{16 June 2024}
+\author{Brandon Wu}
 
 
 \usetikzlibrary{patterns}
@@ -89,6 +92,7 @@
 }
 
 \newcommand\solutionLink[1]{
+  % comment back in to restore solution links!
   \blfootnote{\color{blue}\href{#1}{Solution}}
 }
 
@@ -97,11 +101,17 @@
 \newcommand\patternNotLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#pattern-not}{not}}}
 \newcommand\patternAllLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#patterns}{all}}}
 \newcommand\patternAnyLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#pattern-either}{any}}}
+\newcommand\patternInsideLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#pattern-inside}{inside}}}
 \newcommand\literalEllipsisLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/pattern-syntax\#strings}{literal ellipsis}}}
 \newcommand\literalMetavariableLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/pattern-syntax\#literal-metavariables}{literal metavariable}}}
 \newcommand\focusLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#focus-metavariable}{focus}}}
 \newcommand\metavariableRegexLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#metavariable-regex}{metavariable regex}}}
+\newcommand\metavariablePatternLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#metavariable-pattern}{metavariable pattern}}}
 \newcommand\metavariableComparisonLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/rule-syntax\#metavariable-comparison}{metavariable comparison}}}
+\newcommand\metavariableTypeLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/pattern-syntax\#typed-metavariables}{metavariable type}}}
+\newcommand\taintLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/data-flow/taint-mode}{taint analysis}}}
+\newcommand\sanitizerLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/data-flow/taint-mode\#sanitizers}{sanitizers}}}
+\newcommand\autofixLink[1][]{{\color{blue}\href{https://semgrep.dev/docs/writing-rules/autofix}{autofix}}}
 
 % \renewcommand\blfootnote[1]{}
 
@@ -153,8 +163,9 @@
 
 \definecolor{unknownPink}{HTML}{e0fff6}
 
-\definecolor{sourceColor}{HTML}{8fc4f2}
+\definecolor{sourceColor}{HTML}{4ea4ed}
 \definecolor{sinkColor}{HTML}{f77352}
+\definecolor{sanitizerColor}{HTML}{458c4b}
 
 \tikzset{
   every path/.style={line width=0.25mm},
@@ -233,7 +244,14 @@
 
 \setbeamertemplate{itemize items}[circle]
 
-\begin{comment}
+% 101 slides
+% 15 exercises given 5 minutes each is 75 minutes
+% leaving 75 minutes for 100 - 15 = 85 slides
+% - 10 = 75 for section delimiters
+% - 8 = 67 for animations
+% so it's more like 67 slides for 75 minutes
+
+% TODO: stats on customized rules?
 
 % SOLID COLOR TITLE (see SETTINGS.sty)
 {
@@ -251,11 +269,177 @@
 
 \sectionSlide{1}{Introduction}
 
+\begin{frame}[fragile]
+  \frametitle{Why are we here?}
+
+  \begin{center}
+    \includegraphics[width=0.65\textwidth]{roof.png}
+
+    \vspace{10pt}
+
+    {\color{blue}\href{https://youtu.be/aZKmkkpEsnk?feature=shared&t=27}{Link}}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Why are we here?}
+
+  The finest of parkour runners know the importance of guardrails.
+
+  \pause
+  \vspace{\fill}
+
+  Here at OWASP AppSec Days PNW, we are no different. In the absence of
+  \term{secure guardrails}, the only difference between a parkour runner and a
+  security engineer is in the time elapsed to hit the ground.\footnote{He survived.}
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{The idea of \term{secure guardrails} is in making security the
+  \textbf{default} behavior, rather than something that is \textbf{opted into}.
+  In the lifecycle of software development, it champions guiding
+  developers into secure practices \textbf{early}, rather than chasing down
+  vulnerabilities once they have already occurred.
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{In the mind of a developer}
+
+  To understand the importance of secure guardrails, we must look into the mind
+  of a developer. Fortunately, as a developer myself, I can shed some light into
+  the thoughts, in decreasing priority, in a typical developer's head:
+
+  \pause
+  \vspace{\fill}
+
+  \begin{enumerate}
+    \item I wonder how I could solve this problem
+    \pause
+    \item I wonder which of those solutions is the most maintainable
+    \pause
+    \item I wonder which of those solutions is the most simple
+    \pause
+    \item I wonder how long I can take before product managers yell at me
+    \pause
+    \item I wonder when the climbing gym closes
+    \pause
+    \item I wonder how to make this feature have good UX
+    \pause
+    \item I wonder when lunch is \\
+    \pause
+    \hspace{-0.55cm }\textellipsis
+    \addtocounter{enumi}{228}
+    \pause
+    \item I wonder how to make this feature more secure
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Interacting with developers}
+
+  Developers care about many things, but security is not typically one of them.
+
+  \pause
+  \vspace{\fill}
+
+  Dealing with a typical software engineer can be much the same as dealing
+  with a rip current. It is futile to swim against it. Instead, we must guide
+  the waves to a place they can cause a little less destruction.
+
+  \pause
+  \vspace{\fill}
+
+  The goal is to make security part of the developer's typical workflow -- in
+  their IDE, in their pre-commit, in their CI/CD pipeline. This is the idea of
+  \term{shift left}.
+
+  \begin{center}
+    \includegraphics[width=0.7\textwidth]{shift_left.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A world without secure guardrails}
+
+  \begin{minipage}{0.59\textwidth}
+    Secure guardrails are not just for the convenience of developers -- they are
+    for \textit{everyone}.
+
+    \vspace{5pt}
+
+    The game of security is a constant struggle of prioritization. Between
+    audits, pentests, and triaging vulnerabilities, there is
+    an endless stream of noise to sift through.
+  \end{minipage}
+  \begin{minipage}{0.4\textwidth}
+    \begin{center}
+      \hspace{0.2cm}
+      \includegraphics[width=0.9\textwidth]{cliff.jpg}
+    \end{center}
+  \end{minipage}
+
+  \pause
+  \vspace{5pt}
+
+  \begin{center}
+    \textit{``A gloomy security engineer at a large bank once explained to me that if
+    development stopped today, he had calculated it would take over 100 years for
+    them to get through the vulnerability backlog.'' - {\color{blue}\href{https://semgrep.dev/blog/2024/what-it-takes-to-make-shift-left-work}{Isaac Evans}}}
+  \end{center}
+
+  \pause
+  The reality is that there is little time to cover an increasingly broad
+  attack surface. Security teams literally cannot afford to spend their
+  time firefighting when there are so many other things to do.\footnote{In
+  the real world, there are very few things you can do once the car has
+  already driven off the mountain.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The path to the future}
+
+  They say that the definition of insanity is doing the same thing over and over and
+  expecting a different result.\footnote{Others say that the definition of insanity
+  is continuously reusing this clichéd definition of insanity.}
+
+  \pause
+  \vspace{5pt}
+
+  It is not enough to keep chasing vulnerabilities as they come. We must come up
+  with remediation strategies that extend into the \textit{future}, because time
+  is not on our side, and the backlog only grows larger.
+
+  % TODO: two wolves?
+
+  \pause
+  \vspace{5pt}
+
+  \begin{center}
+    \textit{``Knocking him down won the first fight. I wanted to win all the next ones, too.'' - Ender Wiggin, notable proponent of secure guardrails}
+  \end{center}
+
+
+  \pause
+  \vspace{5pt}
+
+  The goal, then, is to simply stop the problem at its source. We must
+  build the guardrails ourselves.
+
+\end{frame}
+
 % TODO: community slack link
 % https://semgrep.slack.com/archives/C0770SP7WTZ
 
+% possible bits:
+% - fall off of a ledge or something because there is no guardrail
+% - talk swiftly and emphatically about how we don't want to be spending
+%   all our time firefighting, get interrupted because I got "paged", run out,
+%   re-enter via a different entrance
+
 \begin{frame}[fragile]
-  \frametitle{Staff}
+  \frametitle{Me!}
 
   \begin{center}
     \begin{minipage}{0.65\textwidth}
@@ -263,18 +447,29 @@
 
       \vspace{10pt}
 
+      \only<2->{
       I have been working at Semgrep for two years now, and I was educated in computer science
       at Carnegie Mellon University, where I previously lectured on the subject of functional
       programming.
+      }
 
       \vspace{10pt}
 
+      \only<3->{
       Semgrep is a software security startup and application security platform that
       helps developers find and fix security vulnerabilities in their code, at minimal
       friction to their workflow.
+      }
+
+      \vspace{10pt}
+
+      \only<4->{
+      \customBox{Mission}{\, To profoundly improve software security.}
+      }
     \end{minipage}
     \hspace{\fill}
     \begin{minipage}{0.30\textwidth}
+      \only<1->{
       \begin{center}
         \includegraphics[scale=0.4]{me_smaller.jpg}
 
@@ -290,47 +485,86 @@
 
         % TODO: punch up with funny link
       \end{center}
+      }
     \end{minipage}
   \end{center}
 \end{frame}
+
+\begin{frame}[fragile]
+  \vspace{\fill}
+
+  \begin{center}
+    \Large
+    Make it \term{cheap} to make it {\textbf{\color{fgOrange}expensive}} to write secure software.
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \textit{or, less eloquently:}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \Large
+    \term{Prevent} people from {\textbf{\color{fgOrange}shooting themselves in the foot}}.
+  \end{center}
+
+  \vspace{\fill}
+\end{frame}
+
+\menti{1226 8048}
 
 \begin{frame}[fragile]
   \frametitle{Introductions}
 
   Some questions to get us started:
 
+  \pause
   \vspace{5pt}
 
   \begin{itemize}
-    \item Is everyone here a security professional?
+    \item What does everyone here do?
+    \pause
     \item Who here has heard of Semgrep before?
+    \pause
     \item Has anyone here written a Semgrep rule before?\footnote{"No" is an acceptable answer.}
+    \pause
     \item Did anyone come to a previous Semgrep training?
   \end{itemize}
+
 \end{frame}
 
 \sectionSlide{2}{Static Analysis Essentials}
 
 \begin{frame}[fragile]
-  \frametitle{Endgame}
+  \frametitle{Software and security}
 
   We're here because we are interested in \term{software security}.
 
+  \pause
   \vspace{5pt}
 
   Broadly, we are interested in categories of undesirable behaviors in programs, and
   in particular, we are interested in minimizing them wherever possible. These may
   take the form of:
 
+  \pause
   \vspace{5pt}
 
   \begin{itemize}
     \item \textbf{logic errors} - passing an ill-typed argument to a function
+    \pause
     \item \textbf{code smells} - using a deprecated utility function instead of a more
     up-to-date one
+    \pause
     \item \textbf{security vulnerabilities} - SQL injection, cross-site scripting, broken authentication
   \end{itemize}
 
+  \pause
   \vspace{5pt}
 
   All of these are fair game for things that we want to find and fix. Our weapon of
@@ -342,42 +576,56 @@
 
   \defBox{}{\term{Static analysis} is the art of analyzing programs without ever running them.}
 
+  \pause
   \vspace{5pt}
 
   This is in contrast to \term{dynamic analysis}, which involves running the program and observing
   its behavior at runtime. While an interesting field in its own right, dynamic analysis
   has its own disadvantages, so it is out of scope for this workshop.
 
-  \vspace{10pt}
+  \pause
+  \vspace{\fill}
 
-  There are many static analysis tools out there which work for different languages, and
-  have varying degrees of effectiveness. Semgrep is one such tool.
+  You may think of the difference between static analysis and dynamic analysis by analogy to
+  the problem of trying to ascertain if a gun is faulty.
 
+  \pause
+  \vspace{\fill}
+
+  Static analysis would be checking the gun for defects by taking it apart and examining its
+  mechanical structure.
+
+  \pause
   \vspace{5pt}
 
-  Other tools may include Checkmarx, SonarQube, Coverity, CodeQL, etc.
+  Dynamic analysis would be firing the gun and observing if it explodes in your hand.
+  \footnote{This is only slightly a misrepresentation, but the problem is that a gun not exploding \textit{now}
+  does not mean it will not explode \textit{later}.}
 \end{frame}
-
-% TODO: more explanation of static analysis?
 
 \begin{frame}[fragile]
   \frametitle{Goals in Static Analysis}
 
   Static analysis should be:
 
+  \pause
   \vspace{5pt}
 
   \begin{enumerate}
       \item \textbf{fast} - Scanning code with a static analysis solution should run
       quickly, so that developers can get feedback and iterate as quickly as possible.
+      \footnote{The car's moving at 90mph. It's not going to wait for you to lay down some brickwork.}
+      \pause
       \item \textbf{fitting} - Static analysis should be customized to \textit{your}
       use case. Teams, codebases, and organizations are \textit{not} one-size-fits-all.
       You should be able to scan your code in a \textbf{way that works for you}.
+      \pause
       \item \textbf{friendly} - Static analysis tools should be simple to use, for
       both developers and security engineers. A tool which is not understood is a tool
       which will be disabled.
   \end{enumerate}
 
+  \pause
   \vspace{\fill}
 
   These are all things that Semgrep aims to achieve.
@@ -386,17 +634,24 @@
 \sectionSlide{3}{Basics: Conceptual Fundamentals}
 
 \begin{frame}[fragile]
-  \frametitle{What is Semgrep?}
+  \frametitle{The Semgrep Pipeline}
 
   Here's some things about Semgrep that are cool:
+
+  \pause
+
   \begin{itemize}
     \item {\color{auxColor}\faBookOpen} \, \textbf{open-source}, with community-contributed language support and rules
+    \pause
     \item {\color{auxColor}\faPen} \, \textbf{customizable} - Semgrep scans for code patterns that you define, and provide
     as an argument to the tool. This means that Semgrep can be customized to your code
     base's idioms, and tuned to your organization's security needs.
+    \pause
     \item {\color{auxColor}\faFont} \, \textbf{multilingual} - Semgrep supports over 25+ languages
+    \pause
     \item {\color{auxColor}\faTimes} \, \textbf{no building required}. Semgrep only needs source code to run, and doesn't
     require that the code it is analyzing can build
+    \pause
     \item {\color{auxColor}\faLightbulb} \, \textbf{No DSL}. Semgrep patterns look like code in the language you're targeting,
     meaning no hours of browsing documentation and API references. All you need to be able
     to do is read and write code.\footnote{This is really a killer, and will form the basis
@@ -409,9 +664,12 @@
 
   Here are some useful Semgrep-related references, when it comes to utilizing the platform:
 
+  \pause
   \vspace{5pt}
 
   \begin{itemize}
+    \item The {\color{blue}\href{https://github.com/semgrep/semgrep}{Semgrep}} open-source repository, where
+    you can read the code I write\footnote{Please don't.}
     \item The {\color{blue}\href{https://formulae.brew.sh/formula/semgrep}{Semgrep brew formula}}, where you can
     pull the Semgrep CLI to your computer via \code{brew install semgrep}
     \item The {\color{blue}\href{https://marketplace.visualstudio.com/items?itemName=Semgrep.semgrep}{Semgrep VS Code Extension}},
@@ -498,8 +756,9 @@
 
   Consider the simple program seen on the previous page. To analyze it, we could
   look at the text directly, or we could notice that the shape of the program forms
-  a kind of hierarchical structure.
+  a kind of hierarchical structure, called an \term{abstract syntax tree (AST)}.
 
+  \pause
   \vspace{5pt}
 
   For instance, we note that the program is made of two statements, which could be
@@ -524,7 +783,7 @@
           }}
           child{node [box, align=left, fill=hlLightRed] {
             \code{def foo(a):} \\
-            \;\;\code{  return a + b}
+            \;\;\code{  return a + b}\strut
           }}
         ;
       \end{tikzpicture}
@@ -532,6 +791,7 @@
     \end{minipage}
   \end{minipage}
 
+  \pause
   \vspace{8pt}
 
   \customBox{Important}{\, We say that the AST nodes of the assignment to \code{b} and the definition of
@@ -541,13 +801,14 @@
 
 
 \begin{frame}[fragile]
-  \frametitle{The Lifecycle of a Program}
+  \frametitle{The Lifecycle of a Program, Deeper}
 
   But, this isn't the farthest granularity we can go. We see that the assignment to
   \code{b = 1}, for instance, is made up of parts also. We could regard the identifier
   \code{b} and the literal \code{1} as children of yet another node, this time for
   an assignment.
 
+  \pause
   \vspace{5pt}
 
   Our new tree will look like a more detailed version of the previous one:
@@ -587,6 +848,7 @@
     \end{minipage}
   \end{minipage}
 
+  \pause
   \vspace{8pt}
 
   Keep in mind that the old assignment node still exists! It just comprises the entire
@@ -596,7 +858,7 @@
 
 
 \begin{frame}[fragile]
-  \frametitle{What is Semgrep?}
+  \frametitle{A Descent into Abstraction}
 
   % TODO: label nodes
   \vspace{5pt}
@@ -617,7 +879,7 @@
           }}
           child{node [box, align=left, fill=hlLightRed] {
             \code{def foo(a):} \\
-            \;\;\code{  return a + b}
+            \;\;\code{  return a + b}\strut
           }}
         ;
       \end{tikzpicture}
@@ -661,10 +923,11 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Semgrep Patterns}
+  \frametitle{Example: A search problem}
 
   Semgrep is about \textbf{matching nodes} and \textbf{obtaining ranges}.
 
+  \pause
   \vspace{\fill}
 
   Suppose we were interested in matching calls to \code{print} in Python. We could
@@ -676,11 +939,12 @@
     # this line will print
     print("Hello, world!")
 
-    isprinted(true)
+    isprinted(True)
 
     print("printing")
   \end{pythoncodeblock}
 
+  \pause
   \vspace{\fill}
 
   We could use \code{grep} or \code{ctrl-f} to find these calls, but they won't
@@ -689,10 +953,11 @@
 
 
 \begin{frame}[fragile]
-  \frametitle{Semgrep Patterns}
+  \frametitle{A syntactic \code{grep}}
 
   By \code{grep}ping for \code{print}, we would get the following:
 
+  \pause
   \vspace{5pt}
 
   % FRAGILE
@@ -700,16 +965,18 @@
     # this line will |lr|print|lr|
     |lr|print|lr|('Hello, world!')
 
-    is|lr|print|lr|ed(true)
+    is|lr|print|lr|ed(True)
 
     |lr|print|lr|('|lr|print|lr|ing now')
   \end{codeblock}
 
+  \pause
   \vspace{\fill}
 
   We were interested in finding \textbf{calls} to \code{print}. We see
   that we have three matches we didn't intend -- three \term{false positives}.
 
+  \pause
   \vspace{\fill}
 
   The reason is that \code{grep} is not aware of whether each contiguous \code{print}
@@ -718,11 +985,12 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Semgrep Patterns}
+  \frametitle{A semantic \code{grep}}
 
   Semgrep stands for \term{semantic grep}. It is a code-searching tool that is aware
   of the underlying structure of the code -- that is, the AST.
 
+  \pause
   \vspace{\fill}
 
   Consider the following example:
@@ -736,14 +1004,14 @@ __compare(
 <<<
     # this line will print
     print("Hello, world!")
-    isprinted(true)
+    isprinted(True)
     print("printing")
 >>>
 )
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Semgrep Patterns}
+  \frametitle{A semantic \code{grep}}
 
   With Semgrep, we will match the two calls to \code{print}, and nothing else.
 
@@ -756,11 +1024,12 @@ __compare(
 <<<
     # this line will print
     `print`("Hello, world!")
-    isprinted(true)
+    isprinted(True)
     `print`("printing")
 >>>
 )
 
+  \pause
   \vspace{\fill}
 
   Note that it is not simply a matter of ignoring the comments and string literals -- we
@@ -769,7 +1038,7 @@ __compare(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Semgrep Patterns}
+  \frametitle{Matching with trees}
 
   \begin{center}
     \begin{minipage}{0.23\textwidth}
@@ -786,7 +1055,7 @@ __compare(
   <<<
       # this line will print
       print("Hello, world!")
-      isprinted(true)
+      isprinted(True)
       print("printing")
   >>>)
 
@@ -811,11 +1080,11 @@ __compare(
         \node[box, fill=bgGray] {\code{statements}}
           child{node[box, fill=bgGray] {\code{call}}
             child{node[hex] {\code{print}}}
-            child{node[hex, fill=hlBlue, yshift=-1cm, highlight] {\code{"Hello, world!"}}}
+            child{node[hex, fill=hlBlue, yshift=-1cm] {\code{"Hello, world!"}}}
           }
           child{node[box, fill=bgGray] {\code{call}}
             child{node[hex, xshift=-0.6cm] {\code{isprinted}}}
-            child{node[hex, xshift=0.2cm, fill=hlGreen] {\code{true}}}
+            child{node[hex, xshift=0.2cm, fill=hlGreen] {\code{True}}}
           }
           child{node[box, fill=bgGray] {\code{call}}
             child{node[hex] {\code{print}}}
@@ -828,7 +1097,7 @@ __compare(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Semgrep Patterns}
+  \frametitle{Matching with trees}
 
   \begin{center}
     \begin{minipage}{0.23\textwidth}
@@ -845,7 +1114,7 @@ __compare(
   <<<
       # this line will print
       `print`("Hello, world!")
-      isprinted(true)
+      isprinted(True)
       `print`("printing")
   >>>)
 
@@ -874,7 +1143,7 @@ __compare(
           }
           child{node[box, fill=bgGray] {\code{call}}
             child{node[hex, xshift=-0.6cm] {\code{isprinted}}}
-            child{node[hex, xshift=0.2cm, fill=hlGreen] {\code{true}}}
+            child{node[hex, xshift=0.2cm, fill=hlGreen] {\code{True}}}
           }
           child{node[box, fill=bgGray] {\code{call}}
             child{node[hex, highlight] {\code{print}}}
@@ -887,23 +1156,28 @@ __compare(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Semgrep Patterns}
+  \frametitle{The \code{semgrep} formula}
 
   Semgrep works by doing three things:
+  \pause
   \begin{enumerate}
     \item parsing the \term{pattern} to an AST
+    \pause
     \item parsing the \term{target} to an AST
+    \pause
     \item \term{matching} both against each other
   \end{enumerate}
 
   % TODO? add a diagram
 
+  \pause
   \vspace{\fill}
 
   Since there are only two nodes on the right-hand side which look like the
-  \tikz[inline] \node[hex]{\code{print}}; node, they are the only ones which
+  \tikz[] \node[hex]{\code{print}}; node, they are the only ones which
   end up being printed.
 
+  \pause
   \vspace{\fill}
 
   Note that the \tikz[inline] \node[hex]{\code{isprinted}}; node is \textbf{not}
@@ -913,9 +1187,63 @@ __compare(
 \sectionSlide{4}{Basics: Patterns}
 
 \begin{frame}[fragile]
+  \frametitle{Logistics: Exercises}
+
+  In today's workshop, we will be doing exercises via the Semgrep Playground, which is a
+  web-based interface for writing and testing Semgrep rules.
+
+  \vspace{\fill}
+
+  You can go to it by going to, very simply, {\color{blue}\href{https://semgrep.dev/playground}{https://semgrep.dev/playground}}.
+
+  \vspace{\fill}
+
+  \customBox{Important}{\, We are also going to implement an autograding schema and a little friendly competition, for funsies.
+  To participate in the workshop, you will have to join the Semgrep Community Slack, which can be
+  found at {\color{blue}\href{https://bit.ly/semgrepslack}{https://bit.ly/semgrepslack}}.
+  }
+
+  \vspace{\fill}
+
+  Once you are in the Slack, join the \code{2024-owasp-pnw-training} channel.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \small
+
+  \begin{minipage}{0.43\textwidth}
+  Every exercise, a new thread will be posted in the channel. To submit a
+  solution, reply in the thread by @ing the Semgrep Workshops account, followed
+  by the permalink to your solution.
+  \end{minipage}
+  \begin{minipage}{0.55\textwidth}
+    \hspace{0.8cm}
+    \begin{center}
+      \includegraphics[width=0.95\textwidth]{thread.png}
+    \end{center}
+  \end{minipage}
+
+  \pause
+  \vspace{5pt}
+
+  This runs an autograding script, which awards points based on correctness and speed.
+  \textbf{There are prizes at the end, so make each second count!}
+
+  \pause
+  \vspace{\fill}
+
+  You can generate a permalink for your rule by going to the "Share" button, and then clicking
+  the "Permalink" toggle and copying the link.
+
+  \begin{center}
+    \includegraphics[width=0.7\textwidth]{share.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
   \begin{exercisePage}{Try it for yourself!}
-    Try writing the pattern we just saw within the Semgrep playground. {\color{blue}\href{https://semgrep.dev/playground/r/lBU4AY2/semgrep.print-example?editorMode=structure}{Link}}
-    \solutionLink{https://semgrep.dev/playground/r/X5UQ0p0/semgrep.print-example-solution}
+    Try writing the pattern we just saw within the Semgrep playground.\solutionLink{https://semgrep.dev/playground/r/X5UQ0p0/semgrep.print-example-solution}
 
     \vspace{\fill}
 
@@ -943,6 +1271,7 @@ __compare(
 
   It's worth expanding on the strange comments that are present in the target source.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, In the Semgrep playground, you can add \term{test annotations} to your target,
@@ -957,6 +1286,7 @@ __compare(
     match_unexpected()
   \end{pythoncodeblock}
 
+  \pause
   \vspace{\fill}
 
   This is useful for verifying that your rule is working as expected. We must
@@ -971,6 +1301,7 @@ __compare(
   Our solution has a bug in it, though! We only want to match \textbf{calls} to the
   \textbf{print} function, not the identifier \code{print} itself.
 
+  \pause
   \vspace{5pt}
 
   This causes a bug in the following example:
@@ -989,6 +1320,7 @@ __compare_30(
 >>>
 )
 
+  \pause
   \vspace{\fill}
 
   Recall the mantra of Semgrep: \textbf{patterns look like code}. To write a pattern
@@ -1002,6 +1334,7 @@ __compare_30(
   To do this, we will need to somehow vary our pattern over any argument to the
   call. We do this with a special Semgrep syntax, the \term{ellipsis}.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, The \term{ellipsis} is a placeholder in a Semgrep pattern which matches
@@ -1009,11 +1342,12 @@ __compare_30(
     and statements.
   }
 
+  \pause
   \vspace{\fill}
 
 __compare_30(
 <<<
-  print(|lg|...|lg|)
+  print(...)
 >>>,
 <<<
   # this code should be matched...
@@ -1023,6 +1357,7 @@ __compare_30(
 >>>
 )
 
+  \pause
   \vspace{\fill}
 
   \noteBox{}{The range has changed! Instead of matching just the identifier \code{print},
@@ -1035,6 +1370,7 @@ __compare_30(
   When put as arguments to a function call, ellipses allow you to match \textit{any number}
   of arguments, even 0.
 
+  \pause
   \vspace{\fill}
 
   Behold the following example showcasing the mighty ellipsis, paired with an equally
@@ -1044,7 +1380,7 @@ __compare_30(
 
 __compare_30(
 <<<
-  print(|lg|...|lg|)
+  print(...)
 >>>,
 <<<
   # no matter the count
@@ -1059,7 +1395,7 @@ __compare_30(
 
 % THINK: important?
 \begin{frame}[fragile]
-  \frametitle{Nodes and Ranges}
+  \frametitle{Tree matching, emphasized}
 
   It's worth clarifying why it is that Semgrep is producing these matches!
 
@@ -1067,6 +1403,7 @@ __compare_30(
 
   When compiled to their respective ASTs, the pattern and target look something like this:
 
+  \pause
   \vspace{\fill}
 
   \begin{minipage}{0.3\textwidth}
@@ -1100,6 +1437,7 @@ __compare_30(
     \end{center}
   \end{minipage}
 
+  \pause
   \vspace{\fill}
 
   Here, we produce three matches, because the right tree has three subtrees which
@@ -1115,6 +1453,7 @@ __compare_30(
   entire \code{call} node, which has a range comprising the entire call,
   including the parentheses.
 
+  \pause
   \vspace{\fill}
 
   You don't need to be able to picture these trees in your head, you just need to know
@@ -1129,7 +1468,7 @@ __compare_30(
 
 \begin{frame}[fragile]
   \begin{exercisePage}{Marking banned, deprecated, or dangerous functions}
-    Let's try an example out using the ellipsis. {\color{blue}\href{https://semgrep.dev/playground/r/j2Ug0p4/semgrep.python-exec}{Link to the playground}}.
+    Let's try an example out using the ellipsis.
     \solutionLink{https://semgrep.dev/playground/r/10UOwnr/semgrep.python-exec-solution}
 
     \vspace{5pt}
@@ -1153,42 +1492,80 @@ __compare_30(
 \end{frame}
 
 \begin{frame}[fragile]
-  \begin{exercisePage}{Dangerous keyword arguments}
-    Let's try an example out using the ellipsis. {\color{blue}\href{https://semgrep.dev/playground/r/j2Ug0p4/semgrep.python-exec}{Link to the playground}}.
-    \solutionLink{https://semgrep.dev/playground/r/10UOwnr/semgrep.python-exec-solution}
+  \frametitle{Ellipsis Isn't Magic}
 
-    \vspace{5pt}
+  Something I feel that I must get across to you, that people often get wrong, is that
+  \textbf{the ellipsis is not magic}.\footnote{Friendship is, though.} Consider the following pattern:
 
-    {\footnotesize\begin{codeblock}[language=python]
-      import exec as definitely_safe_function
+  \pause
+  \vspace{\fill}
+  __pattern(
+<<<
+  def ...
+>>>
+  )
 
-      # ruleid: python-exec
-      definitely_safe_function(user_input)
-      # ruleid: python-exec
-      exec()
-      # ruleid: python-exec
-      exec("ls")
-    \end{codeblock}
-    }
+  \pause
+  \vspace{\fill}
 
-    \vspace{\fill}
+  This looks like it should match any function definition, because we match a \code{def},
+  and then a sequence of things, which would match a function like:
 
-    Keywords: \ellipsisLink
-  \end{exercisePage}
+  \vspace{\fill}
+
+  \begin{pythoncodeblock}
+    def foo():
+      return
+  \end{pythoncodeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Unfortunately, this isn't how Semgrep works at all, and will result in a pattern parse error.
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Ellipsis Isn't Magic}
+
+  In most cases, an ellipsis is \textbf{only admissible} wherever you could put a sequence
+  of parameters, arguments, or statements.
+
+  \pause
+  \vspace{\fill}
+
+  Some might be tempted to think of it like \code{.*} in regex, but it's not the same! Recall
+  that patterns are \textit{parsed}, meaning that Semgrep patterns must \textit{look like code}
+  in the language they are a part of.
+
+  \pause
+  \vspace{\fill}
+
+  What Python construct looks like \code{def ...}, where \code{...} is a sequence of arguments,
+  parameters, or statements? The answer is \textbf{none}, and so the pattern is invalid.
+
+  \pause
+  \vspace{\fill}
+
+  Above all else, remember: \term{patterns must parse}!
+\end{frame}
+
+
 
 \begin{frame}[fragile]
   \frametitle{Metavariables}
 
-  Sometimes, we are only interested in a single argument, though.
+  Sometimes, we are only interested in functions with just a single argument, though.
 
   In these cases, ellipsis is too permissive.
 
+  \pause
   \vspace{\fill}
 
   We need a construct which denotes a single element in the program, kind of like
-  a placeholder. We will call this a \term{metavariable}.
+  a placeholder. We will call this a \term{metavariable}.\footnote{It's like a regular
+  variable, but it drinks and goes to parties.}
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, The \term{metavariable} is a placeholder in a Semgrep
@@ -1196,10 +1573,12 @@ __compare_30(
     an argument, expression, or identifier.
   }
 
+  \pause
   \vspace{\fill}
 
   The syntax for a metavariable is a dollar sign prefixing a capital identifier,
-  for instance \code{$\dollar$X} or \code{$\dollar$EXPR}.
+  for instance \code{$\dollar$X} or \code{$\dollar$EXPR}. Usually, you can put
+  it anywhere in a pattern that you could ordinarily put an identifier.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1208,12 +1587,13 @@ __compare_30(
   Using the ellipsis and metavariable we learned about earlier, we can try to write
   a pattern which matches any Python function.
 
+  \pause
   \vspace{\fill}
 
   __compare(
 <<<
-  def |lg|$FUNC|lg|(|lg|...|lg|):
-    |lg|...|lg|
+  def $FUNC(...):
+    ...
 >>>,
 <<<
   `def foo():`
@@ -1224,13 +1604,16 @@ __compare_30(
 >>>
   )
   __useless($)
+
+  \vspace{\fill}
+
+  Note that we only put the ellipsis in place of arguments and statements!
 \end{frame}
 
 \begin{frame}[fragile]
   \begin{exercisePage}{Enforcing secure cookies}
     Let's use our newfound knowledge to tackle a real use case -- determining if
     a cookie's \code{setSecure} method was called with a \code{false} value.
-     {\color{blue}\href{https://semgrep.dev/playground/r/6JUvwkA/semgrep.java-secure-cookies}{Link to the playground}}.
     \solutionLink{https://semgrep.dev/playground/r/yyURWzl/semgrep.java-secure-cookies-solution}
 
     \vspace{5pt}
@@ -1252,7 +1635,6 @@ __compare_30(
 
     In particular, we are concerned with the Python \code{requests.get} function,
     which is a potential security concern if called with \code{verify=False}.
-    {\color{blue}\href{https://semgrep.dev/playground/r/r6UyJXW/semgrep.requests-get-verify}{Link to the playground}}.
     \solutionLink{https://semgrep.dev/playground/r/NbU3pEw/semgrep.requests-get-verify-solution}
 
     \vspace{\fill}
@@ -1268,62 +1650,80 @@ __compare_30(
   \end{exercisePage}
 \end{frame}
 
-\end{comment}
-
 \sectionSlide{5}{Basics: Pattern Operators}
 
 \begin{frame}[fragile]
   \frametitle{Semgrep Rules}
 
   \begin{minipage}{0.65\textwidth}
+    \only<1->{
     Now that we have seen basic Semgrep patterns, we can go on to constructing actual Semgrep rules.
+    }
 
     \vspace{5pt}
 
-    A Semgrep rule is a YAML file which contains a Semgrep pattern, and a few other things:
-    {\small\begin{itemize}
-      \setlength\itemsep{-0.15em}
-      \item a \term{message}, which is a string which will be displayed when a match is found
-      \item a \term{severity} (\code{INFO}, \code{WARNING}, or \code{ERROR}), which describes
-      how severe findings from the rule are
-      \item a \term{rule id}, which is the name of the rule
-      \item a \term{languages} field, which specifies the languages the rule is written for
-    \end{itemize}
+    \only<2->{
+      A Semgrep rule is a YAML file which contains a Semgrep pattern, and a few other things:
+    }
+    \only<3->{
+      {\small
+        \begin{itemize}
+          \setlength\itemsep{-0.15em}
+            \item a \term{message}, which is a string which will be displayed when a match is found
+          \only<4->{
+            \item a \term{severity} (\code{INFO}, \code{WARNING}, or \code{ERROR}), which describes
+          }
+          how severe findings from the rule are
+          \only<5->{
+            \item a \term{rule ID}, which is the name of the rule
+          }
+          \only<6->{
+            \item a \term{languages} field, which specifies the languages the rule is written for
+          }
+        \end{itemize}
+      }
     }
 
     \vspace{\fill}
 
-    We will be using the Playground's
-    Structure Mode, which will generate the YAML for us from an interface. Note the
-    pattern in {\color{fgBlue}blue} and other fields in {\color{fgRed}red}.
+    \only<7->{
+      We will be using the Playground's
+      Structure Mode, which will generate the YAML for us from an interface. Note the
+      pattern in {\color{fgBlue}blue} and other fields in {\color{fgRed}red}.
+    }
   \end{minipage}
   \hspace{\fill}
   \begin{minipage}{0.32\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{structure.png}
-    \end{center}
+    \only<1->{
+      \begin{center}
+        \includegraphics[width=\textwidth]{structure.png}
+      \end{center}
+    }
   \end{minipage}
 \end{frame}
 
 % TODO: mention that in the slides the rules are written in YAML,
 % but we will be using Structure Mode
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{Combining patterns}
 
   Sometimes, when we are trying to match something, we are interested in combining
   multiple matches in some way.
 
+  \pause
   \vspace{\fill}
 
   Usually, this we want to match something which is \textbf{one of
   several things}, or \textbf{all of several things}.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, The \code{all} and \code{any} operators are patterns which
   combine other patterns. \code{all} matches ranges where all of the children patterns
   match, and \code{any} matches ranges where at least one of the children patterns match.}
 
+  \pause
   \vspace{\fill}
 
 __rule(
@@ -1333,50 +1733,137 @@ __rule(
       - "print(...)"
 >>>)
 
+  \pause
   \vspace{\fill}
 
   This pattern matches \textbf{both} calls to \code{exec} and calls to \code{print}.
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{The \code{any} pattern}
 
-  We can use the corresponding \code{all} operator to match patterns when multiple
-  patterns match.
+  \code{any} operates under \term{set union} rules, where each of its children produces a
+  set of matches, which are simply unioned together.
 
+  \pause
   \vspace{\fill}
 
+
+{\small
+__compare_rule(
+<<<
+any:
+  - |fb|"exec(...)"|fb|
+  - |fr|"print(...)"|fr|
+>>>,
+<<<
+|fb|exec("ls")|fb|
+|fr|print("hi")|fr|
+>>>
+)
+}
+
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \{ \tikz[inline] \node[box, fill=hlFaintBlue, minimum width=0.4cm, minimum height=0.4cm, yshift=0.145cm]{}; \}
+    $\cup$ \{ \tikz[inline] \node[box, fill=hlFaintRed, minimum width=0.4cm, minimum height=0.4cm, yshift=0.145cm]{}; \} =
+    \{ \tikz[inline] \node[box, fill=hlFaintBlue, minimum width=0.4cm, minimum height=0.4cm, yshift=0.145cm]{};,
+      \tikz[inline] \node[box, fill=hlFaintRed, minimum width=0.4cm, minimum height=0.4cm, yshift=0.145cm]{}; \}
+    $\implies$ \textbf{2 matches}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+{\small
+__compare_rule(
+<<<
+any:
+  - |fb|"exec(...)"|fb|
+  - |fr|"print(...)"|fr|
+>>>,
+<<<
+`exec("ls")`
+`print("hi")`
+>>>
+)
+}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The \code{all} pattern}
+
+  \code{all}, on the other hand, operates under \term{set intersection} rules
+  (or similar to it), where each of its ranges are intersected with each other,
+  keeping the smaller ones.
+
+  \pause
+  \vspace{\fill}
+
+{\small
 __compare_rule(
 <<<
   all:
-    - "exec(...)"
-    - "print(...)"
+    - |fb|"exec(...)"|fb|
+    - |fr|"print(...)"|fr|
 >>>,
 <<<
-  # no matches here
-  print("hi")
-  exec("ls")
+  |fb|exec("ls")|fb|
+  |fr|print("hi")|fr|
 >>>
 )
+}
 
+  \pause
   \vspace{\fill}
 
-  For instance, we could write the above rule, but it's not very useful -- \textbf{it will
+  \begin{center}
+    \{ \tikz[inline] \node[box, fill=hlFaintBlue, minimum width=0.4cm, minimum height=0.4cm, yshift=0.145cm]{}; \}
+    $\cap$ \{ \tikz[inline] \node[box, fill=hlFaintRed, minimum width=0.4cm, minimum height=0.4cm, yshift=0.145cm]{}; \} =
+    \{  \} $\implies$ \textbf{no matches}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+{\small
+__compare_rule(
+<<<
+all:
+  - "exec(...)"
+  - "print(...)"
+>>>,
+<<<
+exec("ls")
+print("hi")
+>>>
+)
+}
+
+  \pause
+  \vspace{\fill}
+
+  So we could write the above rule, but it's not very useful -- \textbf{it will
   match nothing}, because there is no way for a range to be both a call to
   \code{exec} \textit{and} a call to \code{print}.
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{The \code{not} operator}
 
   Instead, the \code{all} operator is most useful when combined with \code{not}.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, The \code{not} operator, when placed under an \code{all}, means
   the result should be anything which \textit{does not} match the pattern under the
   \code{not}.}
 
+  \pause
   \vspace{\fill}
 
   With this, we can express complementary logic, such as "all calls which are not
@@ -1400,14 +1887,10 @@ __compare_rule(
 \begin{frame}[fragile]
   \begin{exercisePage}{Order of API calls must be enforced}
 
-  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/QrUWj3A/semgrep.find-unverified-transactions-exercise}{Link to the playground}}.
-  \solutionLink{https://semgrep.dev/playground/r/4bURwNG/semgrep.find-unverified-transactions-exercise-solution}
-
-  \vspace{\fill}
-
   In this example, we are working in a financial trading application where we need to
   ensure that \code{verify_transaction} is called on any transaction, before we call
   \code{make_transaction}.
+  \solutionLink{https://semgrep.dev/playground/r/4bURwNG/semgrep.find-unverified-transactions-exercise-solution}
 
   \vspace{\fill}
 
@@ -1426,18 +1909,14 @@ __compare_rule(
 
 % TODO: add an exercise exhibiting both `all` and `any` and `not`
 
-
 \begin{frame}[fragile]
   \begin{exercisePage}{Hardcoded secrets detection}
 
-  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/QrUWj3A/semgrep.find-unverified-transactions-exercise}{Link to the playground}}.
-  \solutionLink{https://semgrep.dev/playground/r/4bURwNG/semgrep.find-unverified-transactions-exercise-solution}
-
-  \vspace{\fill}
-
   We want to catch initializations of a \code{PasswordAuthenticator}, imported
   from a Python package \code{couchbase_core.cluster}. In particular, we are interested in
-  when the password passed to the function is a hardcoded literal string (but not the empty string).
+  when the password passed to the function is a hardcoded, nonempty literal string.
+  \solutionLink{https://semgrep.dev/playground/r/4bURwNG/semgrep.find-unverified-transactions-exercise-solution}
+
 
   \vspace{\fill}
 
@@ -1446,10 +1925,10 @@ __compare_rule(
 
   \vspace{\fill}
 
-  \begin{codeblock}
+  \begin{pythoncodeblock}
     # ruleid: python-couchbase-hardcoded-secret
     PasswordAuthenticator('username', "password")
-  \end{codeblock}
+  \end{pythoncodeblock}
 
   \vspace{\fill}
 
@@ -1458,22 +1937,25 @@ __compare_rule(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{The \code{inside} operator}
 
   So far, we have discussed four pattern operators in \code{pattern}, \code{not},
   \code{all}, and \code{any}.
 
+  \pause
   \vspace{\fill}
 
   From the dropdown, we can see there are two more, \code{inside} and \code{regex}.
   These form the fundamental six pattern operators which are used to produce ranges.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, The \code{inside} operator is used for when you want to
   specify that a match should be found only when it is a subrange of the pattern
   under the \code{inside}.}
 
+  \pause
   \vspace{\fill}
 
   {\small
@@ -1497,17 +1979,19 @@ __compare_rule(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{The \code{regex} operator}
 
   \customBox{Feature}{\, The \code{regex} operator matches ranges of \textbf{text}
   which match the regular expression.}
 
+  \pause
   \vspace{\fill}
 
   The \code{regex} operator is the sole exception when it comes to patterns matching
   AST nodes to obtain ranges. \code{regex} is like \code{grep}, and matches
   purely the text. It's useful as an escape hatch, but usually isn't the best solution.
 
+  \pause
   \vspace{\fill}
 
   The following rule matches all instances of the string "import" within functions.
@@ -1533,27 +2017,32 @@ __compare_rule(
   __useless($)
 \end{frame}
 
+% TODO: exercise showing unification, maybe inside
+
 \sectionSlide{6}{Advanced: Conditions and Focusing}
 
 \begin{frame}[fragile]
-  \frametitle{A Note on Presentation}
+  \frametitle{Modifying ranges}
 
   Now that we've seen all the fundamental pattern operators, we can move on to
   \term{conditions} and \term{focusing}, which let us alter and constrain
   existing ranges.
 
+  \pause
   \vspace{\fill}
 
   Sometimes we don't care about just producing a match, we care about the specific
   range that the match covers. For instance, we may want to match the name of a
   function, rather than the function entirely.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, The \code{focus} operator "focuses" a range to that of
   a metavariable it contains, making its range the same as what the metavariable
   matches.}
 
+  \pause
   \vspace{\fill}
 
 __compare_rule(
@@ -1575,7 +2064,7 @@ __compare_rule(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A Note on Presentation}
+  \frametitle{UI: Using \code{focus} in the editor}
 
   To add a \code{focus} in the editor, click the filter button.
 
@@ -1585,6 +2074,7 @@ __compare_rule(
     \includegraphics[width=0.5\textwidth]{constraint.png}
   \end{center}
 
+  \pause
   \vspace{\fill}
 
   This will open a new row where you can enter the metavariable you
@@ -1601,14 +2091,15 @@ __compare_rule(
 \begin{frame}[fragile]
   \begin{exercisePage}{Non-index routes should check fetch metadata}
 
-  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/0oULYkB/semgrep.secfetch-metadata}{Link to the playground}}.
+  In this example, we are concerned with routes in a web application which do not
+  check fetch metadata. For routes which are not index routes, we want to ensure
+  that it has a parameter of type \code{SecFetchMetadata}.
   \solutionLink{https://semgrep.dev/playground/r/KxUv69E/semgrep.secfetch-metadata-solution}
 
   \vspace{\fill}
 
-  In this example, we are concerned with routes in a web application which do not
-  check fetch metadata. For routes which are not index routes, we want to ensure
-  that it has a parameter of type \code{SecFetchMetadata}.
+  Write a Semgrep rule which well enforce that we properly check fetch metadata on
+  appropriate routes!
 
   \vspace{\fill}
 
@@ -1617,28 +2108,35 @@ __compare_rule(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{Filtering matches via metavariables}
 
   Sometimes we want to constrain our matches to only ones which fulfill some conditions.
   Usually this is based on specific parts of the pattern, such as metavariables.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, \term{Metavariable conditions} are conditions that may be
   placed on a pattern, which filter out matches whose metavariables do not fulfill
   the condition. They come in three varieties:}
+  \pause
   \begin{itemize}
     \item metavariable \code{pattern} constraints, which specify that a metavariable
     must contain a specified pattern inside of it
+    \pause
     \item metavariable \code{regex} constraints, which specify that a metavariable
     must match a specific regex
+    \pause
     \item metavariable \code{analyzer}s, which are specific kinds of validators
     that check for things such as high-entropy strings and ReDoS regexes
+    \pause
+    \item metavariable \code{type} constraints, which specify that a metavariable
+    can only match expressions with a certain type
   \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{UI: Using metavariable conditions}
 
   To add a metavariable condition, we use the same drop-down that we would
   select a \code{focus} from:
@@ -1649,11 +2147,12 @@ __compare_rule(
     \includegraphics[width=0.35\textwidth]{conditions.png}
   \end{center}
 
+  \pause
   \vspace{\fill}
 
   Switching to \code{metavariable} will default to a metavariable \code{pattern}
   constraint. The drop-down below will let you select from \code{pattern},
-  \code{regex}, and \code{analyzer}.
+  \code{regex}, \code{analyzer}, and \code{type}.
 
   \vspace{\fill}
 
@@ -1664,17 +2163,13 @@ __compare_rule(
 
 % TODO: edit solutions to be in new syntax
 \begin{frame}[fragile]
-  \begin{exercisePage}{Enforcing controller coventions}
-
-  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/YGUpKG9/semgrep.ruby-inherit-appcontroller-fix-annotations}{Link to the playground}}.
-  \solutionLink{https://semgrep.dev/playground/r/zdUK0g2/semgrep.ruby-inherit-appcontroller-solution}
-
-  \vspace{\fill}
+  \begin{exercisePage}{Enforcing controller conventions}
 
   We want to catch Ruby controllers which do not inherit from \code{ApplicationController}
   or \code{ActionController::Base}. The catch is that we don't necessarily know which
   Ruby classes are controllers, so we need to use regex on the name of the class to
   infer this.
+  \solutionLink{https://semgrep.dev/playground/r/zdUK0g2/semgrep.ruby-inherit-appcontroller-solution}
 
   \vspace{\fill}
 
@@ -1696,12 +2191,14 @@ __compare_rule(
   The final condition operator that we haven't talked about is \code{comparison},
   which lets you verify that metavariables satisfy some programmatic condition.
 
+  \pause
   \vspace{\fill}
 
   \customBox{Feature}{\, The \code{comparison} operator lets you write a simple
   Python expression, and only produces matches whose metavariables satisfy the
   expression.}
 
+  \pause
   \vspace{\fill}
 
   % TODO: change syntax highlighting in target to terraform
@@ -1715,7 +2212,7 @@ __compare_rule(
 >>>,
 <<<
   resource "aws_cloudwatch_log_group" "notifier" {
-    name = "notifier-${var.cluster_name}"
+    name = "notifier-${var.cluster}"
     `retention_in_days = 30`
   }
 >>>
@@ -1727,14 +2224,10 @@ __compare_rule(
 \begin{frame}[fragile]
   \begin{exercisePage}{Flag weak RSA encryption keys}
 
-  Let's do another example. {\color{blue}\href{https://semgrep.dev/playground/r/j2Ug0eE/semgrep.use-of-weak-rsa-key}{Link to the playground}}.
-  \solutionLink{https://semgrep.dev/playground/r/9AUd9NK/semgrep.use-of-weak-rsa-key-solution}
-
-  \vspace{\fill}
-
   We want to ensure that generated RSA keys are of a sufficient strength, in our case
   greater than or equal to 2048. Let's write a Semgrep rule which can find instances
   where RSA keys are too weak.
+  \solutionLink{https://semgrep.dev/playground/r/9AUd9NK/semgrep.use-of-weak-rsa-key-solution}
 
   \vspace{\fill}
 
@@ -1754,27 +2247,29 @@ __compare_rule(
 \sectionSlide{7}{Advanced: Taint Mode}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{From search to taint}
 
   Many of the problems in security are not quite so simple as can be phrased in
   a regular search mode rule.
 
+  \pause
   \vspace{\fill}
 
   Many problems in security come from the simple idea of sensitive data reaching
   a sensitive area, such as a network call or a file write. This problem is solvable
   via a classic technique in static analysis called \term{dataflow analysis}.
 
+  \pause
   \vspace{\fill}
 
   \defBox{}{\term{Taint analysis} is a form of dataflow analysis which tracks whether
-  some specified form of data (called the \term{source}) is capable of reaching some
-  specified sensitive site (called the \term{sink}). We say that data which comes
+  some specified form of data (called the {\color{sourceColor}source}) is capable of reaching some
+  specified sensitive site (called the {\color{sinkColor}sink}). We say that data which comes
   from the source is \term{tainted}.}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{Example: Dataflow analysis}
 
   For instance, consider the following code snippet:
 
@@ -1787,16 +2282,19 @@ __compare_rule(
     }
   \end{pythoncodeblock}
 
+  \pause
   \vspace{\fill}
 
-  In this example, the input \code{args} to the program are a potential source of
-  user input, which is sensitive data!
+  In this example, the input \code{args} to the program are a potential
+  {\color{sourceColor}source} of user input, which is sensitive data!
 
+  \pause
   \vspace{\fill}
 
   If this user input is allowed to reach the \code{Runtime.exec} method, for instance,
   an attacker could potentially cause dangerous arbitrary code execution.
 
+  \pause
   \vspace{\fill}
 
   \begin{itemize}
@@ -1806,14 +2304,34 @@ __compare_rule(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{Taint tracing}
 
   \begin{minipage}[t][1.6in][t]{\textwidth}
     Let's trace the flow of taint through this code snippet:
 
     \begin{pythoncodeblock}[language=java]
       public class DataflowExample {
-        public static void main(String |lb|args|lb|[]) throws IOException {
+        public static void main(String args[]) throws IOException {
+          String cmd = args[0];
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+  \end{minipage}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Taint tracing}
+
+  \begin{minipage}[t][1.6in][t]{\textwidth}
+    Let's trace the flow of taint through this code snippet:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
           String cmd = args[0];
           Runtime.getRuntime().exec(cmd);
         }
@@ -1822,13 +2340,13 @@ __compare_rule(
   \end{minipage}
   \begin{minipage}[t][1in][t]{\textwidth}
     \begin{enumerate}
-      \item the source, the \code{args} argument to \code{main}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
     \end{enumerate}
   \end{minipage}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{Taint tracing}
 
   \begin{minipage}[t][1.6in][t]{\textwidth}
     Let's trace the flow of taint through this code snippet:
@@ -1836,7 +2354,7 @@ __compare_rule(
     \begin{pythoncodeblock}[language=java]
       public class DataflowExample {
         public static void main(String |fb|args|fb|[]) throws IOException {
-          String cmd = |fb|args|fb|[0];
+          String cmd = |fb|args[0]|fb|;
           Runtime.getRuntime().exec(cmd);
         }
       }
@@ -1844,14 +2362,14 @@ __compare_rule(
   \end{minipage}
   \begin{minipage}[t][1in][t]{\textwidth}
     \begin{enumerate}
-      \item the source, the \code{args} argument to \code{main}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
       \item the expression \code{args[0]}
     \end{enumerate}
   \end{minipage}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{Taint tracing}
 
   \begin{minipage}[t][1.6in][t]{\textwidth}
     Let's trace the flow of taint through this code snippet:
@@ -1859,7 +2377,7 @@ __compare_rule(
     \begin{pythoncodeblock}[language=java]
       public class DataflowExample {
         public static void main(String |fb|args|fb|[]) throws IOException {
-          String |fb|cmd|fb| = |fb|args|fb|[0];
+          String |fb|cmd|fb| = |fb|args[0]|fb|;
           Runtime.getRuntime().exec(cmd);
         }
       }
@@ -1867,7 +2385,7 @@ __compare_rule(
   \end{minipage}
   \begin{minipage}[t][1in][t]{\textwidth}
     \begin{enumerate}
-      \item the source, the \code{args} argument to \code{main}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
       \item the expression \code{args[0]}
       \item the newly declared variable \code{cmd}
     \end{enumerate}
@@ -1875,7 +2393,7 @@ __compare_rule(
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Pattern Operators}
+  \frametitle{Taint tracing}
 
   \begin{minipage}[t][1.6in][t]{\textwidth}
     Let's trace the flow of taint through this code snippet:
@@ -1883,7 +2401,7 @@ __compare_rule(
     \begin{pythoncodeblock}[language=java]
       public class DataflowExample {
         public static void main(String |fb|args|fb|[]) throws IOException {
-          String |fb|cmd|fb| = |fb|args|fb|[0];
+          String |fb|cmd|fb| = |fb|args[0]|fb|;
           Runtime.getRuntime().exec(|fb|cmd|fb|);
         }
       }
@@ -1891,7 +2409,7 @@ __compare_rule(
   \end{minipage}
   \begin{minipage}[t][1in][t]{\textwidth}
     \begin{enumerate}
-      \item the source, the \code{args} argument to \code{main}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
       \item the expression \code{args[0]}
       \item the newly declared variable \code{cmd}
       \item the usage of the tainted variable \code{cmd}
@@ -1899,27 +2417,549 @@ __compare_rule(
   \end{minipage}
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Taint tracing}
+
+  \begin{minipage}[t][1.6in][t]{\textwidth}
+    Let's trace the flow of taint through this code snippet:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
+          String |fb|cmd|fb| = |fb|args[0]|fb|;
+          |lr|Runtime.getRuntime().exec(|lr||fb|cmd|fb||lr|)|lr|;
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    \begin{enumerate}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
+      \item the expression \code{args[0]}
+      \item the newly declared variable \code{cmd}
+      \item the usage of the tainted variable \code{cmd}
+      \item we then land in the {\color{sinkColor}sink}, the \code{exec} method
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Taint tracing}
+
+  \begin{minipage}[t][1.6in][t]{\textwidth}
+    Let's trace the flow of taint through this code snippet:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String args[]) throws IOException {
+          String cmd = args[0];
+          `Runtime.getRuntime().exec(cmd)`;
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    \small
+    That's a finding!
+
+    \pause
+    \vspace{5pt}
+
+    This reflects exactly how Semgrep works in taint mode:
+    \begin{enumerate}
+      \setlength\itemsep{-0.15em}
+      \pause
+      \item {\color{sourceColor}sources} of tainted data are specified via patterns
+      \pause
+      \item {\color{sinkColor}sinks} of dangerous sites are specified via patterns
+      \pause
+      \item if a {\color{sourceColor}source} is able to taint data which reaches a {\color{sinkColor}sink}, a finding is produced at the sink
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{UI: How to use taint mode}
+
+  To write a taint mode rule, all you need to do is click on the tab labeled
+  "taint" at the top of the Structure Mode editor.
+
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{taint.png}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  Somewhat self-explanatory.
+\end{frame}
 
 
+\begin{frame}[fragile]
+  \frametitle{Example: Taint rule}
+
+{\footnotesize
+\begin{center}
+  \begin{minipage}{0.47\textwidth}
+
+__rule(<<<
+  taint:
+    sources:
+      - pattern: |
+          void main(String $ARGS[]) {
+            ...
+          }
+        where:
+          - focus: $ARGS
+    sinks:
+      - pattern: |
+          Runtime.getRuntime().exec($CMD)
+        where:
+          - focus: $CMD
+>>>)
+
+  \end{minipage}
+  \hspace{10pt}
+  \begin{minipage}{0.47\textwidth}
+
+__target_lang(<<<
+  public class DataflowExample {
+    public static void main(String args[]) throws IOException {
+      String cmd = args[0];
+      `Runtime.getRuntime().exec(cmd)`;
+    }
+  }
+>>>, java)
+  \end{minipage}
+\end{center}
+}
+
+  \pause
+  \noteBox{}{We have to be a little particular with the source and sink and \code{focus}
+  accordingly, because we specifically want the argument \code{args} to be tainted,
+  and specifically the argument to \code{exec} to be sensitive.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: Sanitized dataflow analysis}
+
+    Let's look at another example:
+
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String args[]) throws IOException {
+          String baseCmd = "rm";
+          String sanitizedPath = filterFilePath(args[0])
+          String cmd = baseCMD + " " + sanitizedPath;
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+
+    \pause
+    \vspace{\fill}
+
+    In this example, our sensitive user input still goes from \code{args} to \code{exec}.
+    The difference is that on the path to the sink, it goes through a function \code{filterFilePath},
+    which verifies that the input is \textit{not} dangerous.
+
+    \pause
+    \vspace{\fill}
+
+    \textbf{This means that the call to \code{exec} is safe here, and should not produce a finding!}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Taint trace, again}
+
+  \begin{minipage}[t][1.8in][t]{\textwidth}
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String args[]) throws IOException {
+          String baseCmd = "rm";
+          String sanitizedPath = filterFilePath(args[0])
+          String cmd = baseCMD + " " + sanitizedPath;
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    Here's the new trace, given appropriate source and sanitizer definitions:
+  \end{minipage}
+\end{frame}
 
 
+\begin{frame}[fragile]
+  \frametitle{Taint trace, again}
+
+  \begin{minipage}[t][1.8in][t]{\textwidth}
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
+          String baseCmd = "rm";
+          String sanitizedPath = filterFilePath(args[0])
+          String cmd = baseCMD + " " + sanitizedPath;
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    Here's the new trace, given appropriate source and sanitizer definitions:
+    \begin{enumerate}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Taint trace, again}
+
+  \begin{minipage}[t][1.8in][t]{\textwidth}
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
+          String baseCmd = "rm";
+          String sanitizedPath = filterFilePath(|fb|args[0]|fb|)
+          String cmd = baseCMD + " " + sanitizedPath;
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    Here's the new trace, given appropriate source and sanitizer definitions:
+    \begin{enumerate}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
+      \item the expression \code{args[0]}
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Taint trace, again}
+
+  \begin{minipage}[t][1.8in][t]{\textwidth}
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String |fb|args|fb|[]) throws IOException {
+          String baseCmd = "rm";
+          String sanitizedPath = |fg|filterFilePath(|fb|args[0]|fb|)|fg|
+          String cmd = baseCMD + " " + sanitizedPath;
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    Here's the new trace, given appropriate source and sanitizer definitions:
+    \begin{enumerate}
+      \item the {\color{sourceColor}source}, the \code{args} argument to \code{main}
+      \item the expression \code{args[0]}
+      \item the sanitizer \code{filterFilePath(...)}, which ends the taint
+    \end{enumerate}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Taint trace, again}
+
+  \begin{minipage}[t][1.8in][t]{\textwidth}
+    \begin{pythoncodeblock}[language=java]
+      public class DataflowExample {
+        public static void main(String args[]) throws IOException {
+          String baseCmd = "rm";
+          String sanitizedPath = filterFilePath(args[0])
+          String cmd = baseCMD + " " + sanitizedPath;
+          Runtime.getRuntime().exec(cmd);
+        }
+      }
+    \end{pythoncodeblock}
+  \end{minipage}
+  \begin{minipage}[t][1in][t]{\textwidth}
+    Ultimately, no finding is produced.
+
+    \vspace{10pt}
+
+    Let's look at how we would produce this rule in Semgrep.
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A sanitized rule}
+
+{\footnotesize
+__rule(
+<<<
+  taint:
+    sources:
+      - pattern: |
+          void main(String $ARGS[]) {
+            ...
+          }
+        where:
+          - focus: $ARGS
+    `sanitizers`:
+    `  - pattern`: |
+    `      filterFilePath(...)`
+    sinks:
+      - pattern: |
+          Runtime.getRuntime().exec($CMD)
+        where:
+          - focus: $CMD
+>>>
+)
+}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Do not pass request parameters to \code{Runtime.exec}}
+
+  In this exercise, we're concerned about sensitive \code{HttpServletRequest} parameters
+  reaching a \code{Runtime.exec} call.
+  \solutionLink{https://semgrep.dev/playground/r/yyURWW2/semgrep.find-runtime-exec-taint-solution}
+
+  \vspace{\fill}
+
+  Let's use taint mode to flag all the ways that this could happen. You may find the
+  metavariable \code{type} condition, as mentioned earlier, useful. It's worth noting
+  that you may also write typed metavariables inline in the pattern, by using the
+  syntax \code[mathescape=false]{(typename $METAVARNAME)}, in Java.
+  __useless($)
+
+  \vspace{\fill}
+
+  Keywords: \taintLink, \sanitizerLink, \metavariableTypeLink
+  \end{exercisePage}
+\end{frame}
 
 
+\begin{frame}[fragile]
+  \begin{exercisePage}{Find XSS in ExpressJS}
 
+  We have an ExpressJS app which is handling request data, and is potentially vulnerable
+  to XSS attacks. We want to ensure that any user input which is received is properly
+  sanitized before potentially reading a write or send.
+  \solutionLink{https://semgrep.dev/playground/r/JDUNYAr/semgrep.express-taint-solution}
 
-% \sectionSlide{8}{Advanced: Miscellaneous}
+  \vspace{\fill}
 
-% \begin{frame}[fragile]
-%   \begin{exercisePage}{Enforcing secure defaults}
+  Let's write a taint mode rule which checks for XSS, while respecting the possible
+  sanitization of the input.
 
-%   \end{exercisePage}
-% \end{frame}
+  \vspace{\fill}
 
-% \begin{frame}[fragile]
-%   \begin{exercisePage}{Enforcing secure defaults}
-%   \end{exercisePage}
-% \end{frame}
+  Keywords: \taintLink, \sanitizerLink, \patternInsideLink
+  \end{exercisePage}
+\end{frame}
 
+\begin{frame}[fragile]
+  \begin{exercisePage}{Find path traversal in Go}
+
+  A \term{path traversal} attack is a kind of attack which attempts to access files
+  or directories that are outside of the application's root directory. We want to
+  ensure that any user input which is received is properly sanitized before potentially
+  opening a file.
+
+  \vspace{\fill}
+
+  Let's use taint mode to find instances of path traversal in a Go web server.
+  \solutionLink{https://semgrep.dev/playground/r/5rUd20G/semgrep.net-http-path-traversal-taint-solution}
+
+  \vspace{\fill}
+
+  Keywords: \taintLink, \sanitizerLink, \metavariableRegexLink
+  \end{exercisePage}
+\end{frame}
+
+\sectionSlide{8}{Advanced: Autofix}
+
+\begin{frame}[fragile]
+  \frametitle{Friendly guardrails}
+
+  We now know how to write Semgrep rules to match patterns, but that is only one piece
+  of the puzzle. Being able to \textit{match} something doesn't necessarily tell you
+  what you can \textit{do} with it.
+
+  \pause
+  \vspace{\fill}
+
+  Remediation is a whole other half of the battle. How can we not just provide a
+  guardrail around a dangerous behavior, but also tell developers what to do
+  instead? We don't just build a guardrail to block others, we want to build a
+  guardrail which will actively steer them towards better outcomes.
+
+  % TODO: bouncy guardrail, rubber guardrail
+
+  \pause
+  \vspace{\fill}
+
+  \customBox{Feature}{\, \term{Autofix} is a Semgrep feature that allows you to write patterns that
+  replace the matched code with safe, remediated code.}
+
+  \pause
+  \vspace{\fill}
+
+  Luckily, it's as easy as adding onto the Semgrep rules we've already learned to write!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{UI: How to add an autofix}
+
+  To add an autofix to your rule, simply click the "Add fix" button located below the
+  rule message in the rule info panel, and enter your autofix.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.8\textwidth]{fix.png}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  \noteBox{}{While autofixes are strictly textual, they are \term{interpolated}, meaning
+  that metavariables appearing in them will be substituted for their matches. This allows
+  you to refactor code based on what was there before!}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example: Autofix}
+
+{\small
+__compare_rule_35(
+<<<
+  pattern:
+    print($STR)
+  fix: |
+    logger.info($STR)
+>>>,
+<<<
+  |fr|print("hi")|fr||fg|logger.info("hi")|fg|
+  |fr|print("there")|fr||fg|logger.info("there")|fg|
+>>>
+)
+}
+
+  \pause
+  \vspace{\fill}
+
+  Here, we see that the metavariable \code[mathescape=false]{$STR} is shared between the two,
+  so while the \code{print} is replaced, the content inside of the call is the same.
+  __useless($)
+
+  \pause
+  \vspace{\fill}
+
+  \customBox{Fact}{\, Rules with autofixes have 50\% higher fix rate than rules without autofix.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Enforce use of \code{addSecureCookie} method}
+
+  In this example, we are working in a codebase which has its own method for adding cookies, which
+  is explicitly designed to be secure. We want to ensure that, instead of using the deprecated
+  \code{Cookie.addCookie} method, we use the new \code{addSecureCookie} method instead.
+  \solutionLink{https://semgrep.dev/playground/r/wdU9BBN/semgrep.java-cookie-addsecurecookie-solution}
+
+  \vspace{\fill}
+
+  Let's use autofix to not just flag the finding, but provide guidance towards fixing it.
+
+  \vspace{\fill}
+
+  Keywords: \autofixLink, \patternNotLink, \patternInsideLink
+  \end{exercisePage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{exercisePage}{Secure subprocess \code{shell=True}}
+
+  Here's an example of an Autofix rule, by making sure that we don't use \code{subprocess.check_output}
+  with \code{shell} set to \code{True}!
+
+  \vspace{\fill}
+
+  Let's go through this one together, to make sure everyone is on the same page.
+
+  \vspace{\fill}
+
+  Keywords: \autofixLink, \focusLink, \metavariablePatternLink
+  \end{exercisePage}
+\end{frame}
+
+\sectionSlide{8}{Conclusions}
+
+\begin{frame}[fragile]
+  \frametitle{The end of an era}
+
+  Congratulations, you've braved the wilds and written your first Semgrep rules!
+
+  \pause
+  \vspace{\fill}
+
+  We've covered a lot of ground, but there's still more to learn. Semgrep is an
+  application security platform with many different avenues from which to
+  fortify a security program. Luckily, everything starts -- and ends -- with
+  Semgrep rules.
+
+  \pause
+  \vspace{\fill}
+
+  Starting tomorrow, you will be able to pull Semgrep from \code{brew}, start scanning
+  your codebases with default rulesets to find vulnerabilities, and even write your
+  own org-specific rules to catch the things that are most important to you.
+
+  \pause
+  \vspace{\fill}
+
+  In a world with increasing technical (and security) debt, we cannot play
+  catch-up. We cannot chase vulnerabilities. We must be \textbf{proactive}, and
+  fight the fight from the beginning.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Not covered but not forgotten}
+
+  We've covered some of the fundamental rule-writing operators, but there are still
+  more advanced features that we won't have time to cover. These include:
+  \pause
+  \begin{itemize}
+    \item {\color{blue}\href{https://semgrep.dev/docs/writing-rules/data-flow/taint-mode#propagators-pro}{taint propagators}}
+    \item {\color{blue}\href{https://semgrep.dev/docs/writing-rules/data-flow/taint-mode#propagators-pro}{taint labels}}
+    \item {\color{blue}\href{https://semgrep.dev/docs/writing-rules/generic-pattern-matching}{generic mode}}
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Feel free to read about these, or approach with any questions on Semgrep rules or rule-writing.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Additional resources}
+
+  Some excellent further resources include:
+  \pause
+  \begin{itemize}
+    \item \term{Semgrep Academy}, a free online learning platform for
+    information security education, with courses on things like
+    {\color{blue}\href{https://academy.semgrep.dev/courses/custom-rules}{rule
+    writing}},
+    {\color{blue}\href{https://academy.semgrep.dev/courses/secure-coding}{secure
+    coding}}, and
+    {\color{blue}\href{https://academy.semgrep.dev/courses/principles-of-functional-programming}{functional
+    programming}} (hey, that's me!)
+    \item Pieter De Cremer's {\color{blue}\href{https://www.youtube.com/@0xDC0DE/videos}{YouTube channel}} with
+    helpful videos about security and Semgrep
+    \item My website, where these slides will be hosted: {\color{blue}\href{https://brandonspark.github.io/files/finding_bugs.pdf}{https://brandonspark.github.io/files/finding\_bugs.pdf}}
+  \end{itemize}
+\end{frame}
 
 \thankyou
 
