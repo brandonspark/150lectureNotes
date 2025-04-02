@@ -4,6 +4,7 @@ dateString=$(date '+%Y%m%d')
 
 cd /Users/brandonspark/teaching/150lectureNotes/crucible
 
+echo "Copying img/$1.png to img/title.png..."
 cp img/$1.png img/title.png
 
 ./slice $1

@@ -123,7 +123,9 @@
 \definecolor{hlPink}{HTML}{ffa3ed}
 \definecolor{hlLightRed}{HTML}{ffaea8}
 \definecolor{hlLightBlue}{HTML}{a1fffa}
-\definecolor{hlFaintBlue}{HTML}{8fc4f2}
+\definecolor{hlFaintRed}{HTML}{f2acac}
+\definecolor{hlFaintBlue}{HTML}{a2d1fa}
+\definecolor{hlFaintGreen}{HTML}{b7f2b6}
 \definecolor{hlLightPurple}{HTML}{e3baff}
 \definecolor{hlLightGreen}{HTML}{c2ffd8}
 
@@ -357,6 +359,43 @@
     \node[anchor=base west, fill=hlFaintBlue,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
   }%
 }
+\newenvironment{faintGreenHighlight}[1][]
+{\begingroup\tikzset{faintGreen@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\faintGreen@HL@box[faintGreen@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\faintGreenHL[1][]{%
+  \begin{faintGreenHighlight}[#1]\bgroup\aftergroup\faintGreen@HL@endenv%
+}
+\def\faintGreen@HL@endenv{%
+  \end{faintGreenHighlight}%
+  \egroup
+}
+\newcommand{\faintGreen@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlFaintGreen,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
+\newenvironment{faintRedHighlight}[1][]
+{\begingroup\tikzset{faintRed@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\faintRed@HL@box[faintRed@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\faintRedHL[1][]{%
+  \begin{faintRedHighlight}[#1]\bgroup\aftergroup\faintRed@HL@endenv%
+}
+\def\faintRed@HL@endenv{%
+  \end{faintRedHighlight}%
+  \egroup
+}
+\newcommand{\faintRed@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=hlFaintRed,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
 
 \newenvironment{templateHighlight}[1][]
 {\begingroup\tikzset{template@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
@@ -525,6 +564,8 @@
   moredelim=**[is][\ctHL]{/}{/}, % blue
   moredelim=**[is][\dtHL]{?}{?}, % orange
   moredelim=**[is][\etHL]{@}{@}, % green
+  moredelim=**[is][\faintBlueHL]{|fb|}{|fb|}, % faint blue
+  moredelim=**[is][\faintRedHL]{|fr|}{|fr|}, % faint blue
 }}{}
 
 % no syntax highlighting
@@ -553,7 +594,9 @@
   moredelim=**[is][\lightPurpleHL]{|lp|}{|lp|}, % light purple
   moredelim=**[is][\lightBlueHL]{|lb|}{|lb|}, % light blue
   moredelim=**[is][\faintBlueHL]{|fb|}{|fb|}, % faint blue
-  moredelim=**[is][\lightGreenHL]{|lg|}{|lg|}, % light blue
+  moredelim=**[is][\faintRedHL]{|fr|}{|fr|}, % faint blue
+  moredelim=**[is][\faintGreenHL]{|fg|}{|fg|}, % faint green
+  moredelim=**[is][\lightGreenHL]{|lg|}{|lg|}, % light green
   moredelim=**[is][\ctHL]{|b|}{|b|}, % blue
   moredelim=**[is][\ctHL]{/}{/}, % blue
   moredelim=**[is][\dtHL]{|o|}{|o|}, % orange
@@ -561,6 +604,7 @@
   moredelim=**[is][\etHL]{@}{@}, % green
   moredelim=**[is][\etHL]{|g|}{|g|}, % green
   moredelim=**[is][\ftHL]{!}{!}, % pink
+  moredelim=**[is][\color{fgCodeGreen}]{<g}{g>},
 }}{}
 \lstnewenvironment{ocamlcodeblock}[1][]{\lstset{
   language=ocaml,style=15150code,numbers=none,#1,
@@ -683,14 +727,14 @@
 }
 
 \newrobustcmd{\menti}[1]{
-% \begin{frame}[plain]
-%   \begin{center}
-%     {\huge \color{presentColor} \intermedium{Menti code: #1}}
-%     \vspace{10pt}
+\begin{frame}[plain]
+  \begin{center}
+    {\huge \color{presentColor} \intermedium{Menti code: #1}}
+    \vspace{10pt}
 
-%     \color{presentColor} \intermedium{Go to menti.com to ask anonymously!}
-%   \end{center}
-% \end{frame}
+    \color{presentColor} \intermedium{Go to menti.com to ask questions anonymously!}
+  \end{center}
+\end{frame}
 }
 
 \newrobustcmd{\quizBreak}[1]{
