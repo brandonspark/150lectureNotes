@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Asymptotic Analysis} % TODO
     \subtitle{On the complexity of time} % TODO
-    \date{01 June 2023} % TODO
+    \date{28 May 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -171,7 +171,7 @@
 \begin{frame}[fragile]
   \frametitle{Big-O, Formally}
 
-  Formally, we take a function $f : \mathbb{N}^+ \to \mathbb{N}^+$, which in
+  Formally, we take a function $f : \mathbb{N} \to \mathbb{N}$, which in
   our case describes the abstract cost of running some program.
 
   \pause
@@ -184,7 +184,7 @@
   \pause
   \vspace{\fill}
 
-  For another function $g : \mathbb{N}^+ \to \mathbb{N}^+$, we say that
+  For another function $g : \mathbb{N} \to \mathbb{N}$, we say that
   $f \in O(g)$ if there exists $n_0, c > 0$ such that, for all $n \geq n_0$,
   $f(n) \leq cg(n)$.
 \end{frame}
@@ -219,11 +219,11 @@
   \vspace{\fill}
   \centerline{
   \begin{minipage}{0.4\textwidth}
-    \includegraphics[scale=0.4]{graph1} \\
+    \includegraphics[scale=0.3]{graph1} \\
     $f$ is always less than $g$.
   \end{minipage}
   \begin{minipage}{0.4\textwidth}
-    \includegraphics[scale=0.4]{graph2}
+    \includegraphics[scale=0.3]{graph2}
     $f$ is not always less than $g$
   \end{minipage}
   }
@@ -236,11 +236,11 @@
   \vspace{\fill}
   \centerline{
   \begin{minipage}{0.4\textwidth}
-    \includegraphics[scale=0.4]{graph4}
+    \includegraphics[scale=0.3]{graph4}
     $f$ is greater than $g$
   \end{minipage}
   \begin{minipage}{0.4\textwidth}
-    \includegraphics[scale=0.4]{graph3}
+    \includegraphics[scale=0.3]{graph3}
     but not when $g$ is scaled by 3
   \end{minipage}
   }
@@ -779,7 +779,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A \code{trev}-elevation}
+  \frametitle{A \code{trev}-elation}
 
   \begin{codeblock}
     fun trev ([] : int list, acc : int list) = acc
@@ -1391,5 +1391,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{BIG-OOF}
 
 \end{document}

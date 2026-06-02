@@ -1,20 +1,39 @@
 #!/bin/bash
+set -e
 
 dateString=$(date '+%Y%m%d')
 
-cd /Users/brandonspark/teaching/150lectureNotes/crucible
+# Run from the directory containing this script, regardless of where it's
+# invoked or which machine/username it lives on.
+cd "$(dirname "$0")"
 
-cp img/$1.png img/title.png
+name=$1
 
-./slice $1
-
-if test -f slides/$1.m4; then
-  echo "has an m4 file"
-  m4 slides/$1.m4 slides/$1.tex > slides/$1-intermediate.tex
-  make pdf "SRC=slides/$1-intermediate.tex" "PREFIX=$1" "NUM=$1"
-  rm slides/$1-intermediate.tex
+# Lectures live in slides/150/; standalone talks live flat in slides/.
+# Prefer the 150 subdir, fall back to the flat layout.
+if test -f "slides/150/$name.tex"; then
+  slidedir="slides/150"
 else
-  make pdf "SRC=slides/$1.tex" "PREFIX=$1" "NUM=$1"
+  slidedir="slides"
+fi
+
+# Title image is optional; only stage it if one exists for this slide deck.
+if test -f "img/$name.png"; then
+  cp "img/$name.png" img/title.png
+fi
+
+# Code fragments are only sliced when a code/ tree exists for this deck.
+if test -d "code/$name"; then
+  ./slice "$name"
+fi
+
+if test -f "$slidedir/$name.m4"; then
+  echo "has an m4 file"
+  m4 "$slidedir/$name.m4" "$slidedir/$name.tex" > "$slidedir/$name-intermediate.tex"
+  make pdf "SRC=$slidedir/$name-intermediate.tex" "PREFIX=$name" "NUM=$name"
+  rm "$slidedir/$name-intermediate.tex"
+else
+  make pdf "SRC=$slidedir/$name.tex" "PREFIX=$name" "NUM=$name"
 fi
 
 rm -f img/title.png

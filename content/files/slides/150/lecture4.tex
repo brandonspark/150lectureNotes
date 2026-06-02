@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-\documentclass[aspectratio=169, handout]{beamer}
+\documentclass[aspectratio=169]{beamer}
 
 % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
 \newif\ifcolorlambda
@@ -34,7 +34,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
 \title{Structural Induction and Tail Recursion} % TODO
 \subtitle{Inducting over exotic structures} % TODO
-\date{25 May 2023} % TODO
+\date{21 May 2026} % TODO
 \author{Brandon Wu} % TODO
 
 \graphicspath{ {./img/} }
@@ -294,7 +294,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We say that a function \code{p : t -> bool}, for some type
+  \defBox{}{We say that a function \code{p : t -> bool}, for some type
   \code{t}, is a \term{validator}. It ascertains some property $P$ of the
   input, and returns a boolean.}
 
@@ -309,7 +309,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, We say that a function \code{f : t -> t2} is, in a sense,
+  \defBox{}{We say that a function \code{f : t -> t2} is, in a sense,
   a \term{parser}\footnote{
     This idea comes from
     {\color{blue}\href{https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/}{this excellent article}}.
@@ -443,7 +443,7 @@
   \vspace{\fill}
 
   \begin{center}
-    \includegraphics[scale=0.3]{bucket_0}
+    \includegraphics[scale=0.25]{bucket_0}
   \end{center}
 
   \pause
@@ -461,7 +461,7 @@
   \pause
   \vspace{\fill}
 
-  \begin{center} \includegraphics[scale=0.3]{bucket_0_and_1} \end{center}
+  \begin{center} \includegraphics[scale=0.25]{bucket_0_and_1} \end{center}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -471,7 +471,7 @@
   natural number into the bucket.
 
   \pause
-  \begin{center} \includegraphics[scale=0.3]{bucket_n} \end{center}
+  \begin{center} \includegraphics[scale=0.25]{bucket_n} \end{center}
 
   This means that, for any natural number $n$, we can \textit{eventually}, in finitely many
   applications of this logic, prove $P(n)$.
@@ -551,7 +551,7 @@
 
   \ptmt
 
-  \defBox{\, The principle of \term{structural induction on lists} is as follows:}
+  \defBox{The principle of \term{structural induction on lists} is as follows:}
 
   \pause
   \vspace{\fill}
@@ -621,7 +621,7 @@
   To visualize this, our bucket for structural induction would start with just the empty list in it:
 
   \pause
-  \begin{center} \includegraphics[scale=0.25]{bucket_nil} \end{center}
+  \begin{center} \includegraphics[scale=0.15]{bucket_nil} \end{center}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -634,7 +634,7 @@
   list.
 
   \pause
-  \begin{center} \includegraphics[scale=0.3]{bucket_singletons} \end{center}
+  \begin{center} \includegraphics[scale=0.15]{bucket_singletons} \end{center}
 
   \pause
   \vspace{\fill}
@@ -831,6 +831,16 @@
 \begin{frame}[fragile]
   \frametitle{Tail Recursion}
 
+  \begin{center}
+  \includegraphics[scale=0.4]{tail_recursion}
+  \end{center}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Tail Recursion}
+
   For recursive functions like \code{length}, we can write a version that, instead of making a
   recursive call and then doing some work with it, first does some work and then computes the
   answer by making a recursive call.
@@ -845,7 +855,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, A function is \term{tail recursive} if it makes a singular recursive call as
+  \defBox{A function is \term{tail recursive} if it makes a singular recursive call as
   the \textit{last thing that it does},
   in the recursive case. }
 \end{frame}
@@ -862,7 +872,7 @@
   \end{codeblock}
 
   \pause
-  We already saw this was not tail recursive.
+  We already saw \code{length} was not tail recursive.
 
   \pause
   \begin{codeblock}
@@ -871,7 +881,7 @@
   \end{codeblock}
 
   \pause
-  Similarly, this one ends up not being tail recursive.
+  Similarly, \code{fact} ends up not being tail recursive.
 
   \pause
   \begin{codeblock}
@@ -880,7 +890,7 @@
   \end{codeblock}
 
   \pause
-  Let's call this one "vacuously" tail recursive.
+  Let's call \code{isEmpty} "vacuously" tail recursive.
 
   \pause
   \vspace{\fill}
@@ -901,7 +911,7 @@
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, An \term{accumulator} is an additional argument to a function, which is meant to
+  \defBox{}{An \term{accumulator} is an additional argument to a function, which is meant to
   store the final answer, carrying it forward into future recursive calls.}
 
   \pause
@@ -947,8 +957,6 @@
   \color{blue} \href{https://asciinema.org/a/587210}{We can see our new \code{length} function put to the test!}
 
 \end{frame}
-
-\quizBreak{SAGRADA}
 
 \sectionSlide{4}{More List Functions}
 
@@ -1078,6 +1086,202 @@
 %     \includegraphics[scale=0.035]{qr_may25}
 %   \end{center}
 % \end{frame}
+
+\sectionSlide{5}{Case Study: \code{length} and \code{tlength}}
+
+\begin{frame}[fragile]
+  \frametitle{But Is It Right?}
+
+  We've written \code{tlength}, which computes the same thing as
+  \code{length}, just more efficiently\footnote{\textit{\color{blue}[citation needed]}}.
+
+  \pause
+  \vspace{\fill}
+
+  But this is a claim that deserves a proof! Our \code{length} function is our
+  \term{reference implementation}, and we'd like to show that \code{tlength}
+  agrees with it.
+
+  \pause
+  \vspace{\fill}
+
+  \thmBox{}\, For all \code{L : int list}, \code{tlength (L, 0)} $\eeq$ \code{length L}.
+
+  \pause
+  \vspace{\fill}
+
+  Let's try to prove this by structural induction on \code{L}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Failed Attempt}
+
+  We proceed by structural induction on \code{L : int list}.
+
+  \pause
+  \vspace{\fill}
+
+  \bcBox{\, \code{L = []}}
+  \begin{align*}
+    \code{tlength ([], 0)} &\stepsTo \code{0} & \text{(clause 1 of \code{tlength})} \\
+                           &\eeq \code{length []} & \text{(clause 1 of \code{length})}
+  \end{align*}
+
+  \pause
+  \vspace{-5pt}
+
+  \ihBox{}{\, Case: \code{L = xs}. Assume \code{tlength (xs, 0)} $\eeq$ \code{length xs}.}
+
+  \vspace{\fill}
+
+  \isBox{}{\, Case: \code{L = x::xs}. WTS \code{tlength (x::xs, 0)} $\eeq$ \code{length (x::xs)}.}
+  \pause
+  \begin{align*}
+    \code{tlength (x::xs, 0)} &\stepsTo \code{tlength (xs, 1 + 0)} & \text{(clause 2 of \code{tlength})} \\
+                              &\stepsTo \code{tlength (xs, 1)}     & \text{(math)}
+  \end{align*}
+
+  \pause
+  \vspace{-3pt}
+
+  We're stuck! Our inductive hypothesis tells us about \code{tlength (xs, 0)}, but
+  we have \code{tlength (xs, 1)}. \textbf{The IH does not apply.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strengthening the Theorem}
+
+  The issue is that the accumulator \textit{changes} on every recursive call. Our
+  IH only tells us what happens at \code{0}, but the recursive call passes a
+  different value.
+
+  \pause
+  \vspace{\fill}
+
+  The fix is to prove a \term{stronger} theorem -- one which holds for \textit{any}
+  starting value of the accumulator.
+
+  \pause
+  \vspace{\fill}
+
+  \thmBox{}\, For all \code{L : int list} and all \code{n : int},
+  \code{tlength (L, n)} $\eeq$ \code{length L + n}.
+
+  \pause
+  \vspace{\fill}
+
+  Notice that our original theorem is just the special case where \code{n = 0},
+  since \code{length L + 0} $\hookrightarrow$ \code{length L}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Proof, Take Two}
+
+  We proceed by structural induction on \code{L : int list}.
+
+  \pause
+  \vspace{\fill}
+
+  \bcBox{\, \code{L = []}}
+  \begin{align*}
+    \code{tlength ([], n)} &\stepsTo \code{n}              & \text{(clause 1 of \code{tlength})} \\
+                           &\eeq \code{0 + n}              & \text{(math)} \\
+                           &\eeq \code{length [] + n}      & \text{(clause 1 of \code{length})}
+  \end{align*}
+
+  \pause
+  \vspace{\fill}
+
+  \ihBox{}{\, Case: \code{L = xs}. Assume that for all \code{n : int},
+  \code{tlength (xs, n)} $\eeq$ \code{length xs + n}.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \ihBox{}{\, Case: \code{L = xs}. Assume that for all \code{n : int},
+  \code{tlength (xs, n)} $\eeq$ \code{length xs + n}.}
+
+  \pause
+  \vspace{\fill}
+
+  \isBox{}{\, Case: \code{L = x::xs}. We'd like to show that for all \code{n : int},
+  \code{tlength (x::xs, n)} $\eeq$ \code{length (x::xs) + n}.}
+
+  \pause
+  \begin{align*}
+    \code{tlength (x::xs, n)} &\stepsTo \code{tlength (xs, 1 + n)}   & \text{(clause 2 of \code{tlength})} \\
+                              &\eeq \code{length xs + (1 + n)} & \text{(IH, but see warning)} \\
+                              &\eeq \code{(1 + length xs) + n}       & \text{(associativity)} \\
+                              &\eeq \code{length (x::xs) + n}        & \text{(clause 2 of \code{length})}
+  \end{align*}
+
+  \customColorBox{red}{white}{Warning}{\, There is a technicality here which we will discuss in the next lecture.
+  When we apply the IH, we are actually going to also need to know that \code{+} is total.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Quantifiers Matter}
+
+  Look carefully at the inductive hypothesis we used:
+
+  \pause
+  \vspace{\fill}
+
+  \customBox{IH}{\, For all \code{n : int}, \code{tlength (xs, n)} $\eeq$ \code{length xs + n}.}
+
+  \pause
+  \vspace{\fill}
+
+  This is crucially different from the IH in our failed attempt! There, the IH only
+  spoke about a \textit{single} value of the accumulator, \code{0}. Here, the IH
+  quantifies over \textit{all} \code{n}, which is what allowed us to instantiate it
+  at \code{1 + n}.
+
+  \pause
+  \vspace{\fill}
+
+  This is why strengthening the theorem worked. A stronger theorem gives us a
+  \textbf{stronger inductive hypothesis} -- and sometimes that's exactly what we need.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Real Theorem is a Corollary}
+
+  Now, the result we actually wanted falls right out:
+
+  \pause
+  \vspace{5pt}
+
+  \thmBox{}\, For all \code{L : int list}, \code{tlength (L, 0)} $\eeq$ \code{length L + 0}.
+
+  \pause
+  \vspace{\fill}
+
+  By the powers invested in us by the arithmetic gods, we know that this is really
+  just the same as saying:
+
+  \vspace{5pt}
+
+  \thmBox{}\, For all \code{L : int list}, \code{tlength (L, 0)} $\eeq$ \code{length L}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Lesson About Accumulators}
+
+  This is a pattern which shows up a lot when doing mathematics.
+
+  \pause
+  \vspace{\fill}
+
+  Sometimes, the theorem you really want is a \term{corollary} of a stronger statement
+  -- one which quantifies over all possible values of the accumulator.
+
+  \pause
+  \vspace{\fill}
+
+  Why? Because the accumulator changes on every recursive call. If your IH only
+  tells you about one specific accumulator value, it won't match the recursive
+  call's argument, and you'll get stuck -- just like we did the first time.
+\end{frame}
 
 \thankyou
 

@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Prologue} % TODO
     \subtitle{A humble beginning} % TODO
-    \date{16 May 2023} % TODO
+    \date{12 May 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -94,6 +94,32 @@
   With intros over, let's hop to it. Today we're here to learn functional programming.
 \end{comment}
 
+% \begin{frame}[fragile]
+%   \frametitle{Why are we here?}
+
+%   \begin{lstlisting}[language=ML]
+%     fun qsort [] = []
+%       | qsort (x::xs) =
+%           let val (lo, hi) = List.partition (fn y => y < x) xs
+%           in qsort lo @ [x] @ qsort hi end
+%   \end{lstlisting}
+
+%   \pause
+%   \vspace{\fill}
+
+%   \begin{center}
+%     This is an example of the \textbf{quicksort} algorithm, in a language called Standard ML.
+%   \end{center}
+
+%   \pause
+%   \vspace{\fill}
+
+%   \begin{center}
+%     Right now, this looks like nonsense.
+%   \end{center}
+% \end{frame}
+
+
 \begin{frame}[fragile]
   \frametitle{Lesson Plan}
 
@@ -105,20 +131,28 @@
 \begin{frame}[fragile]
   \frametitle{Myself}
 
-  I'm an alum who graduated last year with a degree in computer science from CMU.
+  I'm an alum who graduated four years ago\footnote{Wow, time passes quick.} with a degree in computer science.
 
+  \pause
   \vspace{\fill}
 
-  I TA'd 150 for three years while I was at CMU, and I currently work a
-  full-time job as a software engineer at a security company called
+  I TA'd 150 for seven semesters while I was at CMU, and I also taught this course
+  three years ago, and then retired from teaching. It is a bad sign that I am back here now.
+
+  \pause
+  \vspace{\fill}
+
+  I currently work a full-time job as a software engineer at a security company called
   {\color{blue}\href{https://semgrep.dev/}{Semgrep}}, doing functional
   programming\footnote{Using a language very similar to the one you will learn in this class.} for program analysis.
 
+  \pause
   \vspace{\fill}
 
   This means I am uniquely equipped as someone who works in the industry, to say that
   \textbf{functional programming is really useful}.
 
+  \pause
   \vspace{\fill}
 
   \noteBox{\, \textbf{I am not a professor}.}
@@ -128,26 +162,24 @@
     \frametitle{The Course Staff}
 
     \begin{center}
-      \includegraphics[width=0.12\columnwidth]{nancy} \qquad \qquad \qquad
-      \includegraphics[scale=0.3]{me_smaller.jpg} \qquad \qquad \qquad
-      \includegraphics[width=0.12\columnwidth]{sonya}
+      \includegraphics[scale=0.04]{me_new.jpg}
     \end{center}
     \begin{center}
-      \large Nancy \qquad \qquad \quad
-      \Large Brandon Wu \qquad \qquad \quad
-      \large Sonya
+      {\Large Brandon Wu} \\
+      \vspace{1pt}
+      GHC 6008
     \end{center}
 
     \vspace{\fill}
 
     \begin{center}\begin{tabular}{c c c c c c c c }
-      Kaz & Deya & Caroline & Stephen & Brandon & Michael \\
-      \includegraphics[width=0.1\columnwidth]{kaz} &
-      \includegraphics[width=0.1\columnwidth]{deya} &
-      \includegraphics[width=0.1\columnwidth]{caroline} &
-      \includegraphics[width=0.1\columnwidth]{stephen} &
-      \includegraphics[width=0.1\columnwidth]{brandon_little} &
-      \includegraphics[width=0.1\columnwidth]{michael} \\
+      Alessandro & Andrew & Angie & Arnim & Veer & Vincent \\
+      \includegraphics[width=0.1\columnwidth]{alessandro_3x4.jpg} &
+      \includegraphics[width=0.1\columnwidth]{andrew_3x4.jpg} &
+      \includegraphics[width=0.1\columnwidth]{angie_3x4.jpg} &
+      \includegraphics[width=0.1\columnwidth]{arnim_3x4.jpg} &
+      \includegraphics[width=0.1\columnwidth]{veer_3x4.jpg} &
+      \includegraphics[width=0.1\columnwidth]{vincent_3x4.jpg} \\
     \end{tabular}\end{center}
 \end{frame}
 
@@ -156,11 +188,12 @@
 
   \begin{itemize}
     \item Homework every week -- due on Tuesdays or Thursdays (see the lecture schedule!)
+    \item Quizzes most weeks on Fridays
     \item Turn in assignments via Gradescope
     \item Receive assignments via Canvas
     \item Piazza for any questions
     \item If you are not in all of \{ Gradescope, Piazza, Canvas \} please let me know
-    \item Slides, course policy, and other information at the {\color{blue}\href{http://www.cs.cmu.edu/~15150/}{course website here}}
+    \item Slides, course policy, and other information at the {\color{blue}\href{http://www.cs.cmu.edu/~15150/}{course website here}}\footnote{As of May 12th, still under construction.}
   \end{itemize}
 \end{frame}
 
@@ -200,28 +233,6 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Grading: Lecture Track}
-
-  \begin{minipage}{0.59\textwidth}
-    (visualized via \% of Farnam) \\
-
-    \vspace{\fill}
-
-    \begin{itemize}
-      \item Homework: 42\%
-      \item Lecture Attendance: 3\%
-      \item Lab Attendance: 10\%
-      \item Midterm 1: 10\%
-      \item Midterm 2: 15\%
-      \item Final: 20\%
-    \end{itemize}
-  \end{minipage}
-  \begin{minipage}{0.4\textwidth}
-    \includegraphics[scale=0.45]{farnam_lecture}
-  \end{minipage}
-\end{frame}
-
-\begin{frame}[fragile]
   \frametitle{Grading: Homework Track}
 
   \begin{minipage}{0.59\textwidth}
@@ -231,71 +242,91 @@
     \vspace{\fill}
 
     \begin{itemize}
-      \item Homework: 45\%
+      \item Homework: 30\%
       \item Lab Attendance: 10\%
-      \item Midterm 1: 10\%
+      \item Quizzes: 10\%
+      \item Midterm 1: 15\%
       \item Midterm 2: 15\%
       \item Final: 20\%
     \end{itemize}
   \end{minipage}
   \begin{minipage}{0.4\textwidth}
-    \includegraphics[scale=0.45]{farnam_homework}
+    \includegraphics[scale=0.1]{farnam_grades.jpg}
   \end{minipage}
 \end{frame}
 
-
-
 \begin{frame}[fragile]
-  \frametitle{House System}
+  \frametitle{Grading: Lecture Track}
 
-  This semester, we are implementing a house system.\footnote{Yes, like Harry Potter.}
+  \begin{minipage}{0.59\textwidth}
 
-  \pause
-  \vspace{\fill}
+    (visualized via \% of Farnam) \\
 
-  The class has been divided into three labs of roughly 20 students, which each forms a
-  "house". Each house will be eligible to earn points on the merits of:
-  \pause
-  \begin{itemize}
-    \item Asking good questions on Piazza \pause
-    \item Giving good answers on Piazza \pause
-    \item Answering questions during lecture
-  \end{itemize}
+    \vspace{\fill}
 
-  \pause
-  \vspace{\fill}
-
-  \textbf{Twice a semester, the house with the most points will earn boba for their entire lab}.
+    \begin{itemize}
+      \item Homework: 27\%
+      \item Lecture Attendance: 3\%
+      \item Lab Attendance: 10\%
+      \item Quizzes: 10\%
+      \item Midterm 1: 15\%
+      \item Midterm 2: 15\%
+      \item Final: 20\%
+    \end{itemize}
+  \end{minipage}
+  \begin{minipage}{0.4\textwidth}
+    \includegraphics[scale=0.1]{farnam_grades_v2.jpg}
+  \end{minipage}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Active Learning}
+  \frametitle{Quizzes}
 
-  It is better to learn by exercising your mind actively, rather than passively absorbing
-  information in a lecture setting.
-
-  \pause
-  \vspace{\fill}
-
-  To facilitate this, we will have active learning exercises during lecture. There will be
-  a short (roughly 5 minute) quiz in the middle of every single lecture, that \textbf{will not
-  count towards your grade}. Instead, it will simply be used by TAs to judge where your
-  understanding may be lacking.
+  One practice we are instituting this semester is \textbf{quizzes}.
 
   \pause
   \vspace{\fill}
 
-  In particular, these quizzes are a whole-house effort! Every house will take the quiz
-  together, and whichever house scores the highest cumulatively earn points for their house,
-  and be crowned that lecture's victor, along with earning other prizes.
+  Midterms are good for synchronously testing your understanding of the material, but they
+  come too infrequently to be a good temperature check.
 
   \pause
   \vspace{\fill}
 
-  This means that winning the house competition is a whole-house effort! It's in your interest
-  to discuss with others during these quizzes, and fill in gaps in yours and others'
-  understanding.
+  Quizzes this semester will be a more frequent assessment of your understanding, with lower
+  stakes. The intention is that they should not be nearly at the difficulty of examination questions
+  or homeworks, but be a good way to demonstrate your understanding of the material so we can
+  know early if anyone is falling behind.
+
+  \pause
+  \vspace{\fill}
+
+  Fair game for quizzes is the \textbf{material covered in that week's lectures} and the
+  \textbf{material graded in the previously due homework}. We will drop the lowest two
+  quiz scores as well.
+
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{AI Policy}
+
+  Our AI policy is simple: \textbf{No usage of AI is permitted}.
+
+  \pause
+  \vspace{\fill}
+
+  We will have more to say on this later. Suffice to say that you are at a
+  stage of your education where you are not yet ready to use AI in a way that
+  can help you learn.
+
+  \pause
+  \vspace{\fill}
+
+  Please make maximal use of the humans that are being paid minimum wage (and me)
+  to help you, whether through Piazza or office hours.
+\end{frame}
+
+
 
 \begin{frame}[fragile]
   \frametitle{Wellness}
@@ -343,8 +374,7 @@
   Let's make a plan to help you succeed.
 \end{frame}
 
-
-
+\slido{\#3951 716}{slido_qr_5_12}
 
 \sectionSlide{2}{The Philosophy of Functional Programming}
 
@@ -433,23 +463,28 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{What should programming be?}
+  \frametitle{Programming should be: Descriptive}
 
   \begin{center}
-    Good programming should be \textbf{descriptive}. \\
+      Good code should allow you to \textbf{reason without running}. \\
+      % Good programming should be \textbf{descriptive}. \\
 
     \vspace{\fill}
   \end{center}
 
-  \centerline{
-    \begin{minipage}{0.4\textwidth}
+  \begin{center}
+    \begin{minipage}{0.48\textwidth}
       \pause
-      \includegraphics[scale=0.35]{goto.jpeg}
+      \begin{center}
+      \includegraphics[scale=0.3]{goto.jpg}
+      \end{center}
     \end{minipage}
-    \begin{minipage}{0.4\textwidth}
-      \includegraphics[scale=0.5]{spaghetti.png}
+    \begin{minipage}{0.48\textwidth}
+      \begin{center}
+      \includegraphics[scale=0.52]{goto.png}
+      \end{center}
     \end{minipage}
-  }
+  \end{center}
 
   \note{
     So how can we characterize good programming? \\
@@ -475,14 +510,14 @@
 
 
 \begin{frame}[fragile]
-  \frametitle{What should programming be?}
+  \frametitle{Programming should be: Modular}
   \begin{center}
-    Good programming should be \textbf{modular}.
+    Good code should allow you to \textbf{reuse without rewriting}. \\
 
     \pause
     \vspace{\fill}
 
-    Logically distinct parts should be separated, for separate maintenance and reuse.
+    Logically distinct parts should be \textit{modular}, for separate maintenance and reuse.
 
     \pause
     \vspace{\fill}
@@ -509,10 +544,10 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{What should programming be?}
+  \frametitle{Programming should be: Maintainable}
 
   \begin{center}
-    Good programming should be \textbf{maintainable}.
+    Good code should let you \textbf{change without breaking}. \\
   \end{center}
 
   \pause
@@ -537,6 +572,13 @@
     with modularity and descriptivity -- I can't go and modify code I don't understand.
   }
 \end{frame}
+
+\lstset{
+    backgroundcolor=\color{lightgray},
+    basicstyle=\ttfamily,
+    frame=single,
+    columns=fullflexible
+}
 
 \begin{frame}[fragile]
   \frametitle{What is Not Functional Programming?}
@@ -687,8 +729,10 @@
     to understand programs, but functional programming has a big win here.
   }
 
+  \keyBox {
   In stateful programs, understanding a program entails not only understanding what the code does,
-  but knowing the entire history of the program up until that point.
+  but knowing the \textbf{entire history of the program up until that point.}
+  }
 
 \end{frame}
 
@@ -811,17 +855,6 @@
 
   In this way, types guide the structure of a program, by providing clean interfaces
   for how different parts should interact, and what it should be allowed to do.
-
-\end{frame}
-
-
-
-
-\begin{frame}[plain]
-
-  \begin{center}
-    \Large 5-minute break!
-  \end{center}
 
 \end{frame}
 
@@ -1222,7 +1255,7 @@
   \vspace{\fill}
 
   \defBox{\, The typing rule for function application is that \code{e1 e2 : t2} iff
-   \code{e1 : t1 -> t2} and \code{e1 : t1}, for some types \code{t1}, \code{t2}.}
+   \code{e1 : t1 -> t2} and \code{e2 : t1}, for some types \code{t1}, \code{t2}.}
 
    \pause
   \vspace{\fill}
@@ -1273,6 +1306,119 @@
   \vspace{\fill}
 
   We will have more to say about variable declarations in the next lecture.
+\end{frame}
+
+\sectionSlide{5}{Closing Remarks}
+
+\begin{frame}[fragile]
+  \frametitle{The AI-lephant in the room}
+
+  Let's discuss the elephant in the room.
+
+  \pause
+  \vspace{\fill}
+
+  We live in unprecedented times, where classrooms and software engineering are being
+  disrupted by the rise of large language models and agentic coding assistants.
+
+  \pause
+  \vspace{\fill}
+
+  It would be wrong of me as your instructor to not acknowledge this, and the fundamental
+  question: \textbf{why are we here, learning functional programming?}
+
+  \pause
+  \vspace{\fill}
+
+  What is the point of us learning how to write programs which can be generated by
+  an LLM?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The AI-lephant in the room}
+
+  How many of you want to be software engineers?
+
+  \pause
+  \vspace{\fill}
+
+  How many of you are worried about having difficulty finding an entry-level job due
+  to AI? About being replaced by AI?
+
+  \pause
+  \vspace{\fill}
+
+  I cannot promise to you answers to all of these worries. What I can tell you is that
+  there has never been a better time to really care about the material you
+  have the opportunity to learn.
+
+  \pause
+  \vspace{\fill}
+
+  In a world where generating code via LLMs is cheap, the ability to discern good solutions
+  and reason about code is more valuable than ever.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The AI-lephant in the room}
+
+  \begin{minipage}[c]{0.55\textwidth}
+    They\footnote{The New York Times, that is.} say that taste is the one thing that AI cannot replicate.
+
+    \pause
+    \vspace{10pt}
+
+    \keyBox{ Generativity without constraint is chaos!}
+
+    \pause
+    \vspace{10pt}
+
+    Without the ability to appraise the solutions that are presented to you, programming becomes a mess.
+
+    \pause
+    \vspace{10pt}
+
+    You need to be able to choose what to do, and what to not do, and you cannot do that
+    without first understanding the relative merits of different code.
+
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[c]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{taste.png}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Closing Remarks}
+
+  % Some people ask "Why SML?"
+  % Why functional programming?
+
+  I promised you at the start of this lecture that I would change the way that you think.
+
+  \pause
+  \vspace{\fill}
+
+  The point of 15-150 is not functional programming. Functional programming is a tool,
+  a paradigm, and an art. But most of all, it is a way of thinking.
+
+  \pause
+  \vspace{\fill}
+
+  Ideas from functional programming are not just pervasive among many disciplines of
+  programming and in many programming languages, but they make you a stronger problem solver
+  and better architect of code.
+
+  \pause
+  \vspace{\fill}
+
+  You are at Carnegie Mellon University, an institution that is special in teaching you a subject that most never
+  get the chance to learn.
+
+  \pause
+  \vspace{\fill}
+
+  \textbf{I intend to keep my promise.}
 \end{frame}
 
 \thankyou

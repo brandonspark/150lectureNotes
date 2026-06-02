@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Trees} % TODO
     \subtitle{Branching out our types} % TODO
-    \date{30 May 2023} % TODO
+    \date{26 May 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -124,7 +124,7 @@
   \begin{center}
     \begin{tikzpicture}
       [level distance=10mm,
-      every node/.style={circle,inner sep=2pt, draw=black!80, thick},
+      every node/.style={circle,inner sep=2pt, draw=black!80, thick, fill=black!15!white},
       level 1/.style={sibling distance=20mm},
       level 2/.style={sibling distance=10mm},
       ]
@@ -218,7 +218,7 @@
   \begin{center}
     \begin{tikzpicture}
       [level distance=10mm,
-      every node/.style={circle,inner sep=2pt, draw=black!80, thick},
+      every node/.style={circle,inner sep=2pt, draw=black!80, thick, fill=black!15!white},
       level 1/.style={sibling distance=20mm},
       level 2/.style={sibling distance=10mm},
       ]
@@ -237,7 +237,7 @@
   \begin{center}
     \begin{tikzpicture}
       [level distance=10mm,
-      every node/.style={circle,inner sep=2pt, draw=black!80, thick},
+      every node/.style={circle,inner sep=2pt, draw=black!80, thick, fill=black!15!white},
       level 1/.style={sibling distance=20mm},
       level 2/.style={sibling distance=10mm},
       ]
@@ -255,7 +255,7 @@
   \begin{center}
     \begin{tikzpicture}
       [level distance=10mm,
-      every node/.style={circle,inner sep=2pt, draw=black!80, thick},
+      every node/.style={circle,inner sep=2pt, draw=black!80, thick, fill=black!15!white},
       level 1/.style={sibling distance=20mm},
       level 2/.style={sibling distance=10mm},
       ]
@@ -395,7 +395,7 @@
     \begin{center}
       \begin{tikzpicture}
         [level distance=12mm,
-        every node/.style={circle,inner sep=4pt, draw=black!80, thick},
+        every node/.style={circle,inner sep=4pt, draw=black!80, thick, fill=black!15!white},
         level 1/.style={sibling distance=24mm},
         level 2/.style={sibling distance=12mm},
         ]
@@ -417,7 +417,7 @@
     \begin{center}
       \begin{tikzpicture}
         [level distance=12mm,
-        every node/.style={circle,inner sep=4pt, draw=black!80, thick},
+        every node/.style={circle,inner sep=4pt, draw=black!80, thick, fill=black!15!white},
         level 1/.style={sibling distance=24mm},
         level 2/.style={sibling distance=12mm},
         ]
@@ -439,7 +439,7 @@
     \begin{center}
       \begin{tikzpicture}
         [level distance=12mm,
-        every node/.style={circle,inner sep=4pt, draw=black!80, thick},
+        every node/.style={circle,inner sep=4pt, draw=black!80, thick, fill=black!15!white},
         level 1/.style={sibling distance=24mm},
         level 2/.style={sibling distance=12mm},
         ]
@@ -465,7 +465,7 @@
     \begin{center}
       \begin{tikzpicture}
         [level distance=12mm,
-        every node/.style={circle,inner sep=4pt, draw=black!80, thick},
+        every node/.style={circle,inner sep=4pt, draw=black!80, thick, fill=black!15!white},
         level 1/.style={sibling distance=24mm},
         level 2/.style={sibling distance=12mm},
         ]
@@ -486,14 +486,14 @@
 
         \vspace{5pt}
 
-        {\color{black!10!red}left}-{\color{black!20!green}root}-{\color{black!10!blue}right}
+        {\color{black!15!red}left}-{\color{black!10!green}root}-{\color{black!10!blue}right}
     \end{center}
   \end{minipage}
   \begin{minipage}{0.32\textwidth}
     \begin{center}
       \begin{tikzpicture}
         [level distance=12mm,
-        every node/.style={circle,inner sep=4pt, draw=black!80, thick},
+        every node/.style={circle,inner sep=4pt, draw=black!80, thick, fill=black!15!white},
         level 1/.style={sibling distance=24mm},
         level 2/.style={sibling distance=12mm},
         ]
@@ -514,14 +514,14 @@
 
       \vspace{5pt}
 
-      {\color{black!20!green}root}-{\color{black!10!red}left}-{\color{black!10!blue}right}
+      {\color{black!15!green}root}-{\color{black!10!red}left}-{\color{black!10!blue}right}
     \end{center}
   \end{minipage}
   \begin{minipage}{0.32\textwidth}
     \begin{center}
       \begin{tikzpicture}
         [level distance=12mm,
-        every node/.style={circle,inner sep=4pt, draw=black!80, thick},
+        every node/.style={circle,inner sep=4pt, draw=black!80, thick, fill=black!15!white},
         level 1/.style={sibling distance=24mm},
         level 2/.style={sibling distance=12mm},
         ]
@@ -542,7 +542,7 @@
 
         \vspace{5pt}
 
-        {\color{black!10!red}left}-{\color{black!10!blue}right}-{\color{black!20!green}root}
+        {\color{black!15!red}left}-{\color{black!10!blue}right}-{\color{black!10!green}root}
     \end{center}
   \end{minipage}
 
@@ -839,9 +839,9 @@
 
   \begin{center}
     \begin{tikzpicture}
-      \node[shape=rectangle,draw=black, text width=3cm] (M1) at (-3,2) {totality citation};
-      \node[shape=rectangle,draw=black, text width=3cm] (M2) at (1.5,2) {valuability of \code{e}};
-      \node[shape=rectangle,draw=black, text width=5cm] (M3) at (7,2) {ability to use theorem which \\ relies on \code{e} being valuable};
+      \node[shape=rectangle,draw=black, fill=black!15!white, text width=3cm] (M1) at (-3,2) {totality citation};
+      \node[shape=rectangle,draw=black, fill=black!15!white, text width=3cm] (M2) at (1.5,2) {valuability of \code{e}};
+      \node[shape=rectangle,draw=black, fill=black!15!white, text width=5cm] (M3) at (7,2) {ability to use theorem which \\ relies on \code{e} being valuable};
 
       \draw[->] (M1) -- (M2);
       \draw[->] (M2) -- (M3);
@@ -1311,7 +1311,7 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    type class =
+    datatype class =
         Employed of real * string
           (* paycheck and company name *)
       | Student of real * int
@@ -1361,6 +1361,22 @@
   functional programmer can \textit{make} a peg to fit any hole that they need.
 \end{frame}
 
+\thankyou
+
+\begin{frame}[plain]
+  \begin{center}
+    {\huge \color{presentColor} \intermedium{Post-lecture attendance poll}}
+
+    \vspace{10pt}
+
+    \color{presentColor} \intermedium{Password: JADEN}
+
+    \vspace{\fill}
+
+    \includegraphics[scale=0.35]{jaden.jpeg}
+  \end{center}
+\end{frame}
+
 % \begin{frame}[plain]
 % 	\begin{center} Thank you! \end{center}
 
@@ -1370,7 +1386,5 @@
 %     \includegraphics[scale=0.035]{qr_may25}
 %   \end{center}
 % \end{frame}
-
-\thankyou
 
 \end{document}
