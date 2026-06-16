@@ -45,7 +45,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Continuation-Passing Style} % TODO
     \subtitle{Making control flow explicit} % TODO
-    \date{20 June 2023} % TODO
+    \date{16 June 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -207,25 +207,26 @@
 \begin{frame}[fragile]
   \frametitle{A Less Convenient Example}
 
-  What if we were doing something slightly different? Suppose we now have
-  a list of strings, and we want to interpret them as integers and find the
-  average.
+  Suppose we have a list of grades, and we want to add a curve to each,
+  and then find the average. Assume
+  \code{applyCurve : int -> int} bumps a single grade.\footnote{
+    Also, our grades are 1, 2, and 3. Our students didn't study a lot.
+  }
 
   \pause
   \vspace{\fill}
 
   \begin{codeblock}
-    ["1", "2", "3"]
-    |> map Int.fromString
-    |> map Option.valOf
+    [1, 2, 3]
+    |> map applyCurve
     |> (fn L => (foldr op+ 0 L) div (List.length L))
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  We have to introduce a lambda, because we want to use the value of
-  \code{L} twice. We need to know how much the denominator is.
+  We have to introduce a lambda, because we want to use \code{L} twice.
+  We need both the sum and the length.
 
   \pause
   \vspace{\fill}
@@ -233,7 +234,7 @@
   This is kind of gross, and breaks our nice sequencing, though! Because of
   this \code{div} function, it's not clear what the control flow of our
   function is. Before, our steps were cleanly separated by pipes -- now,
-  we rely on evaluation order. Can we do better?
+  we rely on evaluation order inside that last lambda. Can we do better?
 \end{frame}
 
 \begin{frame}[fragile]
@@ -254,36 +255,131 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    ["1", "2", "3"]
-    |> `(fn L1 =>`    map Int.fromString `L1`
-    |> `(fn L2 =>`    map Option.valOf `L2`
-    |> (fn L =>     foldr op+ 0 L
-    |> `(fn total =>` List.length L
-    |> `(fn len =>`   `total` div `len` )))))
+    [1, 2, 3]
+    |> `(fn grades =>` map applyCurve `grades`
+    |> (fn L =>   foldr op+ 0 L
+    |> `(fn total =>`  List.length L
+    |> `(fn len =>`    `total` div `len` ))))
   \end{codeblock}
 \end{frame}
 
-
 \begin{frame}[fragile]
-  \frametitle{Super Explicit Piping}
+  \frametitle{Super Explicit Piping: Alternatively}
 
-  Actually, we usually prefer to indent it slightly differently:
+  \badBox{Subtle: Why did we not say that our pipeline is equivalent to
+  this?}
+
+  \pause
+  \vspace{\fill}
 
   \begin{codeblock}
-    ["1", "2", "3"]       |> (fn L1 =>
-    map Int.fromString L1 |> (fn L2 =>
-    map Option.valOf L2   |> (fn L =>
-    foldr op+ 0 L         |> (fn total =>
-    List.length L         |> (fn len =>
-    total div len         )))))
+    [1, 2, 3]
+    |> `(fn grades =>` map applyCurve `grades)`
+    |> (fn L =>   foldr op+ 0 L`)`
+    |> `(fn total =>`  List.length `L)`
+    |> `(fn len =>`    `total` div `len` )
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  Now, each expression, such as \code{map Int.fromString L1}, is placed
+  \textbf{Answer:} Here, each step closes its own lambda. So when we reach
+  \code{List.length L}, the value \code{L} is \textbf{out of scope}
+  -- it lived only inside the lambda two steps up! Nesting keeps \code{L}
+  alive for the rest of the chain; this flat form throws it away.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Super Explicit Piping: Alternatively}
+
+  Put more clearly, we could have written this:
+
+  \begin{codeblock}
+    x
+    |> (fn y => f y)
+    |> (fn z => g z)
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  But we chose instead to write this:
+
+  \begin{codeblock}
+    x
+    |> (fn y => f y` `
+    |> (fn z => g z)`)`
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  The former is \code{x} being piped into two lambdas, each of which
+  apply \code{f} and \code{g} to their arguments, respectively. The
+  latter is \code{x} being piped into a \textbf{single lambda} that
+  applies \code{f} to its argument, and then applies \code{g} to that
+  result.
+
+  \pause
+  \vspace{\fill}
+
+  The latter, however, lets us use the value of \code{y} at the
+  step where we compute \code{g z}.
+\end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Super Explicit Piping: Alternatively}
+
+%   We can derive this from first principles, if you trust the fact
+%   that \code{x |> f |> g} is equivalent to \code{x |> (g o f)}.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Then the former, written explicitly, is just
+%   \code{x |> (fn y => f y) |> (fn z => g z)}.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Then the latter, written explicitly, is just
+%   \begin{align*}
+%     & \code{x |> (g o f)} \\
+%     & \eeq \code{x |> (fn y => (g o f) y)} \tag{eta expansion} \\
+%     & \eeq \code{x |> (fn y => g (f y))} \tag{definition of \code{o}} \\
+%     & \eeq \code{x |> (fn y => f y |> g)} \tag{definition of \code{|>}} \\
+%     & \eeq \code{x |> (fn y => f y |> (fn z => g z))} \tag{eta expansion} \\
+%   \end{align*}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Therefore,
+%   \begin{align*}
+%     & \code{x |> (fn y => f y) |> (fn z => g z)} \\
+%     & \eeq \code{x |> (fn y => f y |> (fn z => g z))} \\
+%   \end{align*}
+% \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Super Explicit Piping: Indented}
+
+  Actually, we usually prefer to indent it slightly differently:
+
+  \begin{codeblock}
+    [1, 2, 3]             |> (fn grades =>
+    map applyCurve grades |> (fn L =>
+    foldr op+ 0 L         |> (fn total =>
+    List.length L         |> (fn len =>
+    total div len         ))))
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Now, each expression, such as \code{map applyCurve grades}, is placed
   on the same line as the lambda expression that it is being piped into,
-  which explicitly names the result of the computation (in this case, \code{L2}).
+  which explicitly names the result of the computation (in this case, \code{L}).
 
   \pause
   \vspace{\fill}
@@ -298,12 +394,10 @@
   a little more clear:
 
   \begin{codeblock}
-    ["1", "2", "3"] |> <r(r>fn L1 =>
-      map Int.fromString L1 |> <p(p>fn L2 =>
-        map Option.valOf L2 |> <g(g>fn L =>
-          foldr op+ 0 L |> <r(r>fn total =>
-            List.length L |> (fn len => total div len)
-          <r)r>
+    [1, 2, 3] |> <r(r>fn grades =>
+      map applyCurve grades |> <p(p>fn L =>
+        foldr op+ 0 L |> <g(g>fn total =>
+          List.length L |> (fn len => total div len)
         <g)g>
       <p)p>
     <r)r>
@@ -324,12 +418,11 @@
   But wait, let's revisit the pipeline we just created:
 
   \begin{codeblock}
-    ["1", "2", "3"]       |> (fn L1 =>
-    map Int.fromString L1 |> (fn L2 =>
-    map Option.valOf L2   |> (fn L =>
+    [1, 2, 3]             |> (fn grades =>
+    map applyCurve grades |> (fn L =>
     foldr op+ 0 L         |> (fn total =>
     List.length L         |> (fn len =>
-    total div len         )))))
+    total div len         ))))
   \end{codeblock}
 
   \pause
@@ -353,12 +446,11 @@
   \end{codeblock}
 
   \begin{codeblock}
-    ["1", "2", "3"]           |> (fn L1 =>
-    `mapCool` Int.fromString L1 `  ` (fn L2 =>
-    `mapCool` Option.valOf L2   `  ` (fn L =>
-    `foldrCool` op+ 0 L         `  ` (fn total =>
-    `lengthCool` L              `  ` (fn len =>
-    total div len                )))))
+    [1, 2, 3]                  |> (fn grades =>
+    `mapCool` applyCurve grades  `  ` (fn L =>
+    `foldrCool` op+ 0 L          `  ` (fn total =>
+    `lengthCool` L               `  ` (fn len =>
+    total div len                ))))
   \end{codeblock}
 
   Please take a second to convince yourself that, via referential transparency,
@@ -375,11 +467,10 @@
   \pause
   \begin{codeblock}
     let
-      val L1    = ["1", "2", "3"]
-      val L2    = map Int.fromString L1
-      val L     = map Option.valOf L1
-      val total = foldr op+ 0 L
-      val len   = List.length L
+      val grades = [1, 2, 3]
+      val L = map applyCurve grades
+      val total  = foldr op+ 0 L
+      val len    = List.length L
     in
       total div len
     end
@@ -464,7 +555,7 @@
   \pause
   \vspace{\fill}
 
-  \badBox{}{\, Wrong. This is an incorrect implementation of \code{map}! }
+  \badBox{This is an incorrect implementation of \code{map}!}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -482,7 +573,8 @@
   {\small
   \begin{codeblock}
     fun tmap_backwards f [] acc = acc
-      | tmap_backwards f (x::xs) acc = tmap f xs (f x :: acc)
+      | tmap_backwards f (x::xs) acc =
+          tmap_backwards f xs (f x :: acc)
 
     fun trev [] acc = acc
       | trev (x::xs) acc = trev xs (x::acc)
@@ -646,7 +738,7 @@
 
   \spec
     {addCPS}
-    {int -> int -> (int -> 'a) -> int}
+    {int -> int -> (int -> 'a) -> 'a}
     {\code{true}}
     {\code{addCPS x y k} $\eeq$ \code{k (x + y)}}
 
@@ -668,13 +760,13 @@
   \frametitle{CPS and Tail Recursion}
 
   \begin{codeblock}
-    fun factCPS f L k = k (fact f L)
+    fun factCPS n k = k (fact n)
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  \badBox{}{\, This function is not tail recursive, nor is it CPS!}
+  \badBox{This function is not tail recursive, nor is it CPS!}
 
   \pause
   \vspace{\fill}
@@ -740,7 +832,7 @@
   fulfills the following criteria:}
 
   \pause
-  \vspace{\fill}
+  \vspace{5pt}
 
   \begin{enumerate}
     \item It takes in and uses continuations \pause
@@ -1590,5 +1682,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{THECONTROLMUSTFLOW}
 
 \end{document}
