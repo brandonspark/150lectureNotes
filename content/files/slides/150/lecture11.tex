@@ -468,7 +468,7 @@
   \begin{codeblock}
     let
       val grades = [1, 2, 3]
-      val L = map applyCurve grades
+      val L      = map applyCurve grades
       val total  = foldr op+ 0 L
       val len    = List.length L
     in
