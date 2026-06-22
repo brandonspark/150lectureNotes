@@ -1,0 +1,2316 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=169, handout]{beamer}
+
+% Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+\newif\ifcolorlambda
+\colorlambdafalse % DEFAULT: false
+
+% Use auxcolor for syntax highlighting
+\newif\ifuseaux
+\useauxfalse % DEFAULT: false
+
+% Color settings
+\useauxtrue
+
+% LIGHT MODE TOGGLE: flip \lightmodetrue for a projector-friendly light theme
+% (dark text on a near-white canvas). The base palette below switches on it, and
+% the accent colors further down (ntColor, part*, code*) get darker variants too.
+\newif\iflightmode
+\lightmodefalse % DEFAULT: dark mode
+
+\iflightmode
+  % --- light theme: dark ink on a soft near-white page ---
+  \newcommand{\auxColor}{9A6B12}     % darker gold (readable on light)
+  \newcommand{\presentColor}{0C4033} % deep green accent
+  \newcommand{\bgColor}{F4F1E8}      % soft off-white canvas
+  \newcommand{\darkBg}{8b98ad}
+  \newcommand{\textColor}{1A2420}    % near-black ink
+\else
+  % --- dark theme (original) ---
+  \newcommand{\auxColor}{CC9A49}     % the color of note boxes and stuff
+  \newcommand{\presentColor}{01180E} % the primary color of the slide borders
+  \newcommand{\bgColor}{011C12}      % the color of the background of the slide
+  \newcommand{\darkBg}{8b98ad}
+  \newcommand{\textColor}{E7CEA4}
+\fi
+\newcommand{\lambdaColor}{\auxColor}
+
+\colorlambdatrue
+
+\usepackage{comment} % comment blocks
+\usepackage{soul} % strikethrough
+\usepackage{listings} % code
+\usepackage{makecell}
+\usepackage{transparent}
+\usepackage{proof} % PL inference rules: \infer{conclusion}{premises}
+
+\setbeamertemplate{itemize items}[circle]
+% \setbeameroption{show notes on second screen=right}
+
+\usepackage{lectureSlides}
+
+% Serif body text. lectureSlides loads Inter (sans) as the default family;
+% point the roman family at Crimson and make the document default roman so
+% canvas body text is serif.
+\usepackage[T1]{fontenc}
+\usepackage{crimson}              % sets \rmdefault to the Crimson family
+\renewcommand{\familydefault}{\rmdefault}
+
+% The inter package (loaded by lectureSlides) drives math italic letters through
+% a `pureletters` symbol font that follows the text roman family. Once crimson
+% repointed \rmdefault, math letters rendered in Crimson and clashed with the CM
+% symbols. Redeclare `pureletters` back to Computer Modern math italic so math
+% stays in CM while body text stays Crimson. Must be \AtBeginDocument: inter
+% installs `pureletters` at begin-document, after the preamble.
+\AtBeginDocument{\DeclareSymbolFont{pureletters}{OML}{cmm}{m}{it}}
+
+% Override ONLY the frametitle bar colors for this file (must come after
+% lectureSlides, which defines the frametitle template + theme). Change the
+% hex to recolor the title bar; leave the rest of the theme untouched.
+\definecolor{frametitleBar}{HTML}{0C4033}
+\setbeamercolor{frametitle}{fg=auxColor, bg=frametitleBar}
+
+
+% The custom frametitle template (lectureSlides.sty) sets a font but never
+% applies the frametitle fg, so beamer's fg= gets dropped. Re-inject it.
+\addtobeamertemplate{frametitle}{\usebeamercolor[fg]{frametitle}\color{fg}}{}
+
+% Primary body text color on the canvas. The dark bgColor makes the default
+% black text unreadable. Note \textColor is just a macro holding a hex string;
+% xcolor/beamer's fg= needs a *registered* color name, so define one first.
+\definecolor{textColor}{HTML}{\textColor}
+\setbeamercolor{normal text}{fg=textColor}
+
+% TOC entries inherit from `structure` -> presentColor (near-black here), so the
+% Table of Contents was invisible. Color the toc entries explicitly.
+\setbeamercolor{section in toc}{fg=auxColor}
+\setbeamercolor{subsection in toc}{fg=textColor}
+
+% itemize/enumerate markers also inherit from `structure` (near-black), so the
+% bullets were invisible on the dark canvas. Color the markers gold.
+\setbeamercolor{itemize item}{fg=auxColor}
+\setbeamercolor{itemize subitem}{fg=auxColor}
+\setbeamercolor{itemize subsubitem}{fg=auxColor}
+\setbeamercolor{enumerate item}{fg=auxColor}
+
+% Footnotes inherit from `structure` too, so the footnote text was near-black and
+% invisible (only its separator rule showed). \setbeamercolor alone didn't take,
+% so force the color directly in the template around \insertfootnotetext.
+\setbeamercolor{footnote}{fg=textColor}
+\setbeamercolor{footnote mark}{fg=auxColor}
+\setbeamertemplate{footnote}{%
+  \parindent 1em\noindent%
+  \raggedright
+  \hbox to 1.8em{\hfil{\color{auxColor}\insertfootnotemark}}%
+  {\color{textColor}\insertfootnotetext}\par%
+}
+
+% Grammar markup: distinguish nonterminals from terminals by color AND font.
+%   \nt{...} nonterminal (a symbol that expands further) -> bright gold, the
+%            regular math italic (NOT bold: bold-italic e was muddy/hard to read)
+%   \op{...} terminal OPERATOR (+ - * /) -> cream typewriter, kept as a \mathbin
+%            so it retains the normal binary-operator spacing
+%   \tm{...} terminal literal (numbers, parens, <integer literal>) -> cream
+%            typewriter, so program text reads like code (\texttt-style)
+% Coloring a math sub-expression with {\color..#1} turns it into an ordinary
+% atom and strips operator spacing; \op uses \mathbin to restore it.
+% teal nonterminal accent: a bright pastel for dark mode, a deeper teal for light
+\iflightmode
+  \definecolor{ntColor}{HTML}{0E7C6E}  % deep teal (readable on light)
+\else
+  \definecolor{ntColor}{HTML}{5FD0C0}  % bright teal (for dark)
+\fi
+% \nt is mode-agnostic (\ensuremath) so it works bare in math AND inside the
+% text-mode \gline below. Regular weight (bold was too fat); distinction from
+% the cream terminals comes from color + the terminals being typewriter.
+\newcommand{\nt}[1]{\ensuremath{{\color{ntColor}#1}}}
+% \mathtt does NOT restyle digits/operators (they come from the symbol fonts),
+% so terminals must use real text-mode \texttt via \text{} to look like code.
+\newcommand{\op}[1]{\mathbin{\text{\color{textColor}\texttt{#1}}}}
+\newcommand{\tm}[1]{\text{\color{textColor}\texttt{#1}}}
+
+% \gline{...}: terminal-by-default wrapper. Sets the ambient font to cream
+% typewriter (text mode), so bare characters ( ) + * / digits spaces all render
+% as terminals with NO markup. Only nonterminals need wrapping in \nt{...}, which
+% pops into gold math. \gto is the derivation arrow for use inside \gline.
+% \text{} forces text mode so \gline works even inside an align*/array cell.
+\newcommand{\gline}[1]{\text{\ttfamily\color{textColor}#1}}
+\newcommand{\gto}{\ensuremath{\;\Longrightarrow\;}}
+% \kw{...}: a terminal KEYWORD inside \gline -> gold typewriter (matches the
+% gold keyword highlighting that \code gives). Everything else in \gline stays
+% cream; \nt{...} stays teal.
+\newcommand{\kw}[1]{{\color{auxColor}#1}}
+% \rname{...}: an inference-rule name for \infer's optional [..] arg -- small
+% caps, gold, so rule labels read as a consistent set. Usage:
+%   \infer[\rname{Add}]{conclusion}{premises}
+\newcommand{\rname}[1]{\text{\small\color{auxColor}\textsc{#1}}}
+% \ty{...}: a type name (int, bool, ...) in code/typewriter style, like \tm but
+% semantically "a type". Body is in math mode (\ensuremath) so subscripts like
+% t_1 work; \mathtt gives the typewriter look for letters. For compound types
+% use \op for the connective, e.g. \ty{t_1} \op{*} \ty{t_2}.
+\newcommand{\ty}[1]{\ensuremath{{\color{textColor}\mathtt{#1}}}}
+
+% fact_proto part-highlighting: three semantic colors to mark the condition,
+% the base case, and the recursive case, then referenced in the explanation.
+\iflightmode
+  \definecolor{partCond}{HTML}{1763B0}  % blue  (deeper, for light)
+  \definecolor{partBase}{HTML}{2E8B40}  % green (deeper, for light)
+  \definecolor{partRec}{HTML}{B03C86}   % pink  (deeper, for light)
+\else
+  \definecolor{partCond}{HTML}{6FB7F0}  % condition  -> blue
+  \definecolor{partBase}{HTML}{9FE0A0}  % base case  -> green
+  \definecolor{partRec}{HTML}{E59BC8}   % recursive case -> pink
+\fi
+% (\prec is a built-in relation symbol, so the recursive-case macro is \precase)
+\newcommand{\pcond}[1]{{\color{partCond}#1}}
+\newcommand{\pbase}[1]{{\color{partBase}#1}}
+\newcommand{\cl}[1]{{\color{partCond}#1}}
+\newcommand{\precase}[1]{{\color{partRec}#1}}
+
+% \lam{x}: a lambda binder "lambda x." with a TIGHT dot. A bare \lambda x. gives
+% the period \mathpunct spacing (a wide gap after the dot); {.} makes the dot an
+% ordinary atom and \mkern adds just a hair of space before the body. Usage:
+%   \lam{f} \lam{x} f x   ==>   lambda f. lambda x. f x
+\newcommand{\lam}[1]{\lambda #1{.}\mkern2mu}
+
+% \Y: the Y combinator, in a poppy magenta so it stands out as the "magic" term.
+% Use it (in math mode) anywhere the mathematical Y appears: \Y, \Y \; f, etc.
+\definecolor{yColor}{HTML}{F25CA2}
+% \newrobustcmd so \color survives inside moving args (e.g. \defBox does an
+% \edef, where a fragile \color would break).
+\newrobustcmd{\Y}{{\color{yColor}\texttt{Y}}}
+
+% Big Bird subtyping diagram for the "Why semantics?" section: an array of dogs
+% where muppetify drops a BigBird into slot 0, then barkify calls .bark() on all
+% -- every dog says woof, but the bird (slot 0) can't (???).
+\definecolor{birdRed}{HTML}{E0564F}
+\usetikzlibrary{positioning,arrows.meta}
+\newcommand{\birddiagram}{%
+\begin{tikzpicture}[
+   font=\ttfamily\footnotesize,
+   cell/.style={draw=textColor, minimum width=1.05cm, minimum height=0.95cm},
+   dog/.style={cell, text=ntColor},
+   bird/.style={cell, draw=birdRed, fill=bgColor, text=birdRed, very thick},
+   % gaps live here -- edit these instead of absolute coordinates:
+   % woof/??? sit just below the index labels (i##1), which sit below the cells:
+   sound/.style={below=3pt of i##1},  % ## because this is inside a \newcommand body
+]
+  % the array: bird in slot 0, dogs in 1..5
+  \node[bird] (c0) at (0,0) {bird};
+  \foreach \i in {1,...,5} { \node[dog] (c\i) at (\i*1.15, 0) {dog}; }
+  \foreach \i in {0,...,5} { \node[font=\tiny\ttfamily, text=textColor, below=1pt of c\i] (i\i) {[\i]}; }
+  % muppetify drops Big Bird into slot 0 (label sits just above the array)
+  \node[text=birdRed, font=\scriptsize\bfseries, above=12pt of c0] (mup) {muppetify: animals[0] = BigBird};
+  \draw[-{Stealth[length=2mm]}, birdRed, thick] (mup) -- (c0);
+  % barkify: .bark() on each -- woof under the dogs, ??? under the bird
+  \foreach \i in {1,...,5} { \node[text=auxColor, font=\tiny, sound=\i] (w\i) {woof}; }
+  \node[text=birdRed, font=\small\bfseries, sound=0] {???};
+  % barkify caption below the woof row, spanning toward the middle
+  \node[text=auxColor, font=\scriptsize, below=8pt of w3] {barkify: call \texttt{.bark()} on each};
+\end{tikzpicture}}
+
+% Code blocks: the shared 15150code listings style assumes a LIGHT slide (light
+% gray panel, dark-ish text). On this dark deck the code text inherited cream and
+% vanished on the light box. Re-issue the style with a DARK panel + light text +
+% dark-tuned syntax colors. (Overrides lectureSlides; shared .sty untouched.)
+\iflightmode
+  \definecolor{codeBg}{HTML}{ECEAE0}      % light panel
+  \definecolor{codeKeyword}{HTML}{9A6B12} % darker gold
+  \definecolor{codeString}{HTML}{8A6A00}  % darker warm gold
+  \definecolor{codeComment}{HTML}{5E7468} % muted green-gray (darker)
+  \definecolor{codeNumber}{HTML}{6B7570}  % gray
+\else
+  \definecolor{codeBg}{HTML}{0A2E22}      % panel: a touch lighter than bgColor
+  \definecolor{codeKeyword}{HTML}{CC9A49} % keywords -> gold (auxColor); teal is
+                                          % reserved for nonterminals
+  \definecolor{codeString}{HTML}{E7B95C}  % strings  -> warm gold
+  \definecolor{codeComment}{HTML}{7E9C8E} % comments -> muted green-gray
+  \definecolor{codeNumber}{HTML}{B8C4BE}  % line numbers -> light gray
+\fi
+\lstdefinestyle{15150code}{
+    basicstyle=\ttfamily\color{textColor},
+    numberstyle=\tiny\ttfamily\color{codeNumber},
+    backgroundcolor=\color{codeBg},
+    stringstyle=\color{codeString},
+    keywordstyle=\color{codeKeyword},
+    commentstyle=\color{codeComment},
+    numbers=left,
+    frame=shadowbox,
+    rulesepcolor=\color{codeBg},
+    linewidth=\textwidth,
+    columns=fixed,
+    tabsize=2,
+    xleftmargin=\MaxSizeOfLineNumbers,
+    breaklines=true,
+    keepspaces=true,
+    showstringspaces=false,
+    captionpos=b,
+    autogobble=true,
+    mathescape=true,
+    literate={~}{{$\thicksim$}}1
+}
+
+% Tint the top-right lambda. white_lambda.png is a WHITE silhouette whose alpha
+% channel IS the glyph mask. Rather than fight PDF blend modes (which tint the
+% bounding box), we bake a recolored copy once (RGB = tint, alpha preserved) and
+% include that. The tinted asset is generated by tint_lambda.py; rerun it to
+% change the color.
+\newcommand{\tintedlambda}{%
+  \includegraphics[width=0.6cm]{aux_lambda.png}%
+}
+
+% Re-point ONLY the image in the frametitle template to the tinted version.
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{beamercolorbox}[sep=0.2cm,ht=1.3em,wd=\paperwidth]{frametitle}
+    \vbox{}\vskip-2ex%
+    \usebeamercolor[fg]{frametitle}\color{fg}%
+    \intermedium\fontsize{10.5}{12.5}\selectfont
+    \strut\insertframetitle\strut
+    \hfill
+    \raisebox{-2mm}{\tintedlambda}%
+    \vskip-1ex%
+  \end{beamercolorbox}%
+  % Gold rule flush under the title bar, separating it from the canvas.
+  % Reuse a full-width beamercolorbox (same mechanism as the bar above) so the
+  % rule starts at the exact same left edge — no manual margin math. sep=0
+  % removes padding; the box bg is the gold itself.
+  \nointerlineskip\vskip-1pt
+  \begin{beamercolorbox}[sep=0pt,wd=\paperwidth]{}%
+    {\color{auxColor}\rule{\paperwidth}{0.4pt}}%
+  \end{beamercolorbox}%
+}
+
+% Mirror of the title-bar rule, but ABOVE the bottom (footline) bar. Prepended
+% to the footline template so it sits directly atop the bar; same full-width
+% beamercolorbox mechanism for identical left-edge alignment.
+\addtobeamertemplate{footline}{%
+  \begin{beamercolorbox}[sep=0pt,wd=\paperwidth]{}%
+    {\color{auxColor}\rule{\paperwidth}{0.4pt}}%
+  \end{beamercolorbox}%
+  \nointerlineskip
+}{}
+
+% Gold side decals on every regular slide. Drawn in the `background` template
+% (runs behind content on every frame) with TikZ anchored to the page edges; the
+% right copy is the left one mirrored via xscale=-1. Skipped on [plain] frames
+% (title page + \sectionSlide dividers) via beamer's \ifbeamer@plainframe.
+%
+% side_decal.png is a tall vertical strip, so size it by HEIGHT and run it down
+% the full page edge. Tunables:
+%   \decalheight — rendered height of one decal (default: full paper height)
+%   \decalinset  — horizontal gap from the paper edge
+\usetikzlibrary{calc}
+\newcommand{\decalimg}{side_decal2_gold} % keyed + flooded to auxColor gold, so
+                                         % it keeps its tint even when faded
+\newlength{\decalheight}\setlength{\decalheight}{\paperheight}
+% negative = push decals further toward (partly off) the page edge
+\newlength{\decalinset}\setlength{\decalinset}{-2.5mm}
+% \decalopacity: 1 = solid, lower = fainter so the ornaments read as faint
+% impressions in the background rather than foreground pieces. Applied via the
+% TikZ `opacity` node option below (TikZ-native; \transparent breaks inside a
+% TikZ node path).
+\newcommand{\decalopacity}{0.66}
+\newcommand{\sidedecal}{\includegraphics[height=\decalheight]{\decalimg}}
+% The template body runs in the document body, where @ is not a letter, so
+% \ifbeamer@plainframe can't be used directly. Capture the test into an @-free
+% macro now (under \makeatletter): \ifplainframe{<skip>}{<draw>}.
+\makeatletter
+\newcommand{\ifplainframe}{\ifbeamer@plainframe \expandafter\@firstoftwo \else \expandafter\@secondoftwo \fi}
+\makeatother
+% The texture/decals/border are baked DARK-green assets, so in light mode we
+% suppress all of them and let the light bgColor canvas show through.
+\addtobeamertemplate{background}{%
+  \iflightmode\else
+  \ifplainframe{%
+    % PLAIN frames (title, section dividers, break, poll): a full-frame
+    % celestial border (16:9, white keyed out) filling the whole slide, plus the
+    % mottled texture underneath. Same opacity as the side decals.
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=center] at (current page.center)
+        {\includegraphics[width=\paperwidth,height=\paperheight]{bg_texture}};
+      \node[anchor=center, opacity=\decalopacity] at (current page.center)
+        {\includegraphics[width=\paperwidth,height=\paperheight]{celestial_border2_gold}};
+    \end{tikzpicture}%
+  }{%
+    \begin{tikzpicture}[remember picture, overlay]
+      % Subtle mottled texture filling the whole page, UNDERNEATH the decals.
+      % Generated by make_bg_texture.py; tinted to bgColor.
+      \node[anchor=center] at (current page.center)
+        {\includegraphics[width=\paperwidth,height=\paperheight]{bg_texture}};
+      % left decal, against the left edge (opacity fades it into the background)
+      \node[anchor=west, opacity=\decalopacity] at ([xshift=\decalinset]current page.west)  {\sidedecal};
+      % right decal: mirror the IMAGE with \reflectbox (flipping the node's
+      % transform instead would move it off-page), anchored at the right edge.
+      \node[anchor=east, opacity=\decalopacity] at ([xshift=-\decalinset]current page.east) {\reflectbox{\sidedecal}};
+    \end{tikzpicture}%
+  }%
+  \fi
+}{}
+
+% Keep body text clear of the decals by widening the L/R text margins to the
+% decal width plus a little breathing room.
+\setbeamersize{text margin left=1.2cm, text margin right=1.6cm}
+
+% The shared title-page template positions the full-bleed title image relative
+% to a \textwidth-centered \makebox, so changing the text margins above shifted
+% it sideways. Re-anchor the image to the absolute page center so it fills the
+% slide regardless of margins.
+\setbeamertemplate{title page}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node at (current page.center) {\includegraphics[width=\paperwidth,height=\paperheight]{title.png}};
+  \end{tikzpicture}%
+}
+
+% Plain-slide text fixes. The shared \sectionSlide / \lecturePassword color
+% their text with presentColor, which is near-black on this dark deck and so
+% invisible. Override them locally (shared .sty untouched) to use gold.
+\renewrobustcmd{\sectionSlide}[2]{%
+  \section{#2}%
+  \begin{frame}[plain]
+    \begin{center}
+      \huge \color{auxColor} \intermedium{#1 - #2}
+    \end{center}
+  \end{frame}%
+}
+\renewrobustcmd{\lecturePassword}[1]{%
+  \begin{frame}[plain]
+    \begin{center}
+      {\huge \color{auxColor} \intermedium{Post-lecture attendance poll}}
+
+      \vspace{10pt}
+
+      \color{auxColor} \intermedium{Password: #1}
+    \end{center}
+  \end{frame}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{Lambda Calculus} % TODO
+\subtitle{The foundation of functional programming} % TODO
+\date{22 June 2026} % TODO
+\author{Brandon Wu} % TODO
+
+\graphicspath{ {./img/} }
+% DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+    %\begin{frame}[fragile]
+    %\begin{codeblock}
+    %fun fact 0 = 1
+    %  | fact n = n * fact(n-1)
+    %\end{codeblock}
+    %\end{frame}
+
+% INCLUDING codefile:
+    % 1. In some file under code/NN (where NN is the lecture id num), include:
+%       (* FRAGMENT KK *)
+%           <CONTENT>
+%       (* END KK *)
+
+%    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+    %  2. On the slide where you want code fragment K
+            % \smlFrag[color]{KK}
+    %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+%  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+            % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+\renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+\colorlambdatrue
+\titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+\frametitle{Lesson Plan}
+
+\tableofcontents
+\end{frame}
+
+
+\sectionSlide{1}{The Origin of Programming Languages}
+
+\begin{frame}[fragile]
+\frametitle{What is Programming Language Theory?}
+
+What is programming language theory?
+
+\pause
+\vspace{\fill}
+
+Programming language theory is the study of the design, implementation,
+and analysis of programming languages.
+
+\pause
+\vspace{\fill}
+
+We are interested in answering questions like:
+\begin{itemize}
+  \item Can we design a programming language that makes common
+  idioms easy to express?
+  \item Is it possible for a program in a given language to
+  run into undefined behavior?
+  \item Can we construct a program that violates the rules of
+  type safety?
+  \item How do we design a programming language such that we can
+  compile it efficiently?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Syntax and Semantics}
+
+  The way to look at any programming language is as a combination of
+  its \term{syntax} and \term{semantics}.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\, The syntax of a programming language is how you write
+  programs in the language.
+  }
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\, The semantics of a programming language is set of rules
+  governing the behavior of programs in the language. }
+
+  \pause
+  \vspace{\fill}
+
+  For instance, we might say that the syntax of an SML program could
+  be \code{val x = 2}, and it has the semantics of shadowing any
+  existing binding of \code{x}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Describing Syntax: Grammars}
+
+  Formally, we can describe the syntax of a programming language using
+  a \term{grammar}, a set of recursive rules that describe
+  the form of a valid program in the language.
+
+  \pause
+  \vspace{\fill}
+
+  For instance, for a very simple language consisting of only
+  arithmetic expressions, we might write the \term{Backus-Naur form (BNF)}
+  grammar as follows:
+
+  \[
+  \begin{array}{r r l r}
+    \nt{e} & ::= & \nt{intlit} & \text{(integer literal)} \\
+      &   | & \nt{e} \op{+} \nt{e} & \text{(addition)} \\
+      &   | & \nt{e} \op{*} \nt{e} & \text{(multiplication)}\\
+      &   | & \nt{e} \op{-} \nt{e} & \text{(subtraction)}\\
+      &   | & \nt{e} \op{/} \nt{e} & \text{(division)}\\
+  \end{array}
+  \]
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Grammars: Terminals and Nonterminals}
+
+  Here, we say that \nt{e} is a \term{nonterminal symbol} ranging over the
+  \term{sort} of expressions. In layman's terms, $e$ is a placeholder for any
+  possible expression, defined by the rules given below.
+
+  \[
+  \begin{array}{r r l r}
+    \nt{e} & ::= & \nt{intlit} & \text{(integer literal)} \\
+      &   | & \nt{e} \op{+} \nt{e} & \text{(addition)} \\
+      &   | & \nt{e} \op{*} \nt{e} & \text{(multiplication)}\\
+      &   | & \nt{e} \op{-} \nt{e} & \text{(subtraction)}\\
+      &   | & \nt{e} \op{/} \nt{e} & \text{(division)}\\
+  \end{array}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  We call the integer literal rule a \term{terminal rule}, because it
+  does not result in any further recursive calls to rules. In other
+  words, it cannot be expanded any further.
+
+  \pause
+  \vspace{\fill}
+
+  By contrast, the other four rules are \term{non-terminal rules}, because
+  they require further expansion using the definition of \nt{e}, an expression.
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Validating Syntax}
+
+  Then, equipped with our grammar, we can validate whether a given
+  program is syntactically valid by whether or not it can be produced
+  by using a finite number of our production rules.
+
+  \pause
+  \vspace{\fill}
+
+  Let's suppose that we wanted to determine if the expression
+  $\tm{(1 / 2) + (3 * 4)}$ is syntactically valid.
+
+  \pause
+  \vspace{\fill}
+
+  To do this, we start from the \textit{start symbol} of our grammar,
+  which is $e$\footnote{Here, we are underlining the place where we expanded the rule definition.}.
+
+  \pause
+  \vspace{-7.5pt}
+
+  \begin{minipage}[t]{0.4\textwidth}
+    \[
+    \begin{array}{r r l r}
+      \nt{e} & ::= & \nt{intlit} & \text{(IL)} \\
+        &   | & \nt{e} \op{+} \nt{e} & \text{(ADD)} \\
+        &   | & \nt{e} \op{*} \nt{e} & \text{(MUL)}\\
+        &   | & \nt{e} \op{-} \nt{e} & \text{(SUB)}\\
+        &   | & \nt{e} \op{/} \nt{e} & \text{(DIV)}\\
+    \end{array}
+    \]
+  \end{minipage}
+  \begin{minipage}[t]{0.55\textwidth}
+    \begin{align*}
+      \nt{e} & \stepsTo \gline{\underline{\nt{e_1} + \nt{e_2}}} & \tag{ADD} \\
+               & \stepsTo \gline{\underline{(\nt{e_3} / \nt{e_4})} + \nt{e_2}} & \tag{DIV} \\
+               & \stepsTo \gline{(\nt{e_3} / \nt{e_4}) + \underline{(\nt{e_5} * \nt{e_6})}} & \tag{MUL} \\
+               & \stepsTo \gline{(\underline{1} / \underline{2}) + (\underline{3} * \underline{4})} & \tag{IL}
+    \end{align*}
+  \end{minipage}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Grammar of an SML Subset}
+
+  For instance, we might describe a limited subset of the grammar of an SML program as follows:
+
+  \pause
+
+  \[
+  \begin{array}{r r l r}
+    \nt{e} & ::= & \gline{\kw{fn} \nt{p} \kw{=>} \nt{e}} & \text{(lambda expression)}\\
+      &   | & \gline{\nt{e_1} \nt{e_2}} & \text{(application)} \\
+      &   | & \gline{x} & \text{(variable)} \\
+      &   | & \nt{intlit} & \text{(integer literal)} \\
+  \end{array}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  \[
+  \begin{array}{r r l r}
+    \nt{p} & ::= & \nt{id} & \text{(identifier)}\\
+      &   | & \gline{(\nt{p_1}, $\dots$, \nt{p_n})} & \text{(tuple, $n \geq 2$)} \\
+      &   | & \gline{\nt{id} \nt{p}} & \text{(constructor)} \\
+      &   | & \gline{\kw{\_}} & \text{(wildcard)} \\
+  \end{array}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  \[
+  \begin{array}{r r l r}
+    \nt{dec} & ::= & \gline{\kw{val} \nt{p} \kw{=} \nt{e}} & \text{(value declaration)}\\
+        &   | & \gline{\kw{fun} \nt{id} \nt{args} \kw{=} \nt{e}} & \text{(function declaration)} \\
+        &   | & \gline{\nt{dec_1} \nt{dec_2}} & \text{(sequence)} \\
+  \end{array}
+  \]
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Deriving SML Syntax}
+
+  Let's look at how we might derive the syntax of the SML program\footnote{A reminder that SML programs are whitespace
+  agnostic, so we omit the newline in the derived program.}
+  \begin{codeblock}
+    val x = 1;
+    val _ = fn f => f x
+  \end{codeblock}
+
+  \pause
+  \vspace{-5pt}
+
+  % Tighten the derivation so the slide leaves room for the footnote above the
+  % footline: smaller font + reduced inter-row gap (\jot).
+  \small
+  \setlength{\jot}{3pt}
+
+  % \begin{minipage}{0.4\textwidth}
+
+  % \[
+  % \begin{array}{r r l r}
+  %   \nt{e} & ::= & \code{fn } \;\; \nt{p}\;\; \code{ => } \;\; \nt{e} & \text{(LAM)}\\
+  %     &   | & \nt{e_1} \;\; \nt{e_2} & \text{(APP)} \\
+  %     &   | & \code{x} & \text{(VAR)}
+  % \end{array}
+  % \]
+
+  % \[
+  % \begin{array}{r r l r}
+  %   \nt{p} & ::= & \nt{id} & \text{(ID)}\\
+  %     &   | & (\nt{p_1}, ..., \nt{p_n}) & \text{(TUP, $n \geq 2$)} \\
+  %     &   | & \nt{id} \;\; \nt{p} & \text{(CONS)} \\
+  %     &   | & \code{_} & \text{(WILDCARD)} \\
+  % \end{array}
+  % \]
+
+  % \[
+  % \begin{array}{r r l r}
+  %   \nt{dec} & ::= & \code{val } \;\; \nt{p} \;\; \code{ = } \;\; \nt{e} & \text{(VAL)}\\
+  %       &   | & \code{fun } \;\; \nt{id} \;\; \nt{args} \;\; \code{ = } \;\; \nt{e} & \text{(FUN)} \\
+  %       &   | & \nt{dec_1} \; \nt{dec_2} & \text{(SEQ)} \\
+  % \end{array}
+  % \]
+  % \end{minipage}
+  % \begin{minipage}{0.55\textwidth}
+  \begin{align*}
+    \nt{dec} & \stepsTo \gline{\underline{\nt{dec_1} \nt{dec_2}}} & \tag{SEQ} \\
+              & \stepsTo \gline{\underline{val \nt{p} = \nt{e}} \nt{dec_2}} & \tag{VAL} \\
+              & \stepsTo \gline{val \underline{x} = \underline{1} \nt{dec_2}} & \tag{ID (x2)} \\
+              & \stepsTo \gline{val x = 1 \underline{val \nt{p} = \nt{e}}} & \tag{VAL} \\
+              & \stepsTo \gline{val x = 1 val \underline{\_} = \underline{fn \nt{p} => \nt{e}}} & \tag{LAM} \\
+              & \stepsTo \gline{val x = 1 val \_ = fn \underline{f} => \nt{e}} & \tag{ID} \\
+              & \stepsTo \gline{val x = 1 val \_ = fn f => \underline{\nt{e_1} \nt{e_2}}} & \tag{APP} \\
+              & \stepsTo \gline{val x = 1 val \_ = fn f => \underline{f} \underline{x}} & \tag{ID (x2)} \\
+  \end{align*}
+
+  \vspace{-10pt}
+  % \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parsing in Practice}
+
+  Usually, we do not actually implement parsers in the way that we have
+  described here, where we infinitely expand the grammar until we match
+  the target.
+
+  \pause
+  \vspace{\fill}
+
+  A detailed treatment of how parsing is implemented is beyond the scope of
+  this lecture, and is also generally regarded by programming language
+  theorists as an uninteresting, solved part of the problem.
+
+  \pause
+  \vspace{\fill}
+
+  We will now turn our attention to the rich problem of the semantics
+  of a programming language.
+\end{frame}
+
+\sectionSlide{2}{Semantics and Judgements}
+
+\begin{frame}[fragile]
+  \frametitle{Why Semantics?}
+
+  Why should we care about programming language theory?
+
+  \vspace{\fill}
+
+  Let's take a foray into the world of Java. Java has a notion of
+  \term{subtyping} given by its system of inheritance.
+
+  \begin{codeblock}[language=java]
+    class Dog extends Animal {
+      ...
+    }
+  \end{codeblock}
+
+  \vspace{\fill}
+
+  In its simplest form, you can define a class \code{Dog} that
+  extends \code{Animal}, which
+  means that a \code{Dog} should be admissible anywhere an
+  \code{Animal} is allowed.\footnote{Put another way, "ain't no rule
+  that says you can't put a Dog where an Animal is expected".}
+
+  \pause
+  \vspace{\fill}
+
+  We write this as \code{Dog <: Animal}, meaning that \code{Dog} is a
+  subtype of \code{Animal}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Java's Billion-Dollar Mistake}
+
+  Programming language theorists like to say that Java's type system is
+  fundamentally broken\footnote{I have heard these exact words.}.
+
+  \pause
+  \vspace{\fill}
+
+  The reason comes from Java's subtyping rules on arrays, which are allowed
+  to be generic in their types, like lists in SML. We write that \code{T[]}
+  is the type of arrays of elements of type \code{T}.
+
+  \pause
+  \vspace{\fill}
+
+  Unfortunately, Java arrays are also \term{covariant}, meaning that if
+  \code{B <: A}, then \code{B[] <: A[]}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Subtyping Bug}
+
+  However, if this is true, consider the following code:
+
+  { \small
+  \begin{codeblock}[language=java]
+    public void muppetify(Animal[] animals) {
+      animals[0] = new BigBird();
+    }
+
+    public void barkify(Dog[] dogs) {
+      for (Dog dog : dogs) {
+        dog.bark(); // woof
+      }
+    }
+
+    public void main(String[] args) {
+      Dog[] dogs = new Dog[5];
+      muppetify(dogs); // dogs can go where animals can!
+      barkify(dogs); // but this makes big bird bark :(
+    }
+  \end{codeblock}
+  }
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What Went Wrong}
+
+  We see that there \textit{should} be a rule that prevents
+  dogs from being used where we expect animals!
+
+  \pause
+  \vspace{\fill}
+
+  We see that \code{muppetify} essentially just puts a bird into
+  the array of animals, which in \code{main} is \textit{really} an
+  array of dogs.
+
+  \pause
+  \vspace{\fill}
+
+  This means that we have poor Big Bird in the array of dogs, which
+  causes a runtime exception when we try to make him bark.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \birddiagram
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Why This Matters}
+
+  This might seem like a contrived example or silly trivia, but it is
+  really not.
+
+  \pause
+  \vspace{\fill}
+
+  Because of this behavior, Java needs to be able to detect at runtime
+  whether or not you are doing an unsafe operation, like storing Big Bird
+  in an array of dogs.
+
+  \pause
+  \vspace{\fill}
+
+  This means that arrays actually store additional runtime type information
+  to be able to detect this unsafe operation on array load, meaning that
+  this actually has a real performance cost.
+
+  \pause
+  \vspace{\fill}
+
+  The study of the semantics of programming languages is so that we can
+  discover new patterns of writing expressive programs, as well as to
+  ensure that our programming languages are \textbf{safe and correct}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Properties We Care About}
+
+  For instance, we are interested in certain properties of programs like
+  \term{progress} and \term{preservation}.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\term{Progress} is the property such that every well-typed expression
+  \code{e} is either a value, or there exists \code{e'} such that \code{e} $\stepsTo$ \code{e'}.}
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\term{Preservation} is the property that stepping a well-typed expression
+  preserves its type. Formally, if \code{e : t} and
+  \code{e} $\stepsTo$ \code{e'}, then \code{e' : t}.}
+
+  \pause
+  \vspace{\fill}
+
+  How do we prove this? First we need to have a specification for
+  what the properties of the programming language are. These are its
+  \term{semantics}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Static and Dynamic Semantics}
+
+  Semantics come in two forms, \term{static} and \term{dynamic}.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\term{Static semantics} are the rules of a programming
+  language that govern its properties before being run (e.g. types)
+  }
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\term{Dynamic semantics} are the rules of a programming
+  language that govern its properties during evaluation (how it runs)
+  }
+
+  In programming language theory, the language we use to communicate
+  semantics is \term{judgements}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Judgements}
+
+  \defBox{}{A \term{judgement} is a rule that lets us derive a property
+  of a program, given certain assumptions.}
+
+  \pause
+  \vspace{\fill}
+
+  In generality, it is notated as:
+
+  % One centered line with both forms and a text "or" between them. (align* with
+  % &...&...& would spread the pieces to the margins; "(or)"/conclusions in plain
+  % math render as italic letter-products, so they need \text{}.)
+  {\large
+  \[
+    \infer{\mathcal{J}}{\mathcal{J}_1,\; \mathcal{J}_2,\; \dots,\; \mathcal{J}_n}
+    \qquad \text{(or)} \qquad
+    \infer{\text{conclusion}}{\text{assumptions}}
+  \]
+  }
+
+  where each $\mathcal{J}$ is itself a judgement.
+
+  \pause
+  \vspace{\fill}
+
+  This essentially means that we can derive the fact $\mathcal{J}$,
+  if we are given the facts $\mathcal{J}_1, \mathcal{J}_2, \dots, \mathcal{J}_n$.
+
+  \pause
+  \vspace{\fill}
+
+  Notably, each $\mathcal{J}_i$ is itself a judgement, which may have assumptions
+  that must be fulfilled.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example Judgements: Days of the Week}
+
+  % A row of inference rules: an array (NOT align*) centers them and keeps even
+  % gaps; align* would mis-space the &-separated rules. 2x2 so they fit the width.
+
+  Here are some example judgements:
+
+  \vspace{1em}
+
+  % Two side-by-side blocks, vertically centered against each other ([c], not
+  % [t] -- [t] floated the right-hand tree up against the title bar).
+  % widths sum to < 1.0 and the trailing % kills the inter-block space; otherwise
+  % 0.6 + 0.4 = full width leaves no room and the second minipage wraps below.
+  % [c] centers the short left block against the taller right tree, so they read
+  % as two tidy side-by-side columns (with [t] the left 2x2 staggered against the
+  % 5-deep tree). \hfill + widths < 1.0 keep them on one line.
+  \begin{minipage}[c]{0.56\textwidth}
+  \[
+  \begin{array}{cc}
+    \infer{\text{Day $n$ is Sunday}}{\text{Day $n-1$ is Saturday}} &
+    \infer{\text{Day $n$ is Monday}}{\text{Day $n-1$ is Sunday}} \\[1.5em]
+    \infer{\text{Day $n$ is Tuesday}}{\text{Day $n-1$ is Monday}} &
+    \infer{\text{Day $n$ is Wednesday}}{\text{Day $n-1$ is Tuesday}}
+  \end{array}
+  \]
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.4\textwidth}
+    \centering
+    \scalebox{0.9}{$\infer{\text{Day $n$ is Wednesday}}{
+      \infer{\text{Day $n-1$ is Tuesday}}{
+        \infer{\text{Day $n-2$ is Monday}}{
+          \infer{\text{Day $n-3$ is Sunday}}{
+            \text{Day $n-4$ is Saturday}
+          }
+        }
+      }
+    }$}
+  \end{minipage}
+
+  \pause
+  \vspace{\fill}
+
+  On the left, we see the judgements that are are allowed to use, in order
+  to derive facts.
+
+  \pause
+  \vspace{\fill}
+
+  In plainspeak, if we know that four days ago was Saturday, then we can
+  successfully conclude that today is Wednesday, my dudes\footnote{This
+  joke might be funnier if it wasn't Monday.}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Judgements for Programming Languages}
+
+  That's an example of an intuitive judgement, but what about judgements
+  that we can use for programming languages?
+
+  \pause
+  \vspace{\fill}
+
+  Actually, you've already seen these. Here are some judgements that you
+  might see for SML:
+
+  % A single rule -> \[..\], not align*. The trailing & (with nothing after it)
+  % was breaking align*. Premises are separated by &; widen the gap between them
+  % with \quad / \qquad.
+  % \op{...} renders the operator in code/typewriter style AND keeps its binary-
+  % operator spacing (it's a \mathbin). \code here would inject an \hbox that
+  % breaks the surrounding math spacing.
+  \[
+    \infer[\rname{Add}]{e_1 \op{+} e_2 : \ty{int}}{e_1 : \ty{int} \quad e_2 : \ty{int}}
+    \qquad
+    \infer[\rname{Mul}]{e_1 \op{*} e_2 : \ty{int}}{e_1 : \ty{int} \quad e_2 : \ty{int}}
+    \qquad
+    \infer[\rname{Lit}]{n : \ty{int}}{}
+  \]
+  \[
+    \infer[\rname{Tup}]{(e_1, e_2) : \ty{t_1} \op{*} \ty{t_2}}{e_1 : \ty{t_1} \quad e_2 : \ty{t_2}}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  We note that the \rname{Lit} judgement has no premises, because our
+  variable $n$ is quantified over all integer literals. Those require
+  no justification to be at type \code{int}.
+
+  \pause
+  \vspace{\fill}
+
+  We also typically annotate each judgement with a name so that we can
+  write it in the derivation tree so it's clear which judgement we are invoking.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Typing Derivation}
+
+  Using these judgements, we can derive the fact that the expression
+  \code{(1 + 2) * (3 + 4)} is well-typed at type \code{int}:
+
+  \pause
+  \vspace{\fill}
+
+  \[
+    \infer[\rname{Mul}]{(1 \op{+} 2) \op{*} (3 \op{+} 4) : \ty{int}}{
+      \infer[\rname{Add}]{1 \op{+} 2 : \ty{int}}{
+        \infer[\rname{Lit}]{1 : \ty{int}}{} \qquad
+        \infer[\rname{Lit}]{2 : \ty{int}}{}
+      }
+      \qquad
+      \infer[\rname{Add}]{3 \op{+} 4 : \ty{int}}{
+        \infer[\rname{Lit}]{3 : \ty{int}}{} \qquad
+        \infer[\rname{Lit}]{4 : \ty{int}}{}
+      }
+    }
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  If you squint, this is actually no different than the justification
+  we've been using all semester as to why certain expressions are well-typed!
+
+  \pause
+  \vspace{\fill}
+
+  The great thing about judgements is that they make it very easy for a
+  computer to implement what we intuitively understand. It would be very
+  easy to write a program to follow these rules and verify if a given
+  expression is of type \code{int}, for instance.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Static vs. Dynamic Judgements}
+
+  These judgements we just saw are judgements for static semantics--they
+  only govern how we type-check a given program.
+
+  \pause
+  \vspace{\fill}
+
+  We also have judgements for dynamic semantics, which tell us how to
+  evaluate a given program. We write $e \Downarrow v$ to mean ``$e$ evaluates
+  to the value $v$'':
+  \[
+    \infer[\rname{Lit}]{n \Downarrow n}{}
+    \qquad
+    \infer[\rname{Add}]{e_1 \op{+} e_2 \Downarrow n}
+                       {e_1 \Downarrow n_1 \quad e_2 \Downarrow n_2 \quad n = n_1 + n_2}
+    \qquad
+    \infer[\rname{Tuple}]{(e_1, e_2) \Downarrow (v_1, v_2)}
+                       {e_1 \Downarrow v_1 \quad e_2 \Downarrow v_2}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  These three judgements essentially tell us that numbers step to
+  themselves, addition takes place after evaluating both operands, and
+  a tuple evaluates to the pair of the evaluations of its components.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Dynamic Semantics: Evaluation}
+
+  We can also use these judgements to derive the fact that the expression
+  \code{(1 + 2, 3 + 4)} evaluates to the value \code{(3, 7)}:
+
+  \[
+    \infer[\rname{Tuple}]{(1 + 2, 3 + 4) \Downarrow (3, 7)}{
+      \infer[\rname{Add}]{1 + 2 \Downarrow 3}{
+        \infer[\rname{Lit}]{1 \Downarrow 1}{} \quad
+        \infer[\rname{Lit}]{2 \Downarrow 2}{}
+      } \quad
+      \infer[\rname{Add}]{3 + 4 \Downarrow 7}{
+        \infer[\rname{Lit}]{3 \Downarrow 3}{} \quad
+        \infer[\rname{Lit}]{4 \Downarrow 4}{}
+      }
+    }
+  \]
+
+  \pause
+  \vspace{\fill }
+
+  In reality, there would be far more rules for evaluating programs.
+  Proving a property like progress or preservation would then be a matter
+  of using induction to prove that no matter how many of these rules we
+  chain together, we will always end up with a program with the desired
+  property.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Proving a Safety Property}
+
+  We can sketch out a proof of a safety property for our language:
+  if $e : \ty{t}$ and $e \Downarrow v$, then $v : \ty{t}$.
+
+  \pause
+  \vspace{\fill}
+
+  This involves a technique called \term{rule induction}. Essentially,
+  we will show that through all ways to obtain the judgement $e \Downarrow v$,
+  the property holds.
+
+  \pause
+  \vspace{\fill}
+
+  % Inline judgements use math mode ($...$) with the \op/\ty macros, NOT \code:
+  % \code is verbatim (\lstinline), so \op, $, etc. inside it error out.
+  We proceed by rule induction on the judgement $e \Downarrow v$.
+  \begin{itemize}
+    \item \textbf{Case 1: \rname{Lit}} \\
+    Here, $e = n$ and $v = n$. By the statics rule \rname{Lit}, $n : \ty{int}$,
+    so $\ty{t} = \ty{int}$ and indeed $v : \ty{t}$. \\
+    \item \textbf{Case 2: \rname{Add}} \\
+    Here, $e = e_1 \op{+} e_2$ and $v = n$. The only statics rule for
+    $e_1 \op{+} e_2$ is \rname{Add}, so $\ty{t} = \ty{int}$; and $n : \ty{int}$
+    by \rname{Lit}. So $v : \ty{t}$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Safety Proof: The Tuple Case}
+
+  \begin{itemize}
+    \item \textbf{Case 3: \rname{Tuple}} \\
+    Here, $e = (e_1, e_2) \Downarrow (v_1, v_2) = v$, with assumptions
+    $e_1 \Downarrow v_1$ and $e_2 \Downarrow v_2$. \\[2pt]
+    The only statics rule for $(e_1, e_2)$ is \rname{Tup}, so
+    $\ty{t} = \ty{t_1} \op{*} \ty{t_2}$ with $e_1 : \ty{t_1}$ and $e_2 : \ty{t_2}$. \\[2pt]
+    \pause
+    Now we use the IH: since $e_1 : \ty{t_1}$ and
+    $e_1 \Downarrow v_1$, the IH gives $v_1 : \ty{t_1}$ and $v_2 : \ty{t_2}$. \\[2pt]
+    Then by \rname{Tup}, $(v_1, v_2) : \ty{t_1} \op{*} \ty{t_2} = \ty{t}$, as desired.
+  \end{itemize}
+\end{frame}
+
+\sectionSlide{3}{The Lambda Calculus}
+
+\begin{frame}[fragile]
+  \frametitle{Toward the Lambda Calculus}
+
+  So far, we have discussed a bit of the machinery that we use
+  to reason about programming languages.
+
+  \pause
+  \vspace{\fill}
+
+  These tools are only useful to us insofar as we have access to
+  well-defined statics and dynamics that we can write proofs on.
+
+  \pause
+  \vspace{\fill}
+
+  For simple expression languages, this is easy, but more realistic
+  languages do not always come with simple statics and dynamics. How
+  would we even mathematically render the semantics of a large language
+  like Java?
+
+  \pause
+  \vspace{\fill}
+
+  The answer is the lambda calculus.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{All Languages Look Alike}
+
+  If you squint your eyes, all programming languages look pretty
+  much the same.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{minipage}{0.51\textwidth}
+  They all have some combination of:
+  \begin{itemize}
+    \item variable declarations
+    \item function application
+    \item conditionals
+    \item arithmetic expressions
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  The \term{lambda calculus} is a formal system that is essentially
+  the simplest possible programming language. The key observation
+  is in observing that we can model any programming language as
+  the lambda calculus with some additional special constructs.
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.47\textwidth}
+    \begin{center}
+    \includegraphics[width=0.8\textwidth]{pl_same.png}
+    \end{center}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Lambda Calculus: Grammar}
+
+  The lambda calculus has a very simple grammar:
+
+  \[
+  \large
+  \begin{array}{r r l r}
+    e & ::= & \lambda x . e & \text{(lambda abstraction)}\\
+      & |   & e_1 e_2 & \text{(application)} \\
+      & |   & x & \text{(variable)}
+  \end{array}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  Here, you should read $\lambda x.e$ as \code{fn x => e},
+  an anonymous function that takes in a variable named $x$ and evaluates
+  to the expression $e$.
+
+  \pause
+  \vspace{\fill}
+
+  That's literally it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Lambda Calculus: Dynamics}
+
+  \begin{minipage}{0.33\textwidth}
+
+    The dynamics of the lambda calculus are that there are only functions,
+    variables, and function applications.
+
+    \vspace{5pt}
+
+    There are no numbers, no tuples, and no conditionals.
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.65\textwidth}
+    \begin{center}
+      \includegraphics[width=0.95\textwidth]{all_lambda_calculus.png}
+    \end{center}
+  \end{minipage}
+
+  \pause
+  \vspace{\fill}
+
+  This might seem strange, because we are used to programming languages
+  which have more in-built features. Despite this, the lambda calculus
+  remains \term{Turing-complete}, meaning that it can be used to compute
+  anything a general purpose computer can.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Beta-Reduction, Formally}
+
+  Formally, the semantics of the lambda calculus are given by the
+  relation of \term{$\beta$-reduction}.
+  \vspace{-15pt}
+  \[
+    \infer[\rname{REFL}]{M \equiv_\beta M}{}
+    \qquad
+    \infer[\rname{COMM}]{M \equiv_\beta M'}{M' \equiv_\beta M}
+    \qquad
+    \infer[\rname{TRANS}]{M \equiv_\beta M''}{M \equiv_\beta M' \quad M' \equiv_\beta M''}
+  \]
+  \[
+    \infer[\rname{APP}]{M_1 \; M_2 \equiv_\beta M_1' \; M_2'}{M_1 \equiv_\beta M_1' \quad M_2 \equiv_\beta M_2'}
+    \qquad
+    \infer[\rname{LAM}]{\lam{x}M \equiv_\beta \lam{x}M'}{M \equiv_\beta M'}
+  \]
+  \[
+    \infer[\rname{BETA}]{(\lam{x}N)\, M \equiv_\beta N[x \mapsto M]\footnote{This means "the term $N$ where we substitute
+    $M$ for $x$. There is a bit of a subtlety here having to do with substitution and
+    variable capture. I will decline to elaborate further here.}}{}
+  \]
+
+  Only the last rule is interesting--the other ones just tell us that
+  $\beta$-equivalence is an equivalence relation, and recursively it
+  can be applied throughout a term.
+
+  \pause
+  \vspace{\fill}
+
+  \keyBox{}{\, The last rule is interesting because it essentially tells us the
+  semantics of function application.}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Encoding Data with Lambdas}
+
+  This seems ludicrous, because the lambda calculus doesn't even have
+  numbers. How on earth are we supposed to implement \code{fact}
+  without arithmetic operations?
+
+  \pause
+  \vspace{\fill}
+
+  The proper way to understand this is to ask yourself the question:
+  what is a number? What is 1, really?
+
+  \pause
+  \vspace{\fill}
+
+  I don't mean this in some new-age philosophical sense. I mean in
+  a pragmatic sense, what does it mean for something to be 1?
+
+  \pause
+  \vspace{\fill}
+
+  A working definition of 1 is that it is the number which satisfies
+  all the properties of 1. Adding it to 0 gives you 1, adding it to
+  itself gives you 2, and so on.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Numbers Without Numbers}
+
+  The point being that, although we do not have numbers inbuilt in
+  the lambda calculus, we can define terms in the lambda calculus
+  which \textit{behave} like numbers.
+
+  \pause
+  \vspace{\fill}
+
+  This kind of thinking shouldn't be too shocking, however. The
+  lambda calculus has no more primitive notion of numbers than
+  your computer does, which interprets sequences of bits (which are
+  really just electrical signals) as numbers.
+
+  \pause
+  \vspace{\fill}
+
+  Both rely on an \term{encoding} of the concept of numbers. Either
+  way, no matter the representation, we can implement the behavior
+  of arithmetic\footnote{You might say that we can have
+  \textit{representation independence}. This will be hilarious next week.}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Church Numerals}
+
+  Let's look at the most common encoding of numbers in the lambda calculus.
+
+  \pause
+  \vspace{\fill}
+
+  Recall that although we only have functions, variables, and applications,
+  due to currying we can chain functions together to get functions of
+  multiple arguments.
+
+  \pause
+  \vspace{\fill}
+
+  Here is the encoding. We will write overlines on numbers to indicate we
+  are referring to the number's encoding in the lambda calculus.
+
+  \pause
+  \vspace{\fill}
+
+  { \large
+  \begin{itemize}
+    \item $\overline{0} \triangleq \lam{f} \lam{x} x$\footnote{Saying that $\overline{0} \triangleq M$ here means
+    that $\overline{0}$ is defined to be the lambda term $M$. We just
+    write $\overline{0}$ as a shorthand--this is external to the lambda calculus.}
+    \item $\overline{1} \triangleq \lam{f} \lam{x} f x$
+    \item $\overline{2} \triangleq \lam{f} \lam{x} f (f x)$
+  \end{itemize}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  This is the \term{Church encoding} of the natural numbers. Essentially,
+  every natural number $n$ is encoded as a twice-curried function that
+  accepts a function $f$ and a value $x$ and applies $f$ to $x$ $n$ times.
+  These lambda terms are called \term{Church numerals}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Operations on Church Numerals}
+
+  It's not useful for us to define an encoding for the natural numbers
+  unless we can do things with them.
+
+  \pause
+  \vspace{\fill}
+
+  We will now define the addition function in the
+  Church encoding. Essentially, we want to define a lambda term that
+  can take in two Church numerals
+  $\overline{n}$ and $\overline{m}$, and evaluates to the Church numeral
+  $\overline{n + m}$.
+
+  \pause
+  \vspace{\fill}
+
+  {\large
+  $$\texttt{ADD} \triangleq \lambda n. \lambda m. \lambda f. \lambda x. n f (m f x)$$
+  }
+
+  \pause
+  \vspace{\fill}
+
+  Why does this work? We could induct to prove it, but essentially we see that
+  \texttt{ADD $\overline{n}$ $\overline{m}$} evaluates to a function which
+  accepts a function $f$ and a value $x$, as a Church numeral should.
+
+  Additionally, the definition of $\overline{n}$ is that $\overline{n} f x$ applies
+  $f$ to $x$ $n$ times, and similarly for $\overline{m}$. Therefore
+  $n f (m f x)$ applies $f$ to $x$ $n + m$ times, as desired.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Defining Multiplication}
+
+  Cheekily, we can define multiplication pretty easily in the
+  Church encoding:
+
+  {\large
+  $$\texttt{MUL} \triangleq \lambda n. \lambda m. \lambda f. \lambda x. n (m f) x$$
+  }
+
+  \pause
+  \vspace{\fill}
+
+  \customBox{Check your understanding}{\, Why does this work?}
+
+  \pause
+  \vspace{\fill}
+
+  Subtraction and the predecessor function are more complicated.
+  We leave those as an exercise to the reader (or AI training data
+  scraper).
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Toward Recursion}
+
+  So, we can define encodings in the lambda calculus that do
+  arithmetic. There are also encodings which let us define
+  complex data like tuples, control flow like conditionals, etc.
+
+  \pause
+  \vspace{\fill}
+
+  This is cool, but not very useful without any repetition. The
+  lambda calculus is only equipped with anonymous functions, meaning
+  that we don't have any way to do recursion. Without recursion or
+  loops, control flow isn't so useful.
+
+  \pause
+  \vspace{\fill}
+
+  The \term{Y combinator} is a lambda term that can be used to
+  implement recursion.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Y Combinator}
+
+  \defBox{}{The Y combinator is a lambda term that can be used to
+  implement recursion\footnote{It was also a perfectly respectable
+  term in combinatorial logic before being taken by a certain
+  startup accelerator.}. It is a \term{fixpoint}, meaning that we
+  have that $\Y f = f (\Y f)$.}
+
+  \pause
+  \vspace{\fill}
+
+  This is the definition of the Y combinator:
+
+  {\large
+  $$\Y \triangleq \lambda f. (\lambda x. f (x x)) (\lambda x. f (x x))$$
+  }
+
+  \pause
+  \vspace{\fill}
+
+  What in the fresh hell is this.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Unpacking the Y Combinator}
+
+  {\large
+  $$\Y \triangleq \lambda f. (\lambda x. f (x x)) (\lambda x. f (x x))$$
+  }
+
+  Let's unpack this. First, we notice that
+  {\large
+  \begin{align*}
+    \Y \; f &\equiv_\beta (\lambda x. f (x x)) (\lambda x. f (x x)) \\
+                    &\equiv_\beta f ((\lambda x. f (x x)) (\lambda x. f (x x))) \\
+  \end{align*}
+  }
+  Let's call the $ (\lambda x. f (x x)) (\lambda x. f (x x)) $ expression $ \texttt{SELF}(f) $. Then,
+  replacing it in the lines above:
+  \begin{align*}
+    \Y \; f &\equiv_\beta (\texttt{SELF}(f)) & \tag{via def of \texttt{SELF}(f)}\\
+                 &\equiv_\beta f (\texttt{SELF}(f)) & \tag{via def of \texttt{SELF}(f)}\\
+                 &\equiv_\beta f (\Y \; f) & \tag{via def of \Y}\\
+  \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Using the Fixpoint}
+
+  We mathematically derived the property we wanted, that
+  $\Y \; f = f (\Y \; f)$. But how do we use this?
+
+  \pause
+  \vspace{\fill}
+
+  Any function which is recursive is essentially just a function
+  which has itself in scope. What if we write our desired-to-be-recursive
+  function as one which just takes itself as a parameter?
+
+  \pause
+  \vspace{\fill}
+
+  {\large
+  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n. \ldots$$
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Prototype Factorial}
+
+  For now, let's assume the existence of the
+  \texttt{IF} and \texttt{EQ} terms such that:
+  \begin{itemize}
+    \item \texttt{IF} $e_1$ $e_2$ $e_3$ evaluates to $e_2$ if $e_1$ evaluates to $\overline{true}$, and $e_3$ otherwise.
+    \item \texttt{EQ} $e_1$ $e_2$ evaluates to $\overline{true}$ if $e_1$ and $e_2$ evaluate to the same Church numeral, and $\overline{false}$ otherwise.
+    \item \texttt{PRED} $\overline{n + 1}$ evaluates to the Church numeral $\overline{n}$.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Then we could write:
+
+  {\large
+  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \texttt{IF} \pcond{(\texttt{EQ} \; n \; \overline{0})} \;
+  \pbase{\overline{1}} \;
+  \precase{(\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))}$$
+  }
+
+  \pause
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item $\pcond{(\texttt{EQ} \; n \; \overline{0})}$ is the conditional, which
+    checks if $n$ is equivalent to $\overline{0}$.
+    \item $\pbase{\overline{1}}$ is evaluated to if the conditional succeeds
+    \item $\precase{(\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))}$ is the "else" of the
+    conditional, evaluating to $\overline{n * (n - 1)!}$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Reading \code{fact\_proto}}
+
+  {\large
+  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \texttt{IF} (\texttt{EQ} \; n \; \overline{0}) \;
+  \overline{1} \;
+  (\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))$$
+  }
+
+  \pause
+  \vspace{\fill}
+
+  It is important to realize that all these parameters and encoded numbers
+  are just Church numerals, which are lambda terms!
+
+  \pause
+  \vspace{\fill}
+
+  This also only works if the parameter $fact$ is truly the factorial
+  function, the lambda term such that $\texttt{fact} \; \overline{n}$ evaluates
+  to $\overline{n!}$.
+
+  \pause
+  \vspace{\fill}
+
+  How do we tie the knot? The observation to make is that if we had
+  the "true" $fact$, then $fact_{proto} \; \texttt{fact}$ would just actually
+  be $\texttt{fact}$. So $\texttt{fact} = fact_{proto} \; \texttt{fact}$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\code{fact\_proto}, In Color}
+
+  {\large
+  $$\Y \triangleq \lambda f. (\lambda x. f (x x)) (\lambda x. f (x x))$$
+  }
+  \vspace{-10pt}
+  {\large
+  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \texttt{IF} (\texttt{EQ} \; n \; \overline{0}) \;
+  \overline{1} \;
+  (\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))$$
+  }
+
+  \pause
+  \vspace{\fill}
+
+
+  Let's play around a bit. What happens if we evaluate $\Y \; \texttt{fact}_{proto}$?
+
+  {\large
+  \begin{align*}
+    \Y \; \texttt{fact}_{proto}
+    &\equiv_\beta \texttt{fact}_{proto} \; (\Y \; \texttt{fact}_{proto}) \\
+    &\equiv_\beta \lambda n.\ \texttt{IF} \; (\texttt{EQ} \; n \; \overline{0}) \;
+       \overline{1} \; (\texttt{MUL} \; n \; ((\Y \; \texttt{fact}_{proto}) \; (\texttt{PRED} \; n)))
+  \end{align*}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  We reduce \texttt{fact}$_{proto}$ on its argument, substituting the
+  $\Y \; \texttt{fact}_{proto}$ term for $fact$. We are left with a
+  lambda term which has a recursive call to $\Y \; \texttt{fact}_{proto}$
+  stored within itself.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tying the Knot}
+
+  {\large
+  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \texttt{IF} (\texttt{EQ} \; n \; \overline{0}) \;
+  \overline{1} \;
+  (\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))$$
+  }
+
+  Now feed it a number. Write $F \triangleq \Y \; \texttt{fact}_{proto}$
+  (so $F \equiv_\beta \texttt{fact}_{proto} \; F$). Then:
+  {\large
+  \begin{align*}
+    F \; \overline{2}
+      &\equiv_\beta \cl{(\texttt{fact}_{proto} \; F)} \; \overline{2}
+        & \text{(since $F \equiv_\beta \texttt{fact}_{proto} \; F$)} \\
+      &\equiv_\beta \cl{\texttt{IF} \; (\texttt{EQ} \; \overline{2} \; \overline{0}) \;
+        \overline{1} \; (\texttt{MUL} \; \overline{2} \; (F \; (\texttt{PRED} \; \overline{2})))} & \text{def of \texttt{fact}$_{proto}$} \\
+      &\equiv_\beta \cl{\texttt{MUL} \; \overline{2} \; (F \; \overline{1})}
+        & \text{($\texttt{EQ} \; \overline 2 \; \overline 0$ is $\overline{false}$)} \\
+      &\equiv_\beta \texttt{MUL} \; \overline{2} \; (\cl{\texttt{MUL} \; \overline{1} \; (F \; \overline{0})}) \\
+      &\equiv_\beta \texttt{MUL} \; \overline{2} \; (\texttt{MUL} \; \overline{1} \; \cl{\overline{1}})
+        & \text{($\texttt{EQ} \; \overline 0 \; \overline 0$ is $\overline{true}$)} \\
+      &\equiv_\beta \overline{2} & \text{grind it out}
+  \end{align*}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  The recursion bottoms out because \texttt{IF} discards the recursive
+  branch once $\texttt{EQ} \; n \; \overline{0}$ is true. We built recursion
+  with nothing but anonymous functions!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Y of \code{fact\_proto}}
+
+  Essentially, the Y combinator's property as a fixpoint means that
+  since $\Y \; f \equiv_\beta f (\Y \; f)$, we can
+  use $\Y$ to define a term which can generate another
+  instance of itself when called.
+
+  \pause
+  \vspace{\fill}
+
+  This is essentially all recursion is, and it comes out of nothing
+  but function application and variable substitution.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Untyped vs. Typed}
+
+  It is worth noting that everything that we have disussed so far is
+  only in the untyped lambda calculus. In a normal typed language,
+  you could not write the term $\lam{x} x\,x$.
+
+  \pause
+  \vspace{\fill}
+
+  \customBox{Check your understanding}{\, Why?}
+
+  \pause
+  \vspace{\fill}
+
+  To be able to use the lambda calculus to model real programming
+  languages that we would like to use, we would start enforcing
+  real static judgements on the terms we write.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Simply-Typed Lambda Calculus: Syntax}
+
+  We can extend the lambda calculus with \emph{types}.
+  Let's consider a basic version with numbers and tuples
+  built in. First, the syntax:
+
+  \pause
+  \vspace{\fill}
+
+  \[
+  \begin{array}{r r l r}
+    \nt{t} & ::= & \ty{nat}                  & \text{(numbers)} \\
+           &  |  & \nt{t_1} \op{*} \nt{t_2}  & \text{(products)} \\
+           &  |  & \nt{t_1} \to \nt{t_2}     & \text{(functions)}
+  \end{array}
+  \qquad
+  \begin{array}{r r l r}
+    \nt{e} & ::= & x                                  & \text{(variable)} \\
+           &  |  & n                        & \text{(numeral)} \\
+           &  |  & \lam{(x \op{:} \nt{t})} \nt{e}        & \text{(abstraction)} \\
+           &  |  & \nt{e_1} \; \nt{e_2}                & \text{(application)} \\
+           &  |  & (\nt{e_1}, \nt{e_2})                & \text{(pair)} \\
+           &  |  & \kw{fst}\; \nt{e} \;\;|\;\; \kw{snd}\; \nt{e} & \text{(projections)}
+  \end{array}
+  \]
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Simply-Typed Lambda Calculus: Syntax}
+
+  In order to properly talk about the static semantics of the lambda
+  calculus, we need to imbue our typing judgement with a
+  \term{context}.
+
+  \pause
+  \vspace{\fill}
+
+  The static semantics are defined by the judgement $\Gamma \vdash e : \ty{t}$ ---
+  ``with the context $\Gamma$, the term $e$ has type $\ty{t}$.''
+
+
+  \pause
+  \vspace{\fill}
+
+  The context (typically denoted by $\Gamma$) is a mapping from
+  variables to their types. Essentially, the judgement
+  $\Gamma \vdash e : \ty{t}$ means that, given the variables in $\Gamma$,
+  we can successfully type-check the term $e$ to have type $\ty{t}$.
+
+  \[ \Gamma ::= \cdot \mid \Gamma, x : \ty{t} \]
+
+  \pause
+  \vspace{\fill}
+
+  The above says that either $\Gamma$ is the empty context, notated $\cdot$,
+  or it is a variable $x$ with type $\ty{t}$ added to another context $\Gamma$.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Simply-Typed Lambda Calculus: Typing Rules}
+
+
+
+  \pause
+  \vspace{\fill}
+
+  \[
+    \infer[\rname{Var}]{\Gamma, x : \ty{t} \vdash x : \ty{t}}{}
+    \qquad
+    \infer[\rname{Num}]{\Gamma \vdash n : \ty{nat}}{}
+  \]
+
+  \[
+    \infer[\rname{Abs}]{\Gamma \vdash \lam{x \op{:} \ty{t_1}} e : \ty{t_1} \to \ty{t_2}}
+                       {\Gamma, x : \ty{t_1} \vdash e : \ty{t_2}}
+    \qquad
+    \infer[\rname{App}]{\Gamma \vdash e_1 \; e_2 : \ty{t_2}}
+                       {\Gamma \vdash e_1 : \ty{t_1} \to \ty{t_2} \quad \Gamma \vdash e_2 : \ty{t_1}}
+  \]
+
+  \[
+    \infer[\rname{Pair}]{\Gamma \vdash (e_1, e_2) : \ty{t_1} \op{*} \ty{t_2}}
+                        {\Gamma \vdash e_1 : \ty{t_1} \quad \Gamma \vdash e_2 : \ty{t_2}}
+    \qquad
+    \infer[\rname{Fst}]{\Gamma \vdash \kw{fst}\; e : \ty{t_1}}
+                       {\Gamma \vdash e : \ty{t_1} \op{*} \ty{t_2}}
+    \qquad
+    \infer[\rname{Snd}]{\Gamma \vdash \kw{snd}\; e : \ty{t_2}}
+                       {\Gamma \vdash e : \ty{t_1} \op{*} \ty{t_2}}
+  \]
+\end{frame}
+
+
+
+% \begin{frame}[fragile]
+% \frametitle{Trivial Totality}
+
+
+% \pause
+% \vspace{\fill}
+
+% It is a subfield of computer science that deals with the design, implementation, and analysis of programming languages.
+
+% \pause
+% \vspace{\fill}
+% A \code{fun fact} is that syntactically sugared curried functions are trivially total.\footnote{
+% An even more fun fact is that there were three alliterations in that sentence.
+% }
+
+% \pause
+% \vspace{\fill}
+
+% Consider the definition of a function like \code{map}:
+
+% \pause
+% \vspace{5pt}
+
+% \begin{codeblock}
+% fun map f [] = []
+%   | map f (x::xs) = f x :: map f xs
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% Is \code{map} total? I claim -- yes!
+
+% \pause
+% \vspace{\fill}
+
+% But now, we also know that \code{map f [1, 2, 3]} should be extensionally
+% equivalent to \code{[f 1, f 2, f 3]}, and \code{f} might not be a total function.
+% What gives?
+
+% \pause
+% \vspace{\fill}
+
+% Indeed, if we evaluate \code{map (fn x => x div 0) [1, 2, 3]}, we get a
+% raised exception \code{Div}. What gives?
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{Trivial Totality}
+
+% \customBox{Key Fact}{\, We said that \code{map} was total -- this does not necessarily say anything about
+% the totality of \code{map f}! These are \textit{two different functions}.}
+
+% \pause
+% \vspace{\fill}
+
+% Consider the definition of \code{map}, which can be desugared to the following:
+% \begin{codeblock}
+% val map = fn f => fn [] => (* ... *) | x::xs => (* ... *)
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% It is easy to see that for any function value \code{f : t1 -> t2}, \code{map f} immediately
+% evaluates to a lambda expression, which takes in a list and evaluates to either
+% case of \code{map}.
+
+% \pause
+% \vspace{\fill}
+
+% This is an important conceptual distinction to keep in your mind. So we say that
+% a curried function like \code{map} is "trivially total".
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{Trivial Totality?}
+
+% A question remains then - is every value \code{t1 -> t2 -> t3} total?
+
+% \pause
+% \vspace{\fill}
+
+% The answer: \textit{no!} Just because \code{map} and friends are, doesn't mean
+% all such values of curried type are. For instance, take the following example:
+
+% \pause
+% \begin{codeblock}
+% fun loop () = loop ()
+
+% fun f x =
+%   let
+%     val x = loop ()
+%   in
+%     fn y => 0
+%   end
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% This function does not immediately return a lambda expression upon being given a
+% value. It actually immediately evaluates \code{loop ()}, an infinite loop.
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{A Carnegie Mellon Example}
+
+% Suppose that you are building a booth.\footnote{For readers unfamiliar with
+% Carnegie Mellon traditions, this is a yearly festival where undergraduate
+% students become construction workers and build small houses as decorations for
+% alumni. I'm not joking.}
+
+% \pause
+% \vspace{\fill}
+
+% It's the day of move-on, and you still haven't finished painting the wall boards. Your
+% good friend stays behind to get them painted, and you refuse to move the rest of
+% the booth to Midway until they're done.
+
+% \pause
+% \vspace{\fill}
+
+% That is silly.
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{The Logistics of Booth Building}
+
+% When building a booth, painting the walls is necessary, but comes much after
+% other steps, like setting up the floorboards, constructing the walls, and
+% moving the wood to Midway in the first place!
+
+% \pause
+% \vspace{\fill}
+
+% The point: It's absurd to wait on something completely unrelated, when you
+% could do the work now with what you have!
+% \end{frame}
+
+
+
+% \begin{frame}[fragile]
+% \frametitle{Staging}
+
+% We refer to this as \term{staging}.
+
+% \pause
+% \vspace{\fill}
+
+% \defBox{\, We use the term \term{staging} to describe the act of deliberately placing
+% computations at certain points with respect to receiving curried arguments}.
+
+% \pause
+% \vspace{\fill}
+
+% So instead of saving all computations for when all the curried arguments are received,
+% we can instead move some computations to when only the \textit{necessary} arguments
+% have been received.
+
+% \pause
+% \vspace{\fill}
+
+% Suppose we have the following function:
+% \begin{codeblock}
+% val f = fn x => fn y => x + y
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% Can we move the expression \code{x + y} any earlier in the curried function? The
+% answer is \textit{no}, because \code{x + y} depends on both arguments!
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{A Code Example}
+
+% This comes up all the time!
+
+% \pause
+% \vspace{\fill}
+
+% Consider the following artificial code example:
+
+% \begin{codeblock}
+% fun mystery x y =
+%   let
+%     val res = horrible_computation x
+%   in
+%     res + y
+%   end
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% \code{horrible_computation} takes 3 years to evaluate.
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{A Code Example}
+
+% \begin{codeblock}
+% fun mystery x y =
+%   let
+%     val res = horrible_computation x
+%   in
+%     res + y
+%   end
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% 3 years is kind of a long time. Suppose we're interested in evaluating the following:
+
+% \begin{codeblock}
+% val res1 = mystery 2 4
+% val res2 = mystery 1 2
+% val res3 = mystery 2 5
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% This code takes 9 years in total, to run. But it doesn't need to!
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{Speed Gains}
+
+% Something we notice about \code{mystery} is that
+% \code{horrible_computation} doesn't actually depend on \code{y}.
+
+% \pause
+% \vspace{\fill}
+
+% So we can rewrite it as:
+% \begin{codeblock}
+% fun mystery2 x `=`
+%   let
+%     val res = horrible_computation x
+%   in
+%     `fn y =>` res + y
+%   end
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% Now instead of returning a lambda which accepts \code{y}, computes the horrible
+% computation, and then returns, we first compute the horrible computation!
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{Speed Gains}
+
+% This lets us write:
+
+% \pause
+% \begin{codeblock}
+% val f = mystery2 2
+% val g = mystery2 1
+% val res1 = f 4
+% val res2 = g 2
+% val res3 = f 5
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% We can't avoid the cost of computing \code{mystery2} twice, but 6 years isn't so long.
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{Staging: A Realistic Study}
+
+% This isn't an academic idea at all. What kind of real-world use case
+% has the behavior of a long period of initial computation, followed
+% by numerous shorter calls afterwards dependent on the initial
+% computation?
+
+% \pause
+% \vspace{\fill}
+
+% \begin{codeblock}
+% fun chatgpt (all_the_data_in_the_world) : string -> string =
+%   let
+%     val trained_model = train_model all_the_data_in_the_world
+%   in
+%     fn prompt => run trained_model prompt
+%   end
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% So it's eminently important to know your staging, for the future
+% of our AI overlords\footnote{And the shareholders. Don't forget about
+% the shareholders.}.
+
+% \end{frame}
+
+
+
+% \begin{frame}[fragile]
+% \frametitle{Benefits of Staging}
+
+% Usually, the order in which computations happen doesn't matter, due to extensional
+% equivalence. We might care about things which go beyond simple extensional equivalence
+% however, such as expensive computations, or things that break extensional equivalence,
+% such as side effects or mutability.
+
+% \pause
+% \vspace{\fill}
+
+% Later this semester, we will see how side effects can make correct knowledge of staging
+% even more essential.
+% \end{frame}
+
+% \sectionSlide{2}{Cost Analysis of HOFs}
+
+% \begin{frame}[fragile]
+% \frametitle{Cost Analysis of HOFs}
+
+% We've written some higher-order functions at this point, and we're fairly convinced
+% of their correctness, but what can we say about their efficiency?
+
+% \pause
+% \vspace{\fill}
+
+% Take \code{map} for example.
+
+% \pause
+% \vspace{\fill}
+
+% \begin{codeblock}
+% fun map (f : 'a -> 'b) ([] : 'a list) : 'b list = []
+%   | map f (x::xs) = f x :: map f xs
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% From first glance, it looks like the recurrence is a standard recursion on a list,
+% and thus comes out to a bound of $O(n)$. When analyzing the recursive case, a question
+% comes to mind, however -- what is the work of \code{f}?
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{The Cost of Code}
+
+% \ptmt
+
+% Because HOFs like \code{map} are code which is parameterized on other code,
+% the run-time cost of functions like \code{map} is also parameterized by
+% the cost of the input function!
+
+% \pause
+% \vspace{\fill}
+
+% This is different than before HOFs, when we only had to deal with being passed
+% values that didn't have any notion of cost associated with them -- they just were.
+
+% \pause
+% \vspace{\fill}
+
+% In this case, we would say that the cost of \code{map} is $O(n)$ in the number of
+% calls to \code{f}, but we can't really say anything better than that.
+% \end{frame}
+
+% \quizBreak{NEWFOUNDLAND}
+
+% \sectionSlide{3}{HOFs and Trees}
+% \begin{frame}[fragile]
+% \frametitle{Mapping and Folding}
+
+% \tgs
+
+% We've so far seen mapping and folding on lists. These aren't notions that are
+% specific to lists, however.\footnote{
+% Indeed, "almost every" datatype admits a concept of mapping and
+% folding. Proper treatment of this is outside the scope of this course, however.
+% }
+
+% \pause
+% \vspace{\fill}
+
+% Suppose we have a polymorphic tree type, as we've defined before, such as:
+% \begin{codeblock}
+% datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree
+% \end{codeblock}
+
+% \pause
+% \vspace{\fill}
+
+% We are interested in a \code{map} function which transforms every element of the
+% tree, and a \code{fold} function which combines the elements of the tree in a
+% particular order. How can we define these functions?
+
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{Tree Mapping}
+
+% The type signature for \code{treemap} will look similar to \code{map}:
+
+% \pause
+% \vspace{\fill}
+
+% \spec
+% {treemap}
+% {('a -> 'b) -> 'a tree -> 'b tree}
+% {\code{f is total}}
+% {\code{treemap f T} evaluates to \code{T} with \code{f} called on
+% each element}
+
+% \pause
+% \vspace{\fill}
+
+% \begin{codeblock}
+% fun treemap f Empty = Empty
+%   | treemap f (Node (L, x, R)) =
+%       Node (treemap f L, f x, treemap f R)
+% \end{codeblock}
+% \end{frame}
+
+% \begin{frame}[fragile]
+% \frametitle{Tree Folding}
+
+% What about folding? We need to first pick a particular traversal order. Let's
+% go with \term{inorder} traversal, which is the more intuitive "left-to-right"
+% traversal.
+
+% \pause
+% \vspace{\fill}
+
+% \spec
+% {treefoldl}
+% {('a * 'b -> 'b) -> 'b -> 'a tree -> 'b}
+% {\code{true}}
+% {\code{treefold f z T} $\eeq$ \code{foldl f z (inord T)}}
+
+% \pause
+% \vspace{\fill}
+
+% We see that the types of \code{foldl} and \code{treefoldl} look very
+% similar.
+% \end{frame}
+
+% \begin{frame}[plain]
+% 	\begin{center} Thank you! \end{center}
+
+% 	\begin{center}
+%     {\color{blue} \href{https://docs.google.com/forms/d/e/1FAIpQLScxujBV8sYyq4j2tyh4isfQZrNmN9X--LQ0FI6ebP_jriVEzQ/viewform?usp=sf_link}{Post-lecture survey:}} \\
+%     \vspace{5pt}
+%     \includegraphics[scale=0.035]{qr_june15}
+%   \end{center}
+% \end{frame}
+
+\thankyou
+
+\lecturePassword{HOFBYONE}
+
+
+\end{document}
