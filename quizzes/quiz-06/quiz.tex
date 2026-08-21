@@ -1,0 +1,353 @@
+\documentclass[crop=false]{standalone}
+\usepackage{15150toolbox}
+\usepackage{comment}
+\usepackage{needspace}
+
+% Toggle: set \soltrue to render solutions inline (blue boxes).
+\newif\ifsol
+\soltrue   % comment this line for the student version
+
+% Solution environment.
+\ifsol
+  \newenvironment{solution}
+    {\par\color{solution_color}\begin{framed}\textbf{Solution.}\par}
+    {\end{framed}}
+\else
+  \excludecomment{solution}
+\fi
+
+% Lecture-slide macros not in 15150toolbox.
+\newcommand{\term}[1]{\textbf{\textit{#1}}}
+\newcommand{\thmBox}[2]{\par\noindent\begin{mdframed}[backgroundcolor=blue!8,hidealllines=true]\textbf{Theorem#1.} #2\end{mdframed}}
+\newcommand{\bcBox}[1]{\par\noindent\textbf{Base case.} #1\par}
+\newcommand{\ihBox}[2]{\par\noindent\textbf{Inductive hypothesis#1.} #2\par}
+\newcommand{\isBox}[2]{\par\noindent\textbf{Inductive step#1.} #2\par}
+
+% Problem header.
+\newcommand{\quizproblem}[3]{%
+  \needspace{5\baselineskip}%
+  \stepcounter{problem}%
+  \ifsol
+    \subsection*{Problem \arabic{problem}. #1 \hfill \timing{#2} \quad (#3 pts)}%
+  \else
+    \subsection*{Problem \arabic{problem}. #1 \hfill (#3 pts)}%
+  \fi
+}
+
+\newcommand{\subpts}[1]{\textbf{(#1 pts)}}
+
+\newcommand{\answerspace}[1]{\ifsol\else\vspace{#1}\par\fi}
+
+\printout{Quiz 6}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textbf{15-150 --- Quiz 6}} \\
+  \vspace{4pt}
+  Topics: \textit{Sequences}; \textit{Lazy Programming};
+  \textit{Imperative Programming}; \textit{Asynchronous Programming} \\
+  \vspace{4pt}
+  \textit{60 minutes.}
+\end{center}
+
+\vspace{1em}
+
+\noindent\textbf{Name:} \hrulefill \hspace{2em} \textbf{Andrew ID:} \hrulefill
+
+\vspace{1em}
+
+% =============================================================================
+% PROBLEM 1 --- Sequences: cost of a list-style algorithm on a sequence
+% =============================================================================
+
+\quizproblem{Cons and Effect}{8}{5}
+
+Consider the following function on sequences:
+
+\begin{codeblock}
+  fun rev (S : 'a seq) : 'a seq =
+    case Seq.length S of
+      0 => Seq.empty ()
+    | n => Seq.cons (Seq.nth S (n - 1)) (rev (Seq.take S (n - 1)))
+\end{codeblock}
+
+On lists this pattern is $O(n)$ work. On sequences it is not. Recall that
+\code{Seq.cons} and \code{Seq.take} are each $O(n)$ work (both copy the
+whole sequence), while \code{Seq.nth} and \code{Seq.length} are $O(1)$.
+Let \code{n = Seq.length S}.
+
+\textbf{(a)} \subpts{2} Give a tight big-$O$ bound for the total
+\textbf{work} of \code{rev S}, and justify it in one sentence.
+
+\answerspace{4cm}
+
+\begin{solution}
+\textbf{Work: $O(n^2)$.} There are $n$ recursive calls (the sequence
+shrinks by one each time), and each does a \code{Seq.cons} and a
+\code{Seq.take}, both $O(n)$. That is $O(n)$ work per call over $n$
+calls: $O(n^2)$.
+
+\textbf{Rubric:} 1, $O(n^2)$; 1, $n$ calls $\times$ $O(n)$ each.
+\end{solution}
+
+\textbf{(b)} \subpts{3} Implement \code{rev} a better way --- without
+using \code{Seq.rev}. You should have an improved bound.
+
+\answerspace{4cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun rev (S : 'a seq) : 'a seq =
+    Seq.tabulate (fn i => Seq.nth S (Seq.length S - 1 - i))
+                 (Seq.length S)
+\end{codeblock}
+Work is $O(n)$: a single \code{tabulate} with an $O(1)$ body, since
+\code{nth} and \code{length} are constant time. (Span is $O(1)$, as the
+elements are independent.)
+
+\textbf{Rubric:} 2, \code{tabulate} over \code{n} with body
+\code{nth S (n - 1 - i)}; 1, work $O(n)$.
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 2 --- Lazy: stream filter productivity
+% =============================================================================
+
+\quizproblem{Filter Failure}{6}{4}
+
+Recall streams and the \code{filter} function on them:
+
+\begin{codeblock}
+  datatype 'a stream = Stream of (unit -> 'a front)
+       and 'a front  = Empty | Cons of 'a * 'a stream
+
+  fun filter p S =
+    delay (fn () =>
+      case expose S of
+        Empty        => Empty
+      | Cons (x, S') => if p x then Cons (x, filter p S')
+                        else expose (filter p S'))
+\end{codeblock}
+
+A stream is \term{productive} if exposing it always terminates (returning
+\code{Empty} or a \code{Cons}). Let \code{nats} be the productive infinite
+stream \code{0, 1, 2, 3, ...}.
+
+\textbf{(a)} \subpts{2} Consider \code{filter (fn x => x < 0) nats}.
+Exposing this stream does not terminate, even though \code{nats} is
+productive and \code{(fn x => x < 0)} is total. In one sentence, say why.
+
+\answerspace{3cm}
+
+\begin{solution}
+No natural number is negative, so every element takes the \code{else}
+branch: each expose just exposes the next recursive \code{filter} call,
+searching for a match that never appears, so it never returns a front.
+
+\textbf{Rubric:} 2, no element ever satisfies \code{p}, so the search
+never terminates.
+\end{solution}
+
+\textbf{(b)} \subpts{2} Is \code{filter (fn x => x mod 2 = 0) nats}
+productive? Answer yes or no, and justify in one sentence.
+
+\answerspace{2.5cm}
+
+\begin{solution}
+\textbf{Yes.} Even numbers occur infinitely often in \code{nats}, so
+every search in the \code{else} branch finds the next even number in
+finitely many steps, and every expose terminates.
+
+\textbf{Rubric:} 1, yes; 1, evens occur infinitely often, so each search
+terminates.
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 3 --- Imperative: wrong number of ref cells (repeat)
+% =============================================================================
+
+\quizproblem{Store Wars}{6}{6}
+
+A student writes \code{repeat (s, n)}, intended to build the string
+\code{s} concatenated \code{n} times, by appending into a reference
+cell. Knowing that refs shouldn't be global, they allocate it inside the
+function:
+
+\begin{codeblock}
+  fun repeat (s, n) =
+    let
+      val buf = ref ""
+    in
+      if n = 0 then !buf
+      else ( buf := !buf ^ s; repeat (s, n - 1) )
+    end
+\end{codeblock}
+
+\textbf{(a)} \subpts{4} What does \code{repeat ("ab", 2)} evaluate to?
+Explain in one or two sentences.
+
+\answerspace{4cm}
+
+\begin{solution}
+\textbf{\code{""}}, for any arguments. Every call to \code{repeat},
+including each recursive call, runs \code{ref ""} and allocates its own
+cell: one call to \code{ref}, one box. Each \code{:=} writes into a cell
+the next call abandons, and the base case reads a fresh empty one.
+
+\textbf{Rubric:} 2, \code{""}; 2, each recursive call allocates its own
+\code{buf}, losing the appends.
+\end{solution}
+
+\textbf{(b)} \subpts{2} In one sentence (or with code), how would you fix
+\code{repeat} --- still using a ref --- so that it returns
+\code{"abab"}?
+
+\answerspace{3cm}
+
+\begin{solution}
+Allocate the ref \emph{once per top-level call}, and do the recursion in
+an inner helper that shares that one cell:
+
+\begin{codeblock}
+  fun repeat (s, n) =
+    let
+      val buf = ref ""
+      fun go 0 = !buf
+        | go n = ( buf := !buf ^ s; go (n - 1) )
+    in
+      go n
+    end
+\end{codeblock}
+
+\textbf{Rubric:} 2, one \code{ref} outside the recursion, inner helper
+shares it (sentence or code).
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 4 --- Imperative: write a recursive function with a ref, from scratch
+% =============================================================================
+
+\quizproblem{Some Assembly Required}{5}{4}
+
+Write \code{sumList : int list -> int}, which computes the sum of the
+elements of a list, keeping a \emph{running total in a ref cell}.
+Repeated calls must be correct.
+
+\answerspace{5.5cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun sumList (L : int list) : int =
+    let
+      val total = ref 0
+      fun go [] = !total
+        | go (x::xs) = ( total := !total + x; go xs )
+    in
+      go L
+    end
+\end{codeblock}
+
+\textbf{Rubric:} 1, one \code{ref} per top-level call; 2, recursion
+accumulates via \code{:=} and the base case returns \code{!total}; 1,
+correct overall.
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 5 --- Async: promises (upon timing + minimal-dependency rewrite)
+% =============================================================================
+
+\quizproblem{Promises, Promises}{8}{6}
+
+A \term{promise} is a value representing the result of an asynchronous
+operation that we do not yet have. Calling an asynchronous function
+\emph{starts} its operation and \emph{immediately} returns a promise for
+the result:
+
+\begin{codeblock}
+  val sleep     : int -> unit promise      (* n seconds     *)
+  val read_line : unit -> string promise   (* line of input *)
+\end{codeblock}
+
+Promises are used through these operations, all of which also return
+immediately:
+
+\begin{itemize}
+  \item \code{upon (p, k)} --- registers callback \code{k} to run once
+    \code{p} resolves.
+  \item \code{p thenDo f} --- once \code{p} resolves with \code{x}, runs
+    \code{f x} (which returns another promise); the whole expression is a
+    promise for that final result.
+  \item \code{both (p, q)} --- a promise that resolves with the pair,
+    once both \code{p} and \code{q} have resolved.
+\end{itemize}
+
+\textbf{(a)} \subpts{2} Which is printed first, \code{ping} or
+\code{pong}? Justify in one sentence.
+
+\begin{codeblock}
+  ( upon (sleep 5, fn () => print "pong")
+  ; print "ping"
+  )
+\end{codeblock}
+
+\answerspace{2.5cm}
+
+\begin{solution}
+\textbf{\code{ping} prints first.} \code{upon} only registers the
+callback and returns immediately, so \code{print "ping"} runs right away;
+\code{pong} prints five seconds later, when the promise resolves.
+
+\textbf{Rubric:} 1, \code{ping}; 1, \code{upon} returns immediately.
+\end{solution}
+
+\textbf{(b)} \subpts{4} This pipeline reads two stock tickers (e.g.
+\code{"AAPL"}), fetches each one's current price with
+\code{fetch_quote : string -> int promise}, then computes the spread
+with \code{spread : int * int -> int promise}:
+
+\begin{codeblock}
+  read_line () thenDo (fn tick1 =>
+  read_line () thenDo (fn tick2 =>
+    both (fetch_quote tick1, fetch_quote tick2)
+      thenDo (fn (p1, p2) => spread (p1, p2))))
+\end{codeblock}
+
+This computes the right answer, but some work waits on a result it does
+not need. \textbf{Rewrite the pipeline so that every operation starts as
+soon as the data it depends on is available}, still computing the spread
+at the end.
+
+\answerspace{5.5cm}
+
+\begin{solution}
+The false dependency: \code{fetch_quote tick1} needs only \code{tick1},
+but it is not called until after the second ticker has been typed. Call
+it as soon as \code{tick1} arrives:
+
+\begin{codeblock}
+  read_line () thenDo (fn tick1 =>
+    both (fetch_quote tick1,
+          read_line () thenDo (fn tick2 => fetch_quote tick2))
+      thenDo (fn (p1, p2) => spread (p1, p2)))
+\end{codeblock}
+The first fetch now runs while the second ticker is being typed, and
+\code{both} joins the two price promises. Also fine: bind \code{val q1 =
+fetch_quote tick1}, then \code{read_line () thenDo (fn tick2 => both
+(q1, fetch_quote tick2) thenDo ...)}. The call is what starts the work;
+the promise just remembers it.
+
+\textbf{Rubric:} 2, first fetch starts without waiting on the second
+read (either shape); 1, second read-then-fetch via \code{thenDo}; 1,
+\code{both} joins into \code{spread}.
+\end{solution}
+
+\end{document}

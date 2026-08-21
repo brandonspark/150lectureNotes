@@ -1,0 +1,142 @@
+%% =============================================================================
+%% CPS slot for the final. Replaces Binary Decision Trees (too hard; its
+%% `compress` refsol also hit the value restriction -- both copies kept at
+%% q/bdt.tex and q/bdt_inlined.tex) and then "Short Circuits" (which asked
+%% students to invent discarding the continuation -- lecture13's `match` does it
+%% at `Zero => false`, but the lectures never name or explain the idea).
+%%
+%% This question uses ONLY the idiom lecture13 develops explicitly: the
+%% continuation receives the UNCONSUMED REMAINDER of the input, and nested calls
+%% thread it through --
+%%     Times (r1, r2) => match r1 cs (fn cs' => match r2 cs' k)
+%% Framed as parsing rather than tree-vs-sequence comparison, so it does not
+%% overlap the practice exam's samefringe (streams) or its fillAll (the
+%% list-concatenating `@` continuation).
+%%
+%% Verified in SML/NJ: all three sample trees round-trip through
+%% deserialize o serialize; trailing junk and truncated input both raise
+%% Malformed.
+%% =============================================================================
+
+\titledquestion{Serial Offenders}
+
+\textbf{Serial Offenders}
+
+We want to write a tree to a flat sequence of tokens and read it back. Our trees
+carry no data --- only shape:
+\begin{codeblock}
+  datatype tree  = Leaf | Node of tree * tree
+  datatype token = LeafTok | NodeTok
+
+  exception Malformed
+\end{codeblock}
+
+A tree is written in \textbf{preorder}: a \code{Leaf} becomes the single token
+\code{LeafTok}, and a \code{Node} becomes \code{NodeTok} followed by the tokens
+of its left subtree and then those of its right. For example, the tree
+\code{Node (Node (Leaf, Leaf), Leaf)} is written as
+\begin{codeblock}
+  [NodeTok, NodeTok, LeafTok, LeafTok, LeafTok]
+\end{codeblock}
+
+Notice that there are no parentheses or separators in the output. Reading it back
+works only because each \code{NodeTok} promises that exactly two more trees
+follow.
+
+\begin{parts}
+
+  \part[5]\hfill
+
+    As a warm-up, implement \code{serialize}.
+
+    \spec
+      {serialize}
+      {\code{tree -> token list}}
+      {\code{true}}
+      {\code{serialize T} $\eeq$ the preorder token list of \code{T}, as
+      described above}
+
+    \begin{solutionorbox}[12em]
+      \begin{codeblock}
+        fun serialize Leaf = [LeafTok]
+          | serialize (Node (l, r)) =
+              NodeTok :: serialize l @ serialize r
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[12]\hfill
+
+    Now we read one back. The difficulty is that when we parse the left subtree
+    of a \code{Node}, we do not know in advance how many tokens it will consume
+    --- so the left subtree must tell us where it stopped.
+
+    We handle this in CPS: the continuation is given both the tree that was
+    parsed \textbf{and the tokens that are left over}.
+
+    \spec
+      {parse}
+      {\\ {\small\code{token list -> (tree * token list -> 'a) -> 'a}}}
+      {\code{k} is total}
+      {\code{parse ts k} $\eeq$ \code{k (T, ts')}, where \code{T} is the tree
+      described by a prefix of \code{ts} and \code{ts'} is the remaining tokens.
+      If \code{ts} does not begin with a well-formed tree, \code{parse ts k}
+      raises \code{Malformed}.}
+
+    \begin{solutionorbox}[20em]
+      \begin{codeblock}
+        fun parse (LeafTok :: ts) k = k (Leaf, ts)
+          | parse (NodeTok :: ts) k =
+              parse ts (fn (lt, ts') =>
+                parse ts' (fn (rt, ts'') =>
+                  k (Node (lt, rt), ts'')))
+          | parse [] k = raise Malformed
+      \end{codeblock}
+
+      A \code{LeafTok} consumes exactly one token, so the continuation gets
+      \code{Leaf} and everything after it.
+
+      For a \code{NodeTok} we parse the left subtree from the tokens that follow.
+      Its continuation receives \code{lt} together with \code{ts'}, the tokens
+      the left subtree did not use --- and \textit{those} are what the right
+      subtree parses from. The innermost continuation then has both subtrees and
+      the final leftovers \code{ts''}, so it can build the node and hand it on.
+
+      Threading the remainder through the continuations is what removes the need
+      to know any subtree's length in advance.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[5]\hfill
+
+    Finally, use \code{parse} to implement \code{deserialize}, which must consume
+    the \textbf{entire} token list.
+
+    \spec
+      {deserialize}
+      {\code{token list -> tree}}
+      {\code{true}}
+      {\code{deserialize ts} $\eeq$ \code{T} if \code{ts} $\eeq$
+      \code{serialize T}, and raises \code{Malformed} otherwise}
+
+    \begin{solutionorbox}[14em]
+      \begin{codeblock}
+        fun deserialize ts =
+          parse ts (fn (t, rest) =>
+            if null rest then t
+            else raise Malformed)
+      \end{codeblock}
+
+      \code{parse} is happy to stop early --- it reports what it consumed and
+      what it did not. So the continuation is where ``and nothing may be left
+      over'' is enforced: it accepts the tree only when \code{rest} is empty.
+
+      This is the useful part of returning the remainder rather than hiding it.
+      The same \code{parse} would serve a caller that wanted to read a tree and
+      then keep going with the rest of the tokens; only the continuation would
+      differ.
+    \end{solutionorbox}
+
+\end{parts}

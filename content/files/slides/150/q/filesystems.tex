@@ -1,0 +1,223 @@
+\titledquestion{File Systems}
+
+\textbf{File Systems}
+
+Consider the structure of a Linux file system, which is composed of \textit{directories}
+and \textit{files}.
+
+A directory is a structure which may contain further directories and files. A file
+is just a standalone piece of data.
+
+We may represent it via the following SML type:\footnote{Which is (almost) isomorphic to
+a \code{string rose}, for those of you keeping track at home.}
+\begin{codeblock}
+  datatype filesys =
+      File of string
+    | Dir of string * filesys list
+
+  type filesys = (string * data) list
+  and data = File | Dir of filesys
+\end{codeblock}
+
+A \textit{file system} is a value of type \code{filesys} such that for each
+\code{Dir (d, ds)}, no \code{File} or \code{Dir} in \code{ds} shares the
+same name.
+
+So for instance, a file system with the following structure:
+
+\begin{minipage}{\linewidth} % Use a minipage to control the width
+  \dirtree{%
+  .1 root.
+  .2 A.
+  .3 foo.sml.
+  .3 bar.txt.
+  .2 B.
+  .3 baz.sml.
+  .2 C.
+  }
+\end{minipage}
+
+would be represented by the following SML value:
+\begin{codeblock}
+  Dir ("root",
+    [ Dir ("A", [ File "foo.sml", File "bar.txt" ]),
+      Dir ("B", [ File "baz.sml"]),
+      Dir ("C", [])
+    ]
+  )
+\end{codeblock}
+
+\newpage
+
+You are given an implementation of the \code{cd} function, which allows
+moving through the file system, according to the following specification:
+
+\spec
+  {cd}
+  {\code{filesys -> string list -> filesys option}}
+  {\code{true}}
+  {\code{cd fs path} takes the moves indicated by the path \code{path},
+  and returns \code{SOME fs'} if that ends up at a file system,
+  and \code{NONE} if it doesn't.}
+
+So for the above filesystem, if it was to be bound to \code{fs}, we would
+have that:
+\begin{itemize}
+  \item \code{cd fs []} $\eeq$ \code{SOME fs}
+  \item \code{cd fs ["B"]} $\eeq$ \code{SOME (Dir ("B", [ File "baz.sml" ]))}
+  \item \code{cd fs ["root"]} $\eeq$ \code{NONE}
+\end{itemize}
+
+The given implementation is:
+
+\begin{codeblock}
+  fun cd fs [] = fs
+    | cd (File _) (s::rest) = NONE
+    | cd (Dir (dir, ds)) (s::rest) =
+        List.foldl
+          (fn (_, SOME res) => SOME res
+            | (File _, _) => NONE
+            | (Dir (dir', ds'), _) =>
+                if s = dir' then
+                  cd (Dir (dir', ds')) rest
+                else
+                  NONE
+          )
+          NONE
+          ds
+\end{codeblock}
+
+\begin{parts}
+  \part[6]\hfill
+
+    Assume that any directory in a given file system has $k$
+    many entries in it, and it is roughly balanced.
+
+    Write and solve a recurrence for the \textbf{work} of \code{cd} on
+    such a file system, in terms of the \textbf{depth} of the file system.
+    The depth of a file system is, intuitively, the maximum number of
+    nested directories you can go into.
+
+    \begin{solutionorbox}[18em]
+      $W_{\code{cd}}(0) = c_0$
+      $W_{\code{cd}}(d) = O(k) + W_{\code{cd}}(d - 1)$
+
+      So ultimately, $O(kd)$.
+    \end{solutionorbox}
+
+    \begin{EnvUplevel}
+      Consider the following function on file systems:
+
+      \begin{codeblock}
+        fun countdirs (File _) = 0
+          | countdirs (Dir (_, dirs)) =
+              List.map countfiles dirs
+              |> List.foldl (op+) 1
+      \end{codeblock}
+    \end{EnvUplevel}
+
+  \part[5]\hfill
+
+    Assume that any directory in a given file system has $k$
+    many entries in it, and it is roughly balanced.
+
+    Write but \textbf{do not solve} a recurrence for the \textbf{work} of
+    \code{countdirs} on such a file system, in terms of the \textbf{nodes} of
+    the file system. The nodes of a file system is, intuitively, the total
+    number of files and directories in it.
+
+    \begin{solutionorbox}[18em]
+      $W_{\code{cd}}(0) = c_0$
+      $W_{\code{cd}}(n) = O(k) + k \cdot W_{\code{cd}}(n / k)$
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[6]\hfill
+
+    Assume that any directory in a given file system has $k$
+    many entries in it, and it is roughly balanced.
+
+    Write and solve a recurrence for the \textbf{span} of \code{countdirs} on
+    such a file system, in terms of the \textbf{nodes} of the file system.
+    The nodes of a file system is, intuitively, the total number of
+    files and directories in it.
+
+    \textbf{For this problem, and only this problem, pretend that \code{List.map}
+    runs each call in parallel.}
+
+    \begin{solutionorbox}[20em]
+      $S_{\code{cd}}(0) = c_0$
+      $S_{\code{cd}}(n) = O(k) + S_{\code{cd}}(n / k)$
+
+      So ultimately, $O(k \cdot \log_k n)$.
+    \end{solutionorbox}
+
+
+
+
+
+  % \part[5]\hfill
+
+  %   Assume that any directory in a given file system has, at maximum, $k$
+  %   many entries in it.
+
+  %   Write a recurrence for the \textbf{span} of \code{cd} on
+  %   such a file system, in terms of the \textbf{depth} of the file system.
+  %   The depth of the file system is, intuitively, the maximum number of
+  %   nested directories you can go into.
+
+  %   You may find useful the fact that $1 + k + k^2 + ... + k^n$ is on the order
+  %   of $O(k^n)$, for non-zero $k$.
+
+  %   \begin{solutionorbox}[8em]
+  %     $S_{\code{cd}}(0) = c_0$
+  %     $S_{\code{cd}}(d) = O(k) + \cdot S_{\code{cd}}(d - 1)$
+  %   \end{solutionorbox}
+
+
+  \newpage
+
+  \part[10]\hfill
+
+    Implement \code{absolutize}, which replaces all of the names in the file
+    system with its absolute path. (which should start with a "/"). For
+    instance, running \code{absolutize} on the above example file system should
+    give you
+    \begin{codeblock}
+      Dir ("/root",
+        [ Dir ("/root/A", [ File "/root/A/foo.sml",
+                            File "/root/A/bar.txt" ]),
+          Dir ("/root/B", [ File "/root/B/baz.sml"]),
+          Dir ("/root/C", [])
+        ]
+      )
+    \end{codeblock}
+
+    \spec
+      {absolutize}
+      {\code{filesys -> filesys}}
+      {\code{true}}
+      {\code{absolutize fs} replaces each file and directory's name with
+      the absolute path required to get there}
+
+    \begin{solutionorbox}[30em]
+      \begin{codeblock}
+        fun mkPath strs =
+          List.foldl (fn (x, acc) =>
+            acc ^ "/" ^ x
+          ) "" strs
+
+        fun absolutize' cur (File s) = File (mkPath (s :: cur))
+          | absolutize' cur (Dir (dir, ds)) =
+              let
+                val new_cur = dir :: cur
+              in
+                Dir (mkPath new_cur, List.map (absolutize new_cur) ds)
+              end
+
+        fun absolutize = absolutize' []
+      \end{codeblock}
+    \end{solutionorbox}
+\end{parts}
+

@@ -1,0 +1,569 @@
+\documentclass[crop=false]{standalone}
+\usepackage{15150toolbox}
+\usepackage{comment}
+\usepackage{needspace}
+
+% Toggle: set \soltrue to render solutions inline (blue boxes).
+\newif\ifsol
+\soltrue   % comment this line for the student version
+
+% Solution environment.
+\ifsol
+  \newenvironment{solution}
+    {\par\color{solution_color}\begin{framed}\textbf{Solution.}\par}
+    {\end{framed}}
+\else
+  \excludecomment{solution}
+\fi
+
+% Lecture-slide macros not in 15150toolbox.
+\newcommand{\term}[1]{\textbf{\textit{#1}}}
+\newcommand{\thmBox}[2]{\par\noindent\begin{mdframed}[backgroundcolor=blue!8,hidealllines=true]\textbf{Theorem#1.} #2\end{mdframed}}
+\newcommand{\bcBox}[1]{\par\noindent\textbf{Base case.} #1\par}
+\newcommand{\ihBox}[2]{\par\noindent\textbf{Inductive hypothesis#1.} #2\par}
+\newcommand{\isBox}[2]{\par\noindent\textbf{Inductive step#1.} #2\par}
+
+% Problem header.
+\newcommand{\quizproblem}[3]{%
+  \needspace{5\baselineskip}%
+  \stepcounter{problem}%
+  \ifsol
+    \subsection*{Problem \arabic{problem}. #1 \hfill \timing{#2} \quad (#3 pts)}%
+  \else
+    \subsection*{Problem \arabic{problem}. #1 \hfill (#3 pts)}%
+  \fi
+}
+
+\newcommand{\subpts}[1]{\textbf{(#1 pts)}}
+
+\newcommand{\answerspace}[1]{\ifsol\else\vspace{#1}\par\fi}
+
+\printout{Quiz 4}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textbf{15-150 --- Quiz 4}} \\
+  \vspace{4pt}
+  Topics: \textit{Continuation-Passing Style}; \textit{Exceptions};
+  \textit{Regular Expressions}; \textit{Modules I} \\
+  \vspace{4pt}
+  \textit{60 minutes.}
+\end{center}
+
+\vspace{1em}
+
+\noindent\textbf{Name:} \hrulefill \hspace{2em} \textbf{Andrew ID:} \hrulefill
+
+\vspace{1em}
+
+% =============================================================================
+% PROBLEM 1 --- CPS mechanical translation
+% =============================================================================
+
+\quizproblem{Translating to CPS}{14}{14}
+
+Recall that the difference between a continuation-passing-style function and
+its direct-style analogue is merely a difference in \emph{contract}. Consider a
+function \code{maxOpt : int list -> int option} returning the largest
+element of a list, and its CPS version
+\code{maxOptCPS : int list -> (int -> 'a) -> (unit -> 'a) -> 'a}. Their
+behavior is given by the following specifications:
+
+\[
+  \code{maxOpt L} \eeq
+  \begin{cases}
+    \code{SOME x}, & \text{if the largest element of \code{L} is \code{x}} \\
+    \code{NONE},   & \text{if \code{L} is empty}
+  \end{cases}
+\]
+\[
+  \code{maxOptCPS L sc fc} \eeq
+  \begin{cases}
+    \code{sc x},  & \text{if the largest element of \code{L} is \code{x}} \\
+    \code{fc ()}, & \text{if \code{L} is empty}
+  \end{cases}
+\]
+
+\vspace{0.5em}
+
+\textbf{(a)} \subpts{4} The same idea works for arbitrary types.
+Consider \code{cmp}, which returns a value of type \code{order}:
+
+\begin{codeblock}
+  datatype order = LESS | EQUAL | GREATER
+
+  fun cmp (x : int, y : int) : order =
+    if x < y then LESS
+    else if x = y then EQUAL
+    else GREATER
+\end{codeblock}
+
+We want to write \code{cmpCPS}, the CPS version of \code{cmp}. \textbf{Write
+a possible type for \code{cmpCPS}, and give its specification in the same
+piecewise form as \code{maxOptCPS} above.} (You do not need to implement
+it)
+
+Name the three continuations \code{lc}, \code{ec}, and \code{gc}, or
+alternatively, \code{snap}, \code{crackle}, and \code{pop}.
+
+\vspace{0.3em}
+\hspace{2em}\code{cmpCPS :} \rule[-0.4ex]{0.8\textwidth}{0.4pt}
+
+\answerspace{4cm}
+
+\newpage
+
+\begin{solution}
+Type:
+\begin{quote}
+\code{cmpCPS : int * int ->} \\
+\hspace*{2em}\code{(unit -> 'a) -> (unit -> 'a) -> (unit -> 'a) -> 'a}
+\end{quote}
+
+Specification:
+\[
+  \code{cmpCPS (x, y) lc ec gc} \eeq
+  \begin{cases}
+    \code{lc ()}, & \text{if \code{cmp (x, y)} $\eeq$ \code{LESS}} \\
+    \code{ec ()}, & \text{if \code{cmp (x, y)} $\eeq$ \code{EQUAL}} \\
+    \code{gc ()}, & \text{if \code{cmp (x, y)} $\eeq$ \code{GREATER}}
+  \end{cases}
+\]
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 2 pts: type has three \code{unit -> 'a} continuation arguments and
+    return type \code{'a} (currying the \code{int * int} is fine)
+  \item 2 pts: specification maps each \code{order} result to the
+    corresponding continuation call (\code{LESS} $\to$ \code{lc ()}, etc.)
+\end{itemize}
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(b)} \subpts{8} Consider the function \code{indexOf}, which returns
+the index of the first occurrence of \code{y} in a list, if present:
+
+\begin{codeblock}
+  fun indexOf (y : int, [] : int list) : int option = NONE
+    | indexOf (y, x::xs) =
+        if y = x then SOME 0
+        else case indexOf (y, xs) of
+               NONE   => NONE
+             | SOME i => SOME (i + 1)
+\end{codeblock}
+
+Write \code{indexOfCPS}, the CPS version of \code{indexOf}, satisfying
+
+\spec
+  {indexOfCPS}
+  {int * int list -> (int -> 'a) -> (unit -> 'a) -> 'a}
+  {\code{sc} and \code{fc} are total}
+  {\vspace{-1.5em}
+   {\renewcommand{\arraystretch}{0.9}%
+   \[
+     \code{indexOfCPS (y, L) sc fc} \eeq
+     \begin{cases}
+       \code{sc i},  & \text{if \code{indexOf (y, L)} $\eeq$ \code{SOME i}} \\
+       \code{fc ()}, & \text{if \code{indexOf (y, L)} $\eeq$ \code{NONE}}
+     \end{cases}
+   \]}\vspace{-1em}}
+
+\begin{constraint}
+  \code{indexOfCPS} must be in proper continuation-passing style.
+\end{constraint}
+
+\answerspace{4cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun indexOfCPS (y, []) sc fc = fc ()
+    | indexOfCPS (y, x::xs) sc fc =
+        if y = x then sc 0
+        else indexOfCPS (y, xs) (fn i => sc (i + 1)) fc
+\end{codeblock}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 3 pts: base case calls \code{fc ()}; match case calls \code{sc 0}
+  \item 4 pts: recursive case wraps the success continuation ---
+    \code{(fn i => sc (i + 1))} --- to perform the \code{+ 1}
+  \item 1 pt: recursive call is a tail call, passing \code{fc} unchanged
+\end{itemize}
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(c)} \subpts{2} A student wants to use \code{indexOfCPS} to write
+\code{indexOrMinusOne}, which returns the index of \code{y} in \code{L}, or
+\code{~1} if \code{y} is absent. They write:
+
+\begin{codeblock}
+  fun indexOrMinusOne (y : int, L : int list) : int =
+    case indexOfCPS (y, L) (fn i => SOME i) (fn () => NONE) of
+      SOME i => i
+    | NONE   => ~1
+\end{codeblock}
+
+This produces the right answer, but it uses \code{indexOfCPS} incorrectly.
+In one sentence, say what's wrong with it, then write the corrected
+\code{indexOrMinusOne} below.
+
+\answerspace{4.5cm}
+
+\begin{solution}
+\textbf{What's wrong:} This is not CPS!
+
+\textbf{Corrected:}
+\begin{codeblock}
+  fun indexOrMinusOne (y : int, L : int list) : int =
+    indexOfCPS (y, L) (fn i => i) (fn () => ~1)
+\end{codeblock}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 1 pt: identifies that the continuations just rebuild an option
+    (result-handling should be in the continuations, not a \code{case})
+  \item 1 pt: correct rewrite --- \code{(fn i => i)} as \code{sc},
+    \code{(fn () => ~1)} as \code{fc}
+\end{itemize}
+\end{solution}
+
+% =============================================================================
+% PROBLEM 2 --- CPS implementation from scratch
+% =============================================================================
+
+\quizproblem{The Depth of CPS}{10}{12}
+
+Recall the type of binary trees:
+
+\begin{codeblock}
+  datatype tree = Empty | Node of tree * int * tree
+\end{codeblock}
+
+The \code{depth} of a tree is the length of the longest path from the root
+to a leaf. In direct style:
+
+\begin{codeblock}
+  fun depth (Empty : tree) : int = 0
+    | depth (Node (L, _, R)) = 1 + Int.max (depth L, depth R)
+\end{codeblock}
+
+Write \code{depthCPS}, a continuation-passing-style version of \code{depth},
+satisfying
+
+\spec
+  {depthCPS}
+  {tree -> (int -> 'a) -> 'a}
+  {\code{k} is total}
+  {\code{depthCPS T k} $\eeq$ \code{k (depth T)}}
+
+\begin{constraint}
+  \code{depthCPS} must be in proper continuation-passing style.
+\end{constraint}
+
+You may assume \code{Int.max} is given.
+
+\answerspace{6cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun depthCPS (Empty : tree) (k : int -> 'a) : 'a = k 0
+    | depthCPS (Node (L, _, R)) k =
+        depthCPS L (fn dl =>
+          depthCPS R (fn dr =>
+            k (1 + Int.max (dl, dr))))
+\end{codeblock}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 2 pts: base case \code{k 0}
+  \item 5 pts: both subtrees recursed on, with the second call nested
+    inside the first's continuation (not two separate top-level calls)
+  \item 3 pts: \code{k} called only at the bottom, on
+    \code{1 + Int.max (dl, dr)}
+  \item 2 pts: every call is a tail call (proper CPS, no pending work after
+    a recursive call)
+\end{itemize}
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 3 --- CPS with a two-continuation predicate
+% =============================================================================
+
+\quizproblem{If I Had To Count The Number Of Things That Were Cool About
+Functional Programming, I Would Have To Count To Quite A High Number Indeed}{9}{8}
+
+We are interested in predicates that can be in CPS form too. Instead of
+\code{p : int -> bool}, consider a predicate
+
+\begin{codeblock}
+  p : int -> (unit -> 'a) -> (unit -> 'a) -> 'a
+\end{codeblock}
+
+where \code{p x yes no} calls \code{yes ()} if \code{x} satisfies the
+predicate, and \code{no ()} if it does not. (This is as you saw on
+the CPS homework)
+
+Write \code{countCPS}, which counts how many elements of a list satisfy
+such a predicate and passes the resulting count to a continuation \code{k}:
+
+\spec
+  {countCPS}
+  {(int -> (unit -> 'a) -> (unit -> 'a) -> 'a) * int list
+   -> (int -> 'a) -> 'a}
+  {\code{p} and \code{k} are total, \code{p} is a CPS predicate function
+  as described above}
+  {\code{countCPS (p, L) k} $\eeq$ \code{k n}, where \code{n} is the number
+  of elements of \code{L} satisfying \code{p}}
+
+\begin{constraint}
+  \code{countCPS} must be in proper continuation-passing style.
+\end{constraint}
+
+Complete the two clauses below.
+
+\begin{codeblock}
+  fun countCPS (p, []) k =
+
+    | countCPS (p, x::xs) k =
+\end{codeblock}
+
+\answerspace{5cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun countCPS (p, []) k = k 0
+    | countCPS (p, x::xs) k =
+        p x
+          (fn () => countCPS (p, xs) (fn n => k (n + 1)))
+          (fn () => countCPS (p, xs) k)
+\end{codeblock}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 4 pts: calls \code{p x} with two continuations --- yes (count
+    \code{x}), no (skip \code{x})
+  \item 2 pts: the ``yes'' branch wraps the continuation as
+    \code{(fn n => k (n + 1))} to add \code{1} to the rest's count
+  \item 1 pt: the ``no'' branch recurses with \code{k} unchanged
+  \item 1 pt: base case calls \code{k 0}; every call is a tail call
+\end{itemize}
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 4 --- Exceptions
+% =============================================================================
+
+\quizproblem{Indexing, Exceptionally}{9}{11}
+
+In \term{exception-handling style} (EHS), a function uses exceptions ---
+both raising \emph{and} handling them --- to carry information and direct
+control flow. We will write \code{indexOf} (from Problem 1) in EHS: it
+raises \code{Found i} if \code{y} occurs at index \code{i}, and
+\code{NotFound} if \code{y} is absent. It never returns normally.
+
+\begin{codeblock}
+  exception NotFound
+  exception Found of int
+\end{codeblock}
+
+\textbf{(a)} \subpts{8} Write \code{indexOfEHS}, satisfying
+
+\spec
+  {indexOfEHS}
+  {int * int list -> 'a}
+  {\code{true}}
+  {\code{indexOfEHS (y, L)} raises \code{Found i} if the first occurrence of
+   \code{y} in \code{L} is at index \code{i}, and raises \code{NotFound} if
+   \code{y} does not occur in \code{L}}
+
+\begin{constraint}
+  \code{indexOfEHS} must be in exception-handling style (use \code{handle},
+  not a helper that returns an \code{int} or \code{option}).
+\end{constraint}
+
+\answerspace{6cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun indexOfEHS (y : int, [] : int list) : 'a = raise NotFound
+    | indexOfEHS (y, x::xs) =
+        if y = x then raise (Found 0)
+        else indexOfEHS (y, xs) handle Found i => raise (Found (i + 1))
+\end{codeblock}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 3 pts: base case raises \code{NotFound}; match case raises
+    \code{Found 0}
+  \item 5 pts: recursive case is \code{indexOfEHS (y, xs) handle Found i =>
+    raise (Found (i + 1))} --- catches the inner result and re-raises it
+    incremented, while letting \code{NotFound} propagate
+\end{itemize}
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(b)} \subpts{3} Since \code{indexOfEHS} never returns, a caller must
+\code{handle} its exceptions. Complete \code{indexOrMinusOne}, which
+evaluates to the index of \code{y} in \code{L}, or \code{~1} if \code{y} is
+absent.
+
+\begin{codeblock}
+  fun indexOrMinusOne (y : int, L : int list) : int =
+\end{codeblock}
+
+\answerspace{3.5cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun indexOrMinusOne (y : int, L : int list) : int =
+    indexOfEHS (y, L)
+      handle Found i => i
+           | NotFound => ~1
+\end{codeblock}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 2 pts: \code{handle Found i => i} (extracts the index)
+  \item 1 pt: \code{handle NotFound => ~1} for the absent case
+\end{itemize}
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 4 --- Regular Expressions
+% =============================================================================
+
+\quizproblem{Match Point}{5}{5}
+
+Consider the alphabet $\Sigma = \{\code{a}, \code{b}\}$ and the regular
+expression
+$$ r = \code{a}(\code{a} + \code{b})^* \code{b} $$
+that is, the language of strings that start with \code{a}, end with
+\code{b}, and have any string of \code{a}'s and \code{b}'s in between.
+
+For each string below, circle \textbf{YES} if it is in $L(r)$ and
+\textbf{NO} if it is not.
+
+\vspace{0.5em}
+
+\begin{center}
+\begin{tabular}{l@{\hspace{3em}}c@{\hspace{2em}}c}
+  \code{ba}     & YES \quad NO & \\
+  \code{aab}    & YES \quad NO & \\
+  \code{a}      & YES \quad NO & \\
+  \code{abb}    & YES \quad NO & \\
+  \code{ab}     & YES \quad NO & \\
+\end{tabular}
+\end{center}
+
+\answerspace{1cm}
+
+\begin{solution}
+\begin{center}
+\begin{tabular}{l@{\hspace{2em}}l@{\hspace{2em}}l}
+  \code{ba}  & \textbf{NO}  & does not start with \code{a}. \\
+  \code{aab} & \textbf{YES} & \code{a}, then \code{a} from the star, then \code{b}. \\
+  \code{a}   & \textbf{NO}  & has no final \code{b} (the leading \code{a} is consumed). \\
+  \code{abb} & \textbf{YES} & \code{a}, then \code{b} from the star, then \code{b}. \\
+  \code{ab}  & \textbf{YES} & \code{a}, then $\epsilon$ from the star, then \code{b}. \\
+\end{tabular}
+\end{center}
+
+\textbf{Rubric:} 1 pt each, all-or-nothing.
+\end{solution}
+
+% =============================================================================
+% PROBLEM 5 --- Modules
+% =============================================================================
+
+\quizproblem{Abstract Thinking}{8}{9}
+
+Consider the following signature and two structures that implement it ---
+one ascribed \textbf{transparently} (\code{:}) and one ascribed
+\textbf{opaquely} (\code{:>}). Both use \code{type t = int} internally.
+
+\begin{codeblock}
+  signature COUNTER =
+    sig
+      type t
+      val start : t
+      val tick  : t -> t
+    end
+
+  structure C : COUNTER =
+    struct type t = int  val start = 0  fun tick n = n + 1 end
+
+  structure D :> COUNTER =
+    struct type t = int  val start = 0  fun tick n = n + 1 end
+\end{codeblock}
+
+For each client expression below, state whether it \textbf{typechecks}, and
+explain in one sentence why or why not.
+
+\vspace{0.5em}
+
+\textbf{(a)} \subpts{3} \code{C.tick C.start + 1}
+
+\answerspace{2.5cm}
+
+\textbf{(b)} \subpts{3} \code{D.tick D.start + 1}
+
+\answerspace{2.5cm}
+
+\begin{solution}
+\textbf{(a) Typechecks.} \code{C} is ascribed transparently, so
+\code{C.t} is publicly known to be \code{int}.
+
+\textbf{(b) Does not typecheck.} \code{D} is ascribed opaquely,
+so \code{D.t} is abstract and \code{+}
+cannot be applied to a value of type \code{D.t}.
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 3 pts (a): typechecks, because transparent ascription exposes
+    \code{C.t = int}. (1 pt for ``yes'' with weak/no reason.)
+  \item 3 pts (b): does not typecheck, because opaque ascription makes
+    \code{D.t} abstract, so it isn't known to be \code{int} and \code{+}
+    can't apply. (1 pt for ``no'' with weak/no reason.)
+\end{itemize}
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(c)} \subpts{3} Now consider a third structure that \emph{reuses
+\code{C}'s type}, ascribed opaquely:
+
+\begin{codeblock}
+  structure E :> COUNTER =
+    struct type t = C.t  val start = C.start  fun tick n = C.tick n end
+\end{codeblock}
+
+Does the client expression \code{C.start = E.start} typecheck? Why or why
+not?
+
+\answerspace{3cm}
+
+\begin{solution}
+\textbf{Does not typecheck.} Even though \code{E} reuses \code{C.t}
+internally, the opaque ascription does not let us know about it. So
+the equality fails to type-check.
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 3 pts: does not typecheck, because \code{E.t} is a fresh abstract
+    type distinct from \code{C.t} (so \code{=} compares two different
+    types). (1 pt for ``no'' with weak/no reason, e.g. only mentioning
+    that the type is hidden or equality types.)
+\end{itemize}
+\end{solution}
+
+\end{document}

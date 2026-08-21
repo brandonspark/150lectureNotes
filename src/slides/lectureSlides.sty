@@ -10,6 +10,11 @@
     \usepackage{inter}
     \captionsetup{justification=centering,labelformat=empty}
 
+    % inter overrides \rmdefault to Inter-LF, which causes beamer's serif
+    % math theme (whose math family follows \rmdefault) to also pick up
+    % Inter. Restore \rmdefault to Computer Modern so math renders in CM.
+    \renewcommand{\rmdefault}{cmr}
+
     \newcommand{\codeboxoptions}{frame=shadowbox,rulesepcolor=\color{altBg}}
 % COLOR SETUP
     % Supply default colors

@@ -1,0 +1,148 @@
+%% =============================================================================
+%% CPS slot for the final -- replaces Binary Decision Trees (q/bdt.tex, 30 pts,
+%% 509 lines), which was too difficult and whose `compress` reference solution
+%% did not typecheck (the `val partition_bstrs = partition (...)` binding hit the
+%% value restriction).
+%%
+%% Distinct from the practice exam's CPS question (draft_fill.tex), which is
+%% search WITH BACKTRACKING over a tree. This one is about the other thing CPS
+%% buys you: DISCARDING the continuation to abandon pending work.
+%%
+%% All three parts verified in SML/NJ:
+%%   sumTree t1 = 9   prodTree t1 = 24   prodTree t2 (has a 0) = 0
+%%   prodTree' t1 = 24   prodTree' t2 = 0
+%% and instrumenting the multiply shows ZERO multiplications occur when a 0 is
+%% found, i.e. the short-circuit is real and not merely arithmetic.
+%% =============================================================================
+
+\titledquestion{Short Circuits}
+
+\textbf{Short Circuits}
+
+Throughout this problem we work with the type of integer trees:
+\begin{codeblock}
+  datatype tree = Empty | Node of tree * int * tree
+\end{codeblock}
+
+\begin{parts}
+
+  \part[6]\hfill
+
+    As a warm-up, write \code{sumTree} in continuation-passing style.
+
+    \spec
+      {sumTree}
+      {\code{tree -> (int -> 'a) -> 'a}}
+      {\code{k} is total}
+      {\code{sumTree T k} $\eeq$ \code{k s}, where \code{s} is the sum of all
+      the integers in \code{T}}
+
+    \begin{solutionorbox}[14em]
+      \begin{codeblock}
+        fun sumTree Empty k = k 0
+          | sumTree (Node (l, x, r)) k =
+              sumTree l (fn sl =>
+                sumTree r (fn sr =>
+                  k (sl + x + sr)))
+      \end{codeblock}
+
+      The left subtree is summed first; its continuation receives that sum and
+      sums the right subtree; and \textit{that} continuation has both sums in
+      hand, so it can add in \code{x} and hand the total to \code{k}.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[10]\hfill
+
+    Now the interesting one. Write \code{prodTree}, which multiplies the
+    integers in a tree --- but which stops as soon as it meets a \code{0},
+    performing \textbf{no further multiplications}.
+
+    \spec
+      {prodTree}
+      {\code{tree -> (int -> int) -> int}}
+      {\code{k} is total}
+      {\code{prodTree T k} $\eeq$ \code{k p} if no node of \code{T} holds
+      \code{0}, where \code{p} is the product of the integers in \code{T}; and
+      \code{prodTree T k} $\eeq$ \code{0} otherwise}
+
+    \begin{constraint}
+      Your solution must not multiply anything once a \code{0} has been found.
+      In particular, do not compute the product and then check whether it is
+      \code{0}.
+    \end{constraint}
+
+    \begin{solutionorbox}[18em]
+      \begin{codeblock}
+        fun prodTree Empty k = k 1
+          | prodTree (Node (l, x, r)) k =
+              if x = 0 then 0
+              else
+                prodTree l (fn pl =>
+                  prodTree r (fn pr =>
+                    k (pl * x * pr)))
+      \end{codeblock}
+
+      The recursive case is the same shape as \code{sumTree}. The new idea is the
+      \code{0} case: instead of calling \code{k} on some value, we
+      \textbf{discard \code{k} entirely} and return \code{0} directly.
+
+      That is what makes the short circuit work. Everything still to be done ---
+      every pending multiplication in every enclosing subtree --- lives inside
+      \code{k}, so throwing \code{k} away throws all of it away at once. A
+      direct-style version cannot do this: its pending work sits on the call
+      stack, where the function has no way to reach it, so each recursive call
+      must return and be multiplied on the way out.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[6]\hfill
+
+    Notice that \code{prodTree}'s type forced the answer type to be \code{int},
+    since the \code{0} case returns an \code{int} directly. Generalize it by
+    taking a \textbf{second} continuation to be used when a \code{0} is found.
+
+    \spec
+      {prodTree'}
+      {\code{tree -> (int -> 'a) -> (unit -> 'a) -> 'a}}
+      {\code{sc} and \code{fc} are total}
+      {\code{prodTree' T sc fc} $\eeq$ \code{sc p} if no node of \code{T} holds
+      \code{0}, where \code{p} is the product of the integers in \code{T}; and
+      \code{prodTree' T sc fc} $\eeq$ \code{fc ()} otherwise}
+
+    Then complete the following, so that it behaves exactly like \code{prodTree}:
+
+    \begin{codeblock}
+      fun prodTree T k = prodTree' T
+    \end{codeblock}
+    \vspace{-0.4cm}
+    \begin{solutionorbox}[6em]
+      \begin{codeblock}
+        k (fn () => 0)
+      \end{codeblock}
+    \end{solutionorbox}
+
+    \begin{solutionorbox}[16em]
+      \begin{codeblock}
+        fun prodTree' Empty sc fc = sc 1
+          | prodTree' (Node (l, x, r)) sc fc =
+              if x = 0 then fc ()
+              else
+                prodTree' l (fn pl =>
+                  prodTree' r (fn pr =>
+                    sc (pl * x * pr)) fc) fc
+      \end{codeblock}
+
+      \code{fc} replaces the hard-coded \code{0}, which is what frees the answer
+      type to be any \code{'a}. Note that \code{fc} must be threaded through
+      \textbf{both} recursive calls --- a \code{0} anywhere in either subtree has
+      to reach the same handler.
+
+      Recovering \code{prodTree} is then just a matter of supplying the two
+      continuations it had implicitly: \code{k} for success, and
+      \code{fn () => 0} for the \code{0} case.
+    \end{solutionorbox}
+
+\end{parts}

@@ -1,0 +1,367 @@
+\documentclass[crop=false]{standalone}
+\usepackage{15150toolbox}
+\usepackage{comment}
+\usepackage{needspace}
+
+% Toggle: set \soltrue to render solutions inline (blue boxes).
+\newif\ifsol
+\soltrue   % comment this line for the student version
+
+% Solution environment.
+\ifsol
+  \newenvironment{solution}
+    {\par\color{solution_color}\begin{framed}\textbf{Solution.}\par}
+    {\end{framed}}
+\else
+  \excludecomment{solution}
+\fi
+
+% Lecture-slide macros not in 15150toolbox.
+\newcommand{\term}[1]{\textbf{\textit{#1}}}
+\newcommand{\thmBox}[2]{\par\noindent\begin{mdframed}[backgroundcolor=blue!8,hidealllines=true]\textbf{Theorem#1.} #2\end{mdframed}}
+\newcommand{\bcBox}[1]{\par\noindent\textbf{Base case.} #1\par}
+\newcommand{\ihBox}[2]{\par\noindent\textbf{Inductive hypothesis#1.} #2\par}
+\newcommand{\isBox}[2]{\par\noindent\textbf{Inductive step#1.} #2\par}
+
+% Problem header.
+\newcommand{\quizproblem}[3]{%
+  \needspace{5\baselineskip}%
+  \stepcounter{problem}%
+  \ifsol
+    \subsection*{Problem \arabic{problem}. #1 \hfill \timing{#2} \quad (#3 pts)}%
+  \else
+    \subsection*{Problem \arabic{problem}. #1 \hfill (#3 pts)}%
+  \fi
+}
+
+\newcommand{\subpts}[1]{\textbf{(#1 pts)}}
+
+\newcommand{\answerspace}[1]{\ifsol\else\vspace{#1}\par\fi}
+
+\printout{Quiz 5}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textbf{15-150 --- Quiz 5}} \\
+  \vspace{4pt}
+  Topics: \textit{Functors}; \textit{Red-Black
+  Trees}; \textit{Sequences}; \textit{Lazy Programming} \\
+  \vspace{4pt}
+  \textit{60 minutes.}
+\end{center}
+
+\vspace{1em}
+
+\noindent\textbf{Name:} \hrulefill \hspace{2em} \textbf{Andrew ID:} \hrulefill
+
+\vspace{1em}
+
+% =============================================================================
+% PROBLEM 1 --- Functors (write an ORD instance + apply MkDict)
+% =============================================================================
+
+\quizproblem{Keys to the Kingdom}{7}{6}
+
+Recall the type class of ordered types, and the functor \code{MkDict}
+that turns any ordered key type into a dictionary:
+
+\begin{codeblock}
+  signature ORD =
+    sig
+      type t
+      val compare : t * t -> order
+    end
+
+  functor MkDict (Key : ORD) :> POLY_DICT where type Key.t = Key.t =
+    struct ... end
+\end{codeblock}
+
+Given a \code{structure K : ORD}, the application \code{MkDict (K)}
+produces a dictionary whose keys are values of type \code{K.t}, kept
+sorted according to \code{K.compare}. The SML basis provides
+\code{Int.compare : int * int -> order}.
+
+\textbf{(a)} \subpts{4} We want a dictionary keyed by \code{int}, but
+sorted in \emph{descending} order (largest key first). Write a structure
+\code{RevOrd} that ascribes to \code{ORD} with \code{type t = int} and a
+\code{compare} that reverses the usual integer ordering, then use
+\code{MkDict} to define \code{RevDict}. You may use \code{Int.compare}.
+
+\begin{codeblock}
+  structure RevOrd =
+
+
+
+
+
+
+
+  structure RevDict =
+
+\end{codeblock}
+
+\answerspace{1.5cm}
+
+\begin{solution}
+\begin{codeblock}
+  structure RevOrd : ORD =
+    struct
+      type t = int
+      fun compare (x, y) = Int.compare (y, x)
+    end
+
+  structure RevDict = MkDict (RevOrd)
+\end{codeblock}
+Swapping the arguments to \code{Int.compare} reverses the order: now
+\code{compare (x, y)} is \code{LESS} when \code{x > y}, so larger keys
+sort first. Swapping \code{LESS}/\code{GREATER} in an explicit
+\code{case} works too.
+
+\textbf{Rubric:} 3, reversed \code{compare} (\code{Int.compare (y, x)} or
+swapped cases; unreversed = 0); 1, \code{MkDict (RevOrd)}.
+\end{solution}
+
+\textbf{(b)} \subpts{2} Your \code{RevOrd} must be ascribed
+\emph{transparently} (\code{:}), not opaquely (\code{:>}). In one
+sentence, say what would go wrong for a client of \code{RevDict} if you
+ascribed \code{RevOrd} opaquely instead.
+
+\answerspace{3cm}
+
+\begin{solution}
+Opaque ascription hides \code{RevOrd.t = int}, making the key type
+abstract. A client then has no values of that type to work with:
+\code{RevDict.insert (5, v)} fails to typecheck, since \code{int} is not
+known to match the key type.
+
+\textbf{Rubric:} 2, opaque hides \code{RevOrd.t = int}, so a client
+can't supply a real \code{int} key --- insert/lookup won't typecheck.
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 2 --- Red-Black Trees (definitional spot-the-bug on invariants)
+% =============================================================================
+
+\quizproblem{Seeing Red}{5}{4}
+
+A \term{red-black tree} is a BST whose nodes are colored \code{Red} or
+\code{Black}:
+
+\begin{codeblock}
+  datatype 'a rbtree =
+      Empty
+    | Red   of 'a rbtree * (Key.t * 'a) * 'a rbtree
+    | Black of 'a rbtree * (Key.t * 'a) * 'a rbtree
+\end{codeblock}
+
+\textbf{(a)} \subpts{2} A student states the three red-black tree
+invariants as follows. \textbf{Exactly one} of them is stated
+incorrectly. Circle the number of the wrong one, and rewrite it so it
+is correct.
+
+\begin{enumerate}
+  \item The tree is a BST: its inorder traversal is sorted with respect
+    to its keys.
+  \item The children of a \code{Red} node must be \code{Black}.
+  \item Every path from the root to an \code{Empty} leaf passes through
+    the same number of nodes.
+\end{enumerate}
+
+\answerspace{4.5cm}
+
+\begin{solution}
+\textbf{Invariant 3 is wrong.} It should count only \code{Black} nodes:
+\emph{every path from the root to an \code{Empty} leaf passes through the
+same number of \code{Black} nodes} (the \term{black height}). Counting
+all nodes would force perfect height balance; red nodes are what let path
+lengths differ. Invariants 1 and 2 are correct.
+
+\textbf{Rubric:} 1, picks 3; 1, correction restricts the count to
+\code{Black} nodes.
+\end{solution}
+
+\textbf{(b)} \subpts{2} When \code{insert} adds a new node, it always
+colors that node \code{Red}, never \code{Black}. In one sentence, say
+which invariant coloring the new node \code{Black} would immediately
+risk breaking, and why.
+
+\answerspace{3.5cm}
+
+\begin{solution}
+A new black node adds to the black count of its own root-to-leaf path
+but no other, breaking the \textbf{black height invariant}. A red node
+adds to no path's black count, so it preserves black height (it may
+cause a red-red violation, which rebalancing fixes).
+
+\textbf{Rubric:} 2, black height invariant --- a new black node
+lengthens the black count on its path only.
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 3 --- Sequences (work/span recognition + associativity)
+% =============================================================================
+
+\quizproblem{The Cost of Doing Business}{7}{6}
+
+Recall that \term{sequences} support the same operations as lists but
+with a different \emph{cost model} that exposes parallelism. The
+combinator \code{Seq.reduce g z S} combines all the elements of \code{S}
+using \code{g}. Consider the function \code{maxS}, which finds the
+largest element of a nonempty \code{int seq} (\code{NEG\_INF} is a value
+smaller than every real element, and \code{Int.max} is constant work and
+span):
+
+\begin{codeblock}
+  fun maxS (S : int seq) : int = Seq.reduce Int.max NEG_INF S
+\end{codeblock}
+
+Let \code{n = Seq.length S}.
+
+\textbf{(a)} \subpts{4} Give a tight big-$O$ bound for the \textbf{work}
+and the \textbf{span} of \code{maxS S}, and explain in one sentence
+\emph{why} the span is what it is.
+
+\vspace{0.3em}
+\hspace{2em}Work: \rule{5cm}{0.4pt} \qquad Span: \rule{5cm}{0.4pt}
+
+\answerspace{4cm}
+
+\begin{solution}
+\textbf{Work:} $O(n)$. \qquad \textbf{Span:} $O(\log n)$.
+
+\textbf{Why the span is $O(\log n)$:} \code{reduce} combines pairwise up
+a balanced tree, not one-at-a-time left to right like a list \code{fold}.
+Each of the $\log n$ levels does its \code{Int.max}es in parallel, so the
+longest dependency chain has length $O(\log n)$. Work stays $O(n)$: all
+$n - 1$ combines still happen, parallelism just shortens the span.
+
+\textbf{Rubric:} 1, work $O(n)$; 1, span $O(\log n)$; 2, why-span ---
+pairwise combine up a $\log n$-height tree, levels parallel (``it's
+parallel'' alone = 1).
+\end{solution}
+
+\textbf{(b)} \subpts{2} The function \code{reduce g z S} requires that
+\code{g} be \textbf{associative}. A student claims \code{Seq.reduce (op
+div) 1 S} computes the same result as folding \code{div} over the
+corresponding list, for any \code{S}. Give a specific sequence \code{S}
+for which this fails, and state the underlying reason in one sentence.
+
+\answerspace{3.5cm}
+
+\begin{solution}
+\textbf{Counterexample:} take \code{S = }$\langle$\code{16, 4, 2}$\rangle$.
+Folding \code{div} left-to-right groups as \code{(16 div 4) div 2}
+$\eeq$ \code{4 div 2} $\eeq$ \code{2}, whereas \code{reduce} may
+re-associate to the right as \code{16 div (4 div 2)} $\eeq$
+\code{16 div 2} $\eeq$ \code{8}. Since \code{2} $\neq$ \code{8}, the two
+disagree.
+
+\textbf{Reason:} integer division isn't associative, so \code{reduce}'s
+reparenthesization need not agree with a left-to-right fold.
+
+\textbf{Rubric:} 1, a concrete \code{S} that diverges (no div-by-zero in
+any grouping); 1, because \code{div} isn't associative.
+\end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 4 --- Lazy Programming (eager-eval + maximal laziness recognition)
+% =============================================================================
+
+\quizproblem{Now You See It}{6}{6}
+
+SML is \term{eagerly evaluated}: a function's arguments are fully
+evaluated to values before the body runs. \term{Lazy} evaluation instead
+computes an expression only when its value is needed. A \term{thunk}
+(or \term{suspension}) is a value of type \code{unit -> 'a} used to
+delay a computation.
+
+\textbf{(a)} \subpts{2} What is the result of evaluating the following?
+Circle one, and justify in one sentence.
+
+\begin{codeblock}
+  (fn (x, y) => x) (1, 1 div 0)
+\end{codeblock}
+
+\vspace{0.3em}
+\hspace{2em} evaluates to \code{1} \qquad raises an exception \qquad
+loops forever
+
+\answerspace{2.5cm}
+
+\begin{solution}
+\textbf{Raises an exception} (\code{Div}). SML is eager, so the argument
+tuple \code{(1, 1 div 0)} is evaluated before the projection runs, and
+\code{1 div 0} raises \code{Div}.
+
+\textbf{Rubric:} 1, raises \code{Div}; 1, eager eval forces the whole
+tuple before the projection.
+\end{solution}
+
+\textbf{(b)} \subpts{4} Here are two ways to encode an infinite sequence
+of values. A \term{lazy list} stores its head directly; a \term{stream}
+hides its \emph{whole} front behind a suspension:
+
+\begin{codeblock}
+  datatype 'a llist  = LNil | LCons of 'a * (unit -> 'a llist)
+
+  datatype 'a stream = Stream of (unit -> 'a front)
+       and 'a front  = Empty  | Cons  of 'a * 'a stream
+\end{codeblock}
+
+Each has a \code{tabulate} that builds the sequence
+\code{f 0, f 1, f 2, ...}:
+
+\begin{codeblock}
+  fun ltabFrom f i = LCons (f i, fn () => ltabFrom f (i + 1))
+  fun ltabulate f  = ltabFrom f 0
+
+  fun stabFrom f i = Stream (fn () => Cons (f i, stabFrom f (i + 1)))
+  fun stabulate f  = stabFrom f 0
+\end{codeblock}
+
+Now suppose we evaluate the two bindings below, where \code{f i = 1024
+div i} (so \code{f 0} raises \code{Div}):
+
+\begin{codeblock}
+  val a = ltabulate (fn i => 1024 div i)   (* lazy list *)
+  val b = stabulate (fn i => 1024 div i)   (* stream    *)
+\end{codeblock}
+
+Exactly one of these bindings raises an exception. \textbf{Which one, and
+why does the other not?} Refer to what each of \code{ltabulate} and
+\code{stabulate} actually computes at the moment its binding is
+evaluated.
+
+\answerspace{5.5cm}
+
+\begin{solution}
+\textbf{\code{a} raises \code{Div}; \code{b} does not.} The difference is
+whether the head element is behind a suspension.
+
+\begin{itemize}
+  \item \code{ltabulate f} builds \code{LCons (f 0, ...)}. The head
+    \code{f 0} is a direct argument, so it is evaluated when \code{a} is
+    bound, and \code{f 0 = 1024 div 0} raises \code{Div}. Only the tail
+    is suspended.
+  \item \code{stabulate f} builds \code{Stream (fn () => Cons (f 0,
+    ...))}, with the head \code{f 0} inside the thunk. Binding \code{b}
+    just stores that thunk (a value); \code{f 0} runs only when the
+    stream is exposed, so no \code{Div} yet.
+\end{itemize}
+
+A lazy list forces its first element by construction; a stream defers
+even that. That extra deferral is \term{maximal laziness}.
+
+\textbf{Rubric:} 2, \code{a} raises / \code{b} doesn't; 1, \code{a}'s
+head \code{f 0} is a direct arg to \code{LCons}, forced at bind time;
+1, \code{b}'s head sits inside the thunk, forced only on expose.
+\end{solution}
+
+\end{document}

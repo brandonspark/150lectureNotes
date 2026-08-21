@@ -1,0 +1,26 @@
+% Exceptions + evaluation order. Verified: left-to-right, so A escapes; the
+% right component is never evaluated when the left raises.
+\part[3]\hfill
+
+  Assume \code{exception A} is in scope, and
+  \begin{codeblock}
+    fun bad () : int = raise A
+    fun bump () : int = (count := !count + 1; 5)
+  \end{codeblock}
+  where \code{count : int ref} starts at \code{0}. Consider:
+  \begin{codeblock}
+    val p = (bad (), bump ()) handle A => (0, 0)
+  \end{codeblock}
+
+  What is \code{p}, and what is \code{!count} afterwards? Explain in one
+  sentence what this tells you about how a tuple is evaluated.
+
+  \begin{solutionorbox}[15em]
+    \code{p} $\eeq$ \code{(0, 0)} and \code{!count} $\eeq$ \code{0}.
+
+    A tuple's components are evaluated \textbf{left to right}, so \code{bad ()}
+    raises \code{A} before \code{bump ()} is ever reached --- the second
+    component is never evaluated at all, and the handler supplies the result.
+    (Had the two been written in the other order, \code{bump ()} would have run
+    and \code{!count} would be \code{1}.)
+  \end{solutionorbox}

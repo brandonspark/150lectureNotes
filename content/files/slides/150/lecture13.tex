@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -52,7 +52,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Regular Expressions} % TODO
     \subtitle{Finding patterns in text} % TODO
-    \date{03 July 2023} % TODO
+    \date{23 June 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -233,9 +233,9 @@
   \pause
   \begin{codeblock}
     fun validateEmail s =
-      case validateName (String.explode s) of
+      case consumeName (String.explode s) of
         #"@"::cs =>
-          (case validateWebsite cs of
+          (case consumeWebsite cs of
             `[#".", #"o", #"r", #"g"]` => true
           | `[#".", #"c", #"o", #"m"]` => true
           | _ => false
@@ -844,7 +844,7 @@
     {regexp -> char list -> (char list -> bool) -> bool}
     {\code{k} is total}
     { \\
-      \code{match r s k} $\eeq$
+      \code{match r cs k} $\eeq$
     $\left\{
       \begin{array}{lr}
           \code{true}, & \text{if } \code{cs} \eeq \code{p @ s} \text{ where }
@@ -1248,7 +1248,7 @@
   \vspace{\fill}
 
   If not previously mentioned before, the \code{<>} is the polymorphic inequality
-  operator.
+  operator\footnote{{\color{blue}\href{https://blog.janestreet.com/the-perils-of-polymorphic-compare/}{Please, do not get me started on polymorphic equality.}}}.
 
   \pause
   \vspace{\fill}
@@ -1593,5 +1593,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{SELF-ACCEPT}
 
 \end{document}

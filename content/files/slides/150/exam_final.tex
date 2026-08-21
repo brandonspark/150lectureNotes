@@ -1,0 +1,1635 @@
+%% =============================================================================
+%% REAL FINAL -- all questions inlined.
+%%
+%% Previously this file was an \input list over q/*.tex and draft_*.tex; the
+%% question bodies now live here directly, in exam order. q/preamble.tex is
+%% still \input, since it is shared with exam_practice.tex (it carries the
+%% documentclass, the cover page, and the \blankversion / \practiceversion
+%% switches).
+%%
+%% NOTE: the CPS slot is Binary Decision Trees (30 pts). Its 12-pt `compress`
+%%       part is staged -- students get the if/else-if/else skeleton with the
+%%       conditions filled in. "Filling in the Blanks" is the lighter
+%%       alternative, on the practice exam.
+%% =============================================================================
+
+\input{q/preamble.tex}
+
+%% --- openers -----------------------------------------------------------------
+%% (was \input{q/types_native.tex})
+\titledquestion{Types and Values}
+\textbf{Types and Values}
+
+For each of the expressions below, write its \textbf{most general type} and value.
+
+\textbf{If the expression is not well-typed then say so and explain your answer briefly.}
+
+\textbf{If the expression does not evaluate to a value then say so and explain your answer briefly.}
+
+For brevity, if the expression is already a value, you may write out "same" for its value.
+
+If the value involves a recursive function body, you may write "<body>" instead.
+
+\begin{parts}
+
+  %% (was `fn x => P (x, [x])` over a two-parameter `('a, 'b) pair`, which leaned
+  %%  on double polymorphism; then a version with `None` in the second field,
+  %%  which turned on noticing `'a * 'a` rather than `'a bag * 'a bag` -- a
+  %%  misread lost the whole part. Here both fields are visibly the same
+  %%  expression, so nothing hinges on parsing the declaration: the work is
+  %%  composing 'a -> 'a bag -> 'a bag bag.
+  %%  Verified in SML/NJ: `int -> int bag bag` typechecks, `int -> int bag` is
+  %%  rejected with a tycon mismatch.)
+  \part[2]\hfill
+
+  In the context of the declaration
+  \begin{codeblock}
+    datatype 'a bag = None | Two of 'a * 'a
+  \end{codeblock}
+  consider:
+  \begin{codeblock}
+    fn x => Two (Two (x, x), Two (x, x))
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[4em] \code{'a -> 'a bag bag} \\[2pt]
+  Each inner \code{Two (x, x)} has type \code{'a bag}. The outer \code{Two} then
+  holds two of \textit{those}, so its element type is \code{'a bag} and the
+  result is \code{'a bag bag}. \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] same \end{solutionorlines}
+
+  \vspace{10pt}
+
+  %% (was `fn f => filter (map f)`, an NWT one-liner; then `map o foldl`, which
+  %%  was a puzzle rather than code anyone writes. This is the ordinary
+  %%  "partially apply a curried function, then map the rest" idiom, and it still
+  %%  tests both points: applying `f` to `x` CONSUMES f's first argument, and the
+  %%  leftover `'b -> 'c` is what fixes map's element and result types.
+  %%  Verified in SML/NJ -- no value restriction, both `fun` and `fn` forms give
+  %%    ('a -> 'b -> 'c) -> 'a -> 'b list -> 'c list
+  %%  and e.g. it applied to (fn a => fn b => a * b) and 3 maps [1,2,3] to [3,6,9].
+  \part[2]\hfill
+
+  \begin{codeblock}
+    fn f => fn x => map (f x)
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[3em] \code{('a -> 'b -> 'c) -> 'a -> 'b list -> 'c list} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[6em] same. \\[2pt]
+  \code{f} is applied to \code{x}, so \code{f} must be curried --- say
+  \code{'a -> 'b -> 'c}, with \code{x : 'a}. That application \textbf{consumes}
+  the \code{'a}, leaving \code{f x : 'b -> 'c}, and it is that leftover, not
+  \code{f} itself, that \code{map} receives. So \code{map}'s element type is
+  \code{'b} and its result type is \code{'c}. \end{solutionorlines}
+
+  \vspace{10pt}
+
+  %% (was a five-line `!!r2` ref-chasing expression -- mechanical pointer
+  %%  tracing for 2 points. This one is a trap: `foldl (op @) []` looks like a
+  %%  flatten and IS one on inputs of length 0 or 1, but reverses the blocks.
+  %%  Verified in SML/NJ: [[1,2],[3],[4,5]] |-> [4,5,3,1,2].)
+  \part[2]\hfill
+
+  \begin{codeblock}
+    foldl (op @) [] [[1,2],[3],[4,5]]
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[2em] \code{int list} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[4em] \code{[4,5,3,1,2]}. Not
+  \code{[1,2,3,4,5]}: \code{foldl} keeps the accumulator on the \textbf{left} of
+  \code{@}, so each block is appended \textit{behind} what came before, and the
+  blocks emerge in reverse order (though each block's own elements keep their
+  order). \code{foldr (op @) []} is the real flatten. \end{solutionorlines}
+
+  \vspace{10pt}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    val x = 2
+    fun foo y z = x + y + z
+    val x = 3
+    val res = x + foo x x
+  \end{codeblock}
+
+  What is the type and value of \code{res}?
+
+  \textbf{Type:} \begin{solutionorlines}[2em] \code{int} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] \code{11} \end{solutionorlines}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    fn f => fn g => fn x => g (f x, x)
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[3em] \code{('a -> 'b) -> ('b * 'a -> 'c) -> 'a -> 'c} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] same \end{solutionorlines}
+\end{parts}
+
+\newpage
+
+%% --- openers -----------------------------------------------------------------
+%% (was \input{q/conceptual_native.tex})
+\titledquestion{Conceptual Questions}
+
+\textbf{Conceptual Questions}
+
+For each of the questions below, if it is a true or false question, please
+briefly justify your answer --- unless the question says otherwise.
+
+\begin{parts}
+  \part[3]\hfill
+
+  Consider the specification of the \code{fact} function:
+  \spec
+    {fact}
+    {\code{int -> int}}
+    {\code{n >= 0}}
+    {\code{fact n} evaluates to $n!$}
+
+  Does the following code adhere to that specification?
+  \begin{codeblock}
+    fun fact n =
+      if n < 0 then 0
+      else if n = 0 then 1
+      else n * fact (n - 1)
+  \end{codeblock}
+
+  \begin{solutionorlines}[6em] True. \end{solutionorlines}
+
+  \part[3]\hfill
+
+  For any recurrence of the form
+  $$W(n) = 2W(n - 1) + c_1$$
+  is it true that the span recurrence must then be
+  $$S(n) = S(n - 1) + c_1$$
+
+  \begin{solutionorlines}[6em] False. The calls may not be parallelizable. \end{solutionorlines}
+
+  %% (was "how many ref cells does `ref ref` allocate?" -- trivia about noticing
+  %%  that `ref` is a function; then a nested-handle item, which was too
+  %%  straightforward. This asks about CBV: a function that IGNORES its argument
+  %%  still cannot rescue a divergent one. Verified in SML/NJ: k (loop 0) hangs.)
+  \part[3]\hfill
+
+  Consider the declarations
+  \begin{codeblock}
+    fun k (_ : int) : int = 5
+    fun loop () : int = loop ()
+  \end{codeblock}
+
+  A student proves the following lemma, which is correct:
+
+  \textbf{Lemma.} For all values \code{v : int}, \code{k v} $\eeq$ \code{5}.
+
+  They then write, in the middle of a proof:
+  \begin{align*}
+    \code{k (loop ())} &\eeq \code{5} \tag{by the Lemma}
+  \end{align*}
+
+  Is this step justified? Explain.
+
+  \begin{solutionorbox}[15em]
+    No. The lemma is quantified over \textbf{values} \code{v}, but
+    \code{loop ()} is not a value --- it is an expression that never evaluates
+    to one. So the lemma simply does not apply to this instance, and the step is
+    unjustified.
+
+    In fact the claimed equivalence is false: SML is \textbf{call-by-value}, so
+    evaluating \code{k (loop ())} first evaluates the argument, which diverges.
+    \code{k (loop ())} has no value at all, whereas \code{5} does --- they are
+    not equivalent.
+
+    The tempting misstep is to reason ``\code{k} ignores its argument, so it
+    cannot matter what the argument is.'' Under call-by-value the argument is
+    evaluated regardless, so a divergent (or raising) argument contaminates the
+    whole application. This is exactly why lemmas of this shape are stated over
+    values, and why substituting a non-value into them is invalid.
+  \end{solutionorbox}
+
+  %% Modules, as a short true/false. Tests what abstraction actually buys: it
+  %% controls ACCESS (a client cannot fabricate a value of a sealed type), which
+  %% is enough to enforce an invariant only if every exported operation preserves
+  %% it. Distinct from Memoize Anything (what sealing hides / when you need a
+  %% functor) and from the practice's modules item (representation independence).
+  %% Verified in SML/NJ:
+  %%   - `val forged : P.t = ~5` is rejected under :>  (cannot fabricate)
+  %%   - but exporting `sub` as subtraction yields P.get (P.sub 1 5) = ~4,
+  %%     a well-typed value of the abstract type violating positivity.
+  \part[3]\hfill
+
+  Brandon's friend Austin has gotten really into functional programming recently,
+  in particular the module system. He says that, given a total predicate
+  \code{p : t -> bool}, a module can be written so that the only values of
+  its abstract type are those satisfying \code{p}. Is he cooking, or is this cap?
+  Explain.
+
+  \begin{solutionorbox}[16em]
+    \textbf{True}, but only because the module controls \textit{every} way to
+    make one. Sealing the type with \code{:>} means a client cannot write down a
+    value of it directly --- it can only call the operations the signature
+    exports. So if each such operation returns only values satisfying \code{p}
+    (rejecting bad input, e.g.\ by returning \code{t option}), then every value
+    of the type a client can ever hold satisfies \code{p}.
+
+    The guarantee is exactly as strong as that ``every'' --- and it is the
+    \textbf{module's} obligation, not the type system's. One careless export
+    destroys it: for a positivity invariant, adding
+    \code{val sub : t -> t -> t} implemented as subtraction lets a client form
+    \code{sub one five}, a perfectly well-typed value of the abstract type
+    holding a negative number. Abstraction controls \textit{access}, not
+    correctness; it
+    hands the module sole responsibility for maintaining the invariant rather
+    than enforcing it.
+  \end{solutionorbox}
+
+  %% Freebie: 1 point, no justification asked for.
+  \part[1]\hfill
+
+  True or false: ill-typed programs do not run. \textbf{Do not justify your
+  answer.}
+
+  \begin{solutionorlines}[2em] True. \end{solutionorlines}
+
+\end{parts}
+
+\newpage
+
+%% --- proof -------------------------------------------------------------------
+%% (was \input{q/shrubs.tex})
+\titledquestion{Commutative Shrubs}
+
+\textbf{Commutative Shrubs}
+
+Commutative binary operations are mathematical functions with the characteristic
+that, if the operation is $\otimes$, then $x \otimes y \eeq y \otimes x$, for
+all $x$ and $y$.
+
+In terms of SML, we can phrase it as:
+
+\textbf{Definition.} A value \code{f : t * t -> t} is called \textit{commutative} if
+we have that \\
+\code{f (v1, v2)} $\eeq$ \code{f (v2, v1)} for all values \code{v1, v2 : t}.
+
+In this problem, we will be dealing with the type of polymorphic shrubs. This is
+defined as:
+\begin{codeblock}
+  datatype 'a shrub =
+      Leaf of 'a
+    | Branch of 'a shrub * 'a shrub
+\end{codeblock}
+
+Consider the following code for an \code{invert : 'a shrub -> 'a shrub} function,
+which flips a shrub over the vertical axis.
+\begin{codeblock}
+  fun invert (Leaf x) = Leaf x
+    | invert (Branch (L, R)) =
+        Branch (invert R, invert L)
+\end{codeblock}
+and the following \code{shrubreduce} function, which folds a shrub with
+some function:
+\begin{codeblock}
+  fun shrubreduce f (Leaf x) = x
+    | shrubreduce f (Branch (L, R)) =
+        f (shrubreduce f L, shrubreduce f R)
+\end{codeblock}
+
+You may abbreviate \code{shrubreduce} as \code{sr} if you like.
+
+\begin{parts}
+  \part[15]\hfill
+
+    Prove that, given a \textbf{total}, \textbf{commutative} function \code{f : t * t -> t}, that
+    $$\code{shrubreduce f (invert T)} \eeq \code{shrubreduce f T}$$
+
+    You may use the following lemmas:
+
+    \textbf{Lemma 1 (totality of \code{invert}):} For any value \code{T},
+    \code{invert T} evaluates to a value.
+
+    \textbf{Lemma 2 (totality of \code{shrubreduce}):} For total \code{f} and
+    any value \code{T}, \code{shrubreduce f T} evaluates to a value.
+
+    \begin{solutionorbox}[50em]
+
+      Let \code{x : t} be arbitrary.
+
+      \textbf{Base case:}
+
+      WTS \code{shrubreduce f (invert (Leaf x))} $\eeq$ \code{shrubreduce f (Leaf x)}
+
+      LHS:
+      \begin{align*}
+        & \code{shrubreduce f (invert (Leaf x))} \\
+        &\eeq \code{shrubreduce f (Leaf x)} \tag{clause 1 of \code{invert}} \\
+        &\eeq \code{x} \tag{clause 1 of \code{shrubreduce}} \\
+      \end{align*}
+
+      RHS:
+      \begin{align*}
+        & \code{shrubreduce f (Leaf x)} \\
+        &\eeq \code{x} \tag{clause 1 of \code{shrubreduce}} \\
+      \end{align*}
+
+      \textbf{Inductive case:} Let \code{L} and \code{R} be arbitrary shrubs.
+
+      IH1: Assume \code{shrubreduce f (invert L)} $\eeq$ \code{shrubreduce f L}
+
+      IH2: Assume \code{shrubreduce f (invert R)} $\eeq$ \code{shrubreduce f R}
+
+      WTS: \code{shrubreduce f (invert (Branch (L, R)))} $\eeq$
+          \code{shrubreduce f (Branch (L, R))}
+
+      LHS:
+      \begin{align*}
+        & \code{shrubreduce f (invert (Branch (L, R)))} \\
+        &\eeq \code{shrubreduce f (Branch (invert R, invert L))} \tag{clause 2 of \code{invert}} \\
+        &\eeq \code{f (shrubreduce f (invert R), shrubreduce f (invert L))}
+          \tag{Lemma 1, clause 2 of \code{shrubreduce}} \\
+        &\eeq \code{f (shrubreduce f R, shrubreduce f L)}
+          \tag{IH1 and IH2} \\
+        &\eeq \code{f (shrubreduce f L, shrubreduce f R)}
+          \tag{Lemma 2, commutativity of \code{f}} \\
+      \end{align*}
+
+      RHS:
+      \begin{align*}
+        & \code{shrubreduce f (Branch (L, R))} \\
+        &= \code{f (shrubreduce f L, shrubreduce f R)} \tag{clause 2 of \code{shrubreduce}} \\
+      \end{align*}
+    \end{solutionorbox}
+
+    \begin{solutionorbox}[50em]
+
+    \end{solutionorbox}
+\end{parts}
+
+\newpage
+
+%% --- CPS ---------------------------------------------------------------------
+%% (restored from q/bdt.tex -- the standalone fragment, which keeps the
+%%  "pictured by the BDT:" diagram captions and the "you need only fill in the
+%%  three results" scaffolding line that the previously-inlined copy had lost.
+%%  The other copy is kept at q/bdt_inlined.tex.
+\titledquestion{Binary Decision Trees}
+
+\textbf{Binary Decision Trees}
+
+We are interested in the problem of checking membership of a bit string in sets
+of bit strings of length $n$. We are going to represent bit strings as values of
+the type \code{bit list} in SML, where we have:
+
+\begin{codeblock}
+  datatype bit = One | Zero
+
+  type bitstring = bit list
+\end{codeblock}
+
+So for instance, we might be interested if the bit string 0110 is in the set $\{
+0000, 1100, 1101 \}$. This would be the same as implementing a function of type
+\code{bitstring list -> bitstring -> bool}.
+
+A naive way of doing this is to literally check list membership. For instance,
+we might check every bit string in our set
+\code{[[One, Zero], [Zero, Zero]]}, by comparing it to our bitstring-to-be-queried.
+
+This can be enormously slow, however, because we might have to check potentially
+$2^n$ many bit strings, for bit strings of length $n$! We can do much
+better, by following the principle of a DFA, and making branching choices
+by reading each character. This data structure is called a \textit{binary decision tree}.
+
+Consider the following datatype:\footnote{Which is isomorphic to a \code{bool shrub}, for
+those of you keeping track at home.}
+\begin{codeblock}
+  datatype bdt =
+      Final of bool
+    | Choice of bdt * bdt
+\end{codeblock}
+
+We think of each \code{Choice} node as having a \textbf{left child where the next character
+is \code{0}}, and a \textbf{right child where the next character is \code{1}}. A
+\code{Final} node represents whether the bit string leading to it is
+in the set or not.
+
+\textbf{Definition.} A value \code{b : bdt} is called \textbf{$n$-full} if
+any path from the root to a \code{Final} node has length $n$. You can think of
+it as representing a set of bit strings of length $n$.
+
+For instance, this is a valid 2-full BDT:
+
+\begin{center}
+  \begin{tikzpicture}[
+    level 1/.style={sibling distance=30mm},
+    level 2/.style={sibling distance=15mm}
+  ]
+    \node {$\cdot$}
+      child{node {$\cdot$}
+        child{node {\code{false}}}
+        child{node {\code{true}}}
+      }
+      child{node {$\cdot$}
+        child{node {\code{false}}}
+        child{node {\code{true}}}
+      }
+    ;
+  \end{tikzpicture}
+\end{center}
+
+which represents the set of bit strings $\{ 01, 11 \}$.
+
+\newpage
+
+\begin{parts}
+  \part[5]\hfill
+
+    Write a function \code{check} with the following specification:
+    \spec
+      {check}
+      {\code{bdt -> bitstring -> bool}}
+      {\code{bdt} is $n$-full, and \code{List.length bs} $\eeq$ \code{n}}
+      {\code{check bdt bs} $\eeq$ \code{b}, where \code{b} is the contents of
+      the \code{Final} node reached by reading the bits of \code{bs}.
+      }
+
+    \begin{solutionorbox}[15em]
+      \begin{codeblock}
+        fun check bdt bs =
+          case (bdt, bs) of
+            (Final b, []) => b
+          | (Choice (l, r), Zero::bs) => check l bs
+          | (Choice (l, r), One::bs) => check r bs
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \part[5]\hfill
+
+    We will also need to \textbf{partition} a list according to a predicate:
+    true means left, false means right. For funsies, we will do it in CPS.
+
+    \spec
+      {partition}
+      {\\ {\small\code{('a -> bool) -> 'a list -> ('a list * 'a list -> 'b) -> 'b}}}
+      {\code{p} is total}
+      {\code{partition p L k} $\eeq$ \code{k (A, B)}, where \code{A} holds the
+      elements of \code{L} satisfying \code{p}, \code{B} holds the rest, and both
+      preserve the order they had in \code{L}.}
+
+    For instance, \code{partition (fn x => x mod 2 = 0) [1, 2, 3] (fn x => x)}
+    evaluates to \code{([2], [1, 3])}.
+
+    \begin{constraint}
+      \code{partition} must be written in CPS.
+    \end{constraint}
+
+    \begin{solutionorbox}[16em]
+      \begin{codeblock}
+        fun partition p [] k = k ([], [])
+          | partition p (x :: xs) k =
+              partition p xs (fn (l, r) =>
+                if p x then k (x :: l, r)
+                else k (l, x :: r))
+      \end{codeblock}
+
+      The recursive call is made first, and its continuation receives the
+      partition of the tail; we then place \code{x} into whichever side
+      \code{p x} selects before handing the result to \code{k}.
+    \end{solutionorbox}
+
+  \part[3]\hfill
+
+    Now, write a function \code{partition_bstrs} to partition a list of bit
+    strings into ones which start with \code{One} and ones which start with
+    \code{Zero}.
+
+    \spec
+      {partition_bstrs}
+      {\\ {\small\code{bitstring list -> (bitstring list * bitstring list -> 'a) -> 'a}}}
+      {\code{bstrs} is a list of non-empty bit strings}
+      {\code{partition_bstrs bstrs k} $\eeq$ \code{k (L, R)} such that
+        \code{L} contains all bit strings in \code{bstrs} starting with a 0, and
+        \code{R} contains all bit strings in \code{bstrs} starting with a 1.
+      }
+
+    \begin{constraint}
+      You may not use the \code{fun} keyword, and you are allowed a single
+      \code{fn} expression.
+    \end{constraint}
+
+    \begin{solutionorbox}[14em]
+      \begin{codeblock}
+        val partition_bstrs =
+          partition
+            (fn Zero :: _ => true
+              | One  :: _ => false
+            )
+      \end{codeblock}
+
+      \code{partition} applied to just its predicate is already the function we
+      want --- the remaining two arguments (the list and the continuation) are
+      supplied by the caller.
+    \end{solutionorbox}
+
+  \begin{EnvUplevel}
+    However, checking can be a little redundant. Suppose that our set of
+    bit strings is the set $\{ 00, 01, 10, 11 \}$. Then,
+    we could do the work to query this set, or we could
+    just observe that the answer is always \code{true}!
+
+    This is because this set contains every single bit string of length
+    2. In other words, as an $2$-full tree, our BDT looks like this:
+
+    \begin{center}
+      \begin{tikzpicture}[
+        level 1/.style={sibling distance=27mm},
+        level 2/.style={sibling distance=13mm}
+      ]
+        \node {$\cdot$}
+          child{node {$\cdot$}
+            child{node {\code{true}}}
+            child{node {\code{true}}}
+          }
+          child{node {$\cdot$}
+            child{node {\code{true}}}
+            child{node {\code{true}}}
+          }
+        ;
+      \end{tikzpicture}
+    \end{center}
+
+    but it may as well be described as the following tree:
+
+    \vspace{10pt}
+
+    \begin{center}
+      \code{true}
+    \end{center}
+
+    \vspace{10pt}
+
+    This is another way of saying that we can do some compression!
+
+    \textbf{Definition.} A binary decision tree \code{bdt : bdt} is
+    \textit{compressed} if the values \code{Choice (Final true, Final true)} and
+    \code{Choice (Final false, Final false)} never appear in it anywhere.
+  \end{EnvUplevel}
+
+
+
+  \part[12]\hfill
+
+    Now, let's get to the task of constructing our compressed BDT!
+
+    Write a function \code{compress} with the specification:
+
+    \spec
+      {compress}
+      {\code{int -> bitstring list -> bdt}}
+      {\code{bstrs} is a list of unique bit strings, such that each bit string \code{bs} has
+      that \code{List.length bs = n}}
+      {\code{compress n bstrs} $\eeq$ the compressed BDT that
+      represents the set of bit strings \code{bstrs}}
+
+    \vspace{80pt}
+
+    SPACE INTENTIONALLY LEFT BLANK -- KEEP READING
+
+    \newpage
+
+    I will use the shorthand of surrounding a bit string with curly braces to
+    mean the corresponding SML value. For instance, \code{\{110\}} means
+    \code{[One, One, Zero]}.
+
+    Then, we should have that:
+    \begin{itemize}
+      \item \code{compress 1 []} $\eeq$ \code{Final false}, pictured by the BDT:
+
+      \begin{center}
+        \begin{tikzpicture}[
+          level distance=8mm,
+          level 1/.style={sibling distance=50mm},
+          level 2/.style={sibling distance=30mm},
+          level 3/.style={sibling distance=15mm}
+        ]
+          \node {\code{false}}
+          ;
+        \end{tikzpicture}
+      \end{center}
+      \vspace{5pt}
+      \item \code{compress 1 [\{0\}, \{1\}]} $\eeq$ \code{Final true}, pictured by the BDT:
+
+      \begin{center}
+        \begin{tikzpicture}[
+          level distance=8mm,
+          level 1/.style={sibling distance=50mm},
+          level 2/.style={sibling distance=30mm},
+          level 3/.style={sibling distance=15mm}
+        ]
+          \node {\code{true}}
+          ;
+        \end{tikzpicture}
+      \end{center}
+      \vspace{5pt}
+      \item \code{compress 1 [\{0\}]} $\eeq$ \code{Choice (Final true, Final false)}, pictured by the BDT:
+
+      \begin{center}
+        \begin{tikzpicture}[
+          level distance=8mm,
+          level 1/.style={sibling distance=50mm},
+          level 2/.style={sibling distance=30mm},
+          level 3/.style={sibling distance=15mm}
+        ]
+          \node {$\cdot$}
+            child{node{\code{true}}}
+            child{node{\code{false}}}
+          ;
+        \end{tikzpicture}
+      \end{center}
+      \vspace{5pt}
+      \item \code{compress 1 [\{1\}]} $\eeq$ \code{Choice (Final false, Final true)}, pictured by the BDT:
+
+      \begin{center}
+        \begin{tikzpicture}[
+          level distance=8mm,
+          level 1/.style={sibling distance=50mm},
+          level 2/.style={sibling distance=30mm},
+          level 3/.style={sibling distance=15mm}
+        ]
+          \node {$\cdot$}
+            child{node{\code{false}}}
+            child{node{\code{true}}}
+          ;
+        \end{tikzpicture}
+      \end{center}
+      \vspace{5pt}
+      \item \code{compress 2 [\{00\}, \{01\}, \{10\}, \{11\}]} $\eeq$ \code{Final true}, pictured by the BDT:
+
+      \begin{center}
+        \begin{tikzpicture}[
+          level distance=8mm,
+          level 1/.style={sibling distance=50mm},
+          level 2/.style={sibling distance=30mm},
+          level 3/.style={sibling distance=15mm}
+        ]
+          \node {\code{true}}
+          ;
+        \end{tikzpicture}
+      \end{center}
+      \vspace{5pt}
+      \item \code{compress 3 [\{000\}, \{110\}, \{101\}, \{100\}]} $\eeq$
+      \begin{codeblock}
+        Choice
+          ( Choice
+              (Choice (Final true, Final false), Final false),
+            Choice
+              (Final true, Choice (Final true, Final false))
+          )
+      \end{codeblock}
+    \end{itemize}
+    which denotes the BDT of
+    \begin{center}
+      \begin{tikzpicture}[
+        level distance=8mm,
+        level 1/.style={sibling distance=50mm},
+        level 2/.style={sibling distance=30mm},
+        level 3/.style={sibling distance=15mm}
+      ]
+        \node {$\cdot$}
+          child{node {$\cdot$}
+            child{node {$\cdot$}
+              child{node {\code{true}}}
+              child{node {\code{false}}}
+            }
+            child{node {\code{false}}}
+          }
+          child{node {$\cdot$}
+            child{node {\code{true}}}
+            child{node {$\cdot$}
+              child{node {\code{true}}}
+              child{node {\code{false}}}
+            }
+          }
+        ;
+      \end{tikzpicture}
+    \end{center}
+
+    \newpage
+
+    Reproduced for your convenience: write a function \code{compress} with the
+    specification:
+
+    \spec
+      {compress}
+      {\code{int -> bitstring list -> bdt}}
+      {\code{bstrs} is a list of unique bit strings, such that each bit string \code{bs} has
+      that \code{List.length bs = n}}
+      {\code{compress n bstrs} $\eeq$ the compressed BDT that
+      represents the set of bit strings \code{bstrs}}
+
+    You may assume that you are given \code{pow : int * int -> int}, such that
+    \code{pow (n, k)} $\eeq$ $n^k$, and \code{tl : 'a list -> 'a list}, which
+    obtains the rest of a list after the first element (if possible), and raises an exception otherwise.
+
+    Your solution should have the following shape---you only need to fill in the
+    three blanks:
+
+    \textbf{Hint:} There are $2^n$ bit strings of length \code{n}. You should use
+    \code{partition_bstrs} and \code{tl}.
+
+    %% The \vspace tweaks and the tighter [4em] boxes keep all three staged
+    %% blanks on one page; without them the last box spills onto the next.
+    \begin{codeblock}
+      fun compress (n : int) (bstrs : bitstring list) =
+        if List.length bstrs = pow (2, n) then
+    \end{codeblock}
+    \vspace{-0.2cm}
+    \begin{solutionorbox}[4em]
+      \begin{codeblock}
+        Final true
+      \end{codeblock}
+    \end{solutionorbox}
+
+    \begin{codeblock}[autogobble=false]
+  else if List.length bstrs = 0 then
+    \end{codeblock}
+  \vspace{-0.6cm}
+
+    \begin{solutionorbox}[4em]
+      \begin{codeblock}
+        Final false
+      \end{codeblock}
+    \end{solutionorbox}
+
+    \begin{codeblock}[autogobble=false]
+  else
+    \end{codeblock}
+    \vspace{-0.6cm}
+    \begin{solutionorbox}[13em]
+      \begin{codeblock}
+            partition_bstrs bstrs (fn (l, r) =>
+              Choice
+                ( compress (n - 1) (List.map tl l)
+                , compress (n - 1) (List.map tl r)
+                )
+            )
+      \end{codeblock}
+    \end{solutionorbox}
+
+  % \part[5]\hfill
+
+  %   Write and solve a recurrence which denotes the \textbf{work} of \code{compress},
+  %   in terms of the input value \code{n}, assuming that preconditions hold.
+
+  %   % state the work of pow and partition_strs
+
+  %   Show your work.
+
+  %   \begin{solutionorbox}[19em]
+  %     $W_{\code{compress}}(0) = c_0$
+  %     $W_{\code{compress}}(n) = O(2^n) + 2 \cdot W_{\code{compress}}(n - 1)$
+
+  %     \begin{align*}
+  %       W_{\code{compress}}(n) \\
+  %       &= O(2^n) + 2 \cdot W_{\code{compress}}(n - 1) \\
+  %       &= O(2^n) + 2 \cdot (O(2^{n - 1}) + W_{\code{compress}}(n - 2)) \\
+  %       &= O(2^n) + O(2^n) + W_{\code{compress}}(n - 2)
+  %     \end{align*}
+
+  %     This evaluates to $\Sum_{i = 0}^n O(2^n) = O(n2^n)$.
+  %   \end{solutionorbox}
+
+  % \part[5]\hfill
+
+  %   Write and solve a recurrence which denotes the \textbf{span} of \code{compress},
+  %   in terms of the input value \code{n}, assuming that preconditions hold.
+
+  %   Assume that \code{partition_strs} partitions approximately evenly, and runs in
+  %   linear time in its input list length.
+
+  %   Show your work.
+
+  %   \begin{solutionorbox}[19em]
+  %     $S_{\code{compress}}(0) = c_0$
+  %     $S_{\code{compress}}(n) = O(2^n) + S_{\code{compress}}(n - 1)$
+
+  %     \begin{align*}
+  %       S_{\code{compress}}(n) \\
+  %       &= O(2^n) + \cdot S_{\code{compress}}(n - 1) \\
+  %       &= O(2^n) + O(2^{n - 1}) + S_{\code{compress}}(n - 2)
+  %     \end{align*}
+
+  %     This evaluates to $1 + 2 + ... + 2^n = O(2^n)$.
+  %   \end{solutionorbox}
+
+  % \newpage
+
+  % \part[10]\hfill
+
+  %   Write a function \code{insert} which satisfies the following
+  %   specification:
+  %   \spec
+  %     {insert}
+  %     {\code{bdt -> char list -> bdt}}
+  %     {\code{bt} is a compressed BDT and \code{cs} is a bit string that cannot
+  %     be shorter than any bit string in \code{bt}}
+  %     {\code{insert bt cs} evaluates to the BDT which now contains
+  %     the bit string \code{cs}, but is otherwise equivalently compressed}
+
+  %   \begin{solutionorbox}[30em]
+  %     \begin{codeblock}
+  %       fun insert (bt : bdt) (cs : char list) =
+  %         case (bt, cs) of
+  %           (_, []) => Final true
+  %         | (Choice (L, R), #"0"::cs') =>
+  %             Choice (insert L cs', R)
+  %         | (Choice (L, R), #"1"::cs') =>
+  %             Choice (L, insert R cs')
+  %         | (Final b, #"0"::cs') =>
+  %             Choice (insert L cs', Final b)
+  %         | (Final b, #"1"::cs') =>
+  %             Choice (Final b, insert R cs')
+  %         | _ => raise Precondition
+  %     \end{codeblock}
+  %   \end{solutionorbox}
+
+  \newpage
+  \part[5]\hfill
+
+    Now, we can compress our bit string sets, and query them.
+
+    Consider the following such function:
+
+    \begin{codeblock}
+      fun query (n : int) (bstrs : bitstring list) (bs : bitstring) =
+        check (compress n bstrs) bs
+    \end{codeblock}
+
+    Suppose we are interested in repeat queries to the same set of bit strings.
+    There is an inefficiency in this code. Rewrite \code{query} to perform better
+    in that case.
+
+    \begin{solutionorbox}[15em]
+      \begin{codeblock}
+        fun query (n : int) (bstrs : bitstring list) =
+          let
+            val bdt = compress n bstrs
+          in
+            fn bs => check bdt bs
+          end
+      \end{codeblock}
+    \end{solutionorbox}
+\end{parts}
+
+\newpage
+
+%% --- streams -----------------------------------------------------------------
+%% (was \input{q/levelorder.tex})
+\titledquestion{Level Order Traversal}
+
+\textbf{Level Order Traversal}
+
+Recall the problem of \textit{tree traversal}, which is the problem of visiting
+the elements of a tree in some prescribed order.
+
+We have discussed several tree traversals, such as \textit{postorder},
+\textit{inorder}, and \textit{preorder}, which are classic recursive traversals.
+Less straightforward is what is known as a \textit{level-order traversal}, which
+traverses a tree in the same way that a human would read a book\footnote{An English-speaking
+human, before I get cancelled.}.
+
+\begin{center}
+  \begin{tikzpicture}[
+          level 1/.style={sibling distance=35mm},
+          level 2/.style={sibling distance=18mm},
+          level 3/.style={sibling distance=10mm},
+          level distance=13mm,
+          circ/.style={draw=black, circle}
+        ]
+    \node[circ] {1}
+      child{node[circ] {2}
+        child{node[circ] {4}
+          child{node {\code{E}}}
+          child{node {\code{E}}}
+        }
+        child{node[circ] {5}
+          child{node {\code{E}}}
+          child{node {\code{E}}}
+        }
+      }
+      child{node[circ] {3}
+        child{node[circ] {6}
+          child{node {\code{E}}}
+          child{node {\code{E}}}
+        }
+        child{node[circ] {7}
+          child{node {\code{E}}}
+          child{node {\code{E}}}
+        }
+      }
+    ;
+
+  \end{tikzpicture}
+\end{center}
+
+In the above diagram, the numbers of the nodes denote the order in which
+they appear in the traversal.
+
+This is quite difficult to implement, recursively, via naively computing
+the level order traversal of children. However, by changing our perspective,
+it turns out we can actually still solve this recursively.
+
+Throughout this problem, we will use \code{S} to refer to the \code{STREAM}
+library, whose signature is in the appendix.
+
+We will do this by writing the following helper:
+\spec
+  {levelord}
+  {\code{'a tree -> 'a list stream}}
+  {\code{true}}
+  {\code{levelord T} evaluates to the stream \code{S}, such that the
+  $i$th element of \code{S} contains all of the elements in the $i$th
+  level of the tree \code{T}.}
+
+So for instance, if \code{T} is the above tree, we should have that:
+\begin{itemize}
+  \item \code{levelord T} $\eeq$ \code{Stream.fromList [[1],[2, 3],[4, 5, 6, 7],[]]}
+  \item \code{levelord Empty} $\eeq$ \code{Stream.fromList [[]]}
+  \item \code{levelord (N(E,1,E))} $\eeq$ \code{Stream.fromList [[1], []]}
+  \item \code{levelord (N(N(E,2,E),1,E))} $\eeq$ \code{Stream.fromList [[1], [2], []]}
+\end{itemize}
+
+(The empty lists are because the corresponding level of the tree still has stuff
+in it, it's just all \code{Empty}s)
+
+\newpage
+
+We will also give you this helper function, which you will need:
+
+\spec
+  {zipAppend}
+  {{\small\code{'a list stream -> 'a list stream -> 'a list stream}}}
+  {\code{true}}
+  {\code{zipAppend S1 S2} evaluates to the stream which pairs up elements from
+  \code{S1} and \code{S2}, appending their corresponding lists. If one doesn't
+  exist in one of the streams, it simply takes the other list.}
+
+\begin{codeblock}
+  fun zipAppend S1 S2 =
+    case (S.expose S1, S.expose S2) of
+      (S.Empty, _) => S2
+    | (_, S.Empty) => S1
+    | (S.Cons (x, S1'), S.Cons (y, S2')) =>
+        S.cons (x @ y, zipAppend S1' S2')
+\end{codeblock}
+
+\begin{parts}
+  \part[3]\hfill
+    Is \code{zipAppend} maximally lazy? If not, explain why, and how it may be fixed.
+
+    \begin{solutionorbox}[12em]
+      No, because it exposes the streams before an element is requested.
+      You should instead write:
+
+      \begin{codeblock}
+        fun zipAppend S1 S2 =
+          S.delay (fn () =>
+            case (S.expose S1, S.expose S2) of
+              (S.Empty, _) => S.expose S2
+            | (_, S.Empty) => S.expose S1
+            | (S.Cons (x, S1'), S.Cons (y, S2')) =>
+                S.Cons (x @ y, zipAppend S1' S2')
+          )
+      \end{codeblock}
+
+      Note that \code{S.delay} expects a \code{unit -> 'a front}, so each branch
+      must produce a \textbf{front} rather than a stream --- hence
+      \code{S.expose} on the two base cases, and the \code{S.Cons} constructor
+      instead of \code{S.cons} in the last.
+    \end{solutionorbox}
+  \part[12]\hfill
+
+    Implement \code{levelord} as described above.
+
+    \textbf{Hint:} This problem is about reasoning via specification. Do not get
+    lost in the nitty gritty. \emph{Think recursively}.
+
+    This problem can be solved in three lines.
+
+    \begin{solutionorbox}[12em]
+      \begin{codeblock}
+        fun levelord Empty = S.cons ([], S.empty)
+          | levelord (Node (L, x, R)) =
+              S.cons ([x], (zipAppend (levelord L) (levelord R)))
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[3]\hfill
+
+    Assume you are given a function \code{flatten' : 'a list stream -> 'a list},
+    which takes a stream of lists and flattens it into a list.
+
+    Implement \code{levelord' : 'a tree -> 'a list}, finally, in terms of
+    the functions that we have used previously.
+
+    \begin{constraint}
+      You may not use any \code{fun} declarations or \code{fn} expressions.
+    \end{constraint}
+
+    \begin{solutionorbox}[8em]
+      \begin{codeblock}
+        val levelord' = flatten' o levelord
+      \end{codeblock}
+    \end{solutionorbox}
+\end{parts}
+
+\newpage
+
+%% --- folding -----------------------------------------------------------------
+%% (was \input{draft_rle.tex})
+\newpage
+\titledquestion{Run-Length Encoding}
+
+\textbf{Run-Length Encoding}
+
+The \textbf{run-length encoding} of a list replaces each sublist of equal
+adjacent elements by a \code{(count, element)} pair:
+
+\begin{center}
+  \code{[1, 1, 1, 2, 2, 3]} \quad compresses to \quad
+  \code{[(3, 1), (2, 2), (1, 3)]}
+\end{center}
+
+Only \textbf{adjacent} equal elements share a run: \code{[1, 2, 2, 1]} gives
+\code{[(1, 1), (2, 2), (1, 1)]}, not \code{[(2, 1), (2, 2)]}.
+
+\begin{parts}
+  \part[8]\hfill
+
+    Implement \code{encode}:
+
+    \spec
+      {encode}
+      {\code{'a list -> (int * 'a) list}}
+      {\code{true}}
+      {\code{encode xs} evaluates to the run-length encoding of \code{xs}: a
+      list of \code{(count, element)} pairs, one per maximal run of adjacent
+      equal elements, in order.}
+
+    \begin{constraint}
+      Your solution must be a fold, with no explicit recursion.
+    \end{constraint}
+
+    \textbf{Note:} Technically, to achieve the specification, you would have to have
+    a way of comparing arbitrary elements of type \code{'a}. Assume that
+    you can use \code{= : 'a * 'a -> bool}, where normally it would introduce
+    an "equality type" thing\footnote{If you don't know what this means, don't worry about
+    it, I'm just telling you you can use \code{=} at any type.}.
+
+    \begin{solutionorbox}[25em]
+      \begin{codeblock}
+        fun encode xs =
+          foldr
+            (fn (x, (n, y) :: rest) =>
+                  if x = y then (n + 1, y) :: rest
+                  else (1, x) :: (n, y) :: rest
+              | (x, []) => [(1, x)])
+            []
+            xs
+      \end{codeblock}
+
+      Because \code{foldr} processes right-to-left, the run being built sits at
+      the \textbf{head} of the accumulator. If the current element equals that
+      run's element, we extend the run; otherwise we push a fresh run of length
+      one.
+    \end{solutionorbox}
+
+  % \newpage
+
+  % \part[5]\hfill
+
+  %   Implement \code{decode}.
+
+  %   \spec
+  %     {decode}
+  %     {\code{(int * 'a) list -> 'a list}}
+  %     {\code{each count is} $\geq 1$}
+  %     {\code{decode runs} evaluates to the list obtained by expanding each
+  %     \code{(count, element)} run back into \code{count} copies of
+  %     \code{element}, in order.}
+
+  %   You may use \code{List.tabulate : int * (int -> 'a) -> 'a list}, where
+  %   \code{List.tabulate (n, f)} $\eeq$ \code{[f 0, f 1, ..., f (n-1)]}.
+
+  %   \begin{solutionorbox}[25em]
+  %     \begin{codeblock}
+  %       fun decode runs =
+  %         foldr
+  %           (fn ((n, x), acc) =>
+  %              List.tabulate (n, fn _ => x) @ acc)
+  %           []
+  %           runs
+  %     \end{codeblock}
+  %   \end{solutionorbox}
+
+  %% Sequences, kept deliberately small: recovering the original length from an
+  %% encoding is one map and one reduce, and it is genuinely about RLE -- the
+  %% counts in the encoding are exactly what has to be summed.
+  %% Verified in SML/NJ: <(3,1),(2,2),(1,3)> -> 6, <> -> 0, <(7,4)> -> 7.
+  \part[6]\hfill
+
+    Suppose we wanted to recover the original length of the encoding. This would
+    mean summing the counts of each element --- an easy linear cost.
+
+    We hypothesize we can do this in faster time in parallel, using a
+    sequence. Given an encoding stored as a sequence instead of a list, implement
+    the following function:
+
+    \spec
+      {origLength}
+      {\code{(int * 'a) seq -> int}}
+      {\code{runs} is a valid run-length encoding}
+      {\code{origLength runs} evaluates to the length of the sequence that
+      \code{runs} encodes}
+
+    e.g. \code{origLength $\langle$ (3,"a"), (2,"b"), (1,"c") $\rangle$} $\eeq$ \code{6}.
+
+    \begin{constraint}
+      You should achieve a better-than-linear complexity.
+    \end{constraint}
+
+
+    \begin{solutionorbox}[16em]
+      \begin{codeblock}
+        fun origLength runs =
+          Seq.reduce (op +) 0 (Seq.map (fn (n, _) => n) runs)
+      \end{codeblock}
+
+      Each run contributes exactly its count to the original length, so we
+      project out the counts and add them up. On
+      $\langle (3,1), (2,2), (1,3) \rangle$ --- the encoding of
+      \code{[1,1,1,2,2,3]} --- this gives $3 + 2 + 1 = 6$.
+
+      Both steps are parallel: the \code{map} is independent per element, and
+      \code{reduce} may group the additions into a balanced tree of depth
+      $O(\log n)$ rather than chaining them. Note this works only because
+      \code{+} is \textbf{associative} --- \code{reduce} is free to group
+      however it likes.
+    \end{solutionorbox}
+
+  \part[2]\hfill
+
+  What is the span bound of \code{origLength}? Do not justify your
+  answer, the bound is fine.
+
+  \begin{solutionorbox}[4em]
+    $O(\log n)$
+  \end{solutionorbox}
+\end{parts}
+
+%% --- work/span ---------------------------------------------------------------
+%% (was \input{draft_isbalanced.tex})
+\newpage
+\titledquestion{Inner Balance}
+
+\textbf{Inner Balance}
+
+A tree is \textbf{balanced} if at every node its two subtrees' heights differ by
+at most one, and both subtrees are balanced.
+\begin{codeblock}
+  datatype tree = Empty | Node of tree * int * tree
+\end{codeblock}
+
+Here is the natural first implementation, using a helper \code{height}:
+\begin{codeblock}
+  fun height Empty = 0
+    | height (Node (l, _, r)) = 1 + Int.max(height l, height r)
+
+  fun isBalanced Empty = true
+    | isBalanced (Node (l, _, r)) =
+        abs (height l - height r) <= 1
+        andalso isBalanced l
+        andalso isBalanced r
+\end{codeblock}
+
+Throughout, assume the tree is balanced with \code{n} nodes. You may
+also assume that the work of \code{height} is $O(n)$ in the number of
+nodes in the tree.
+
+\begin{parts}
+  \part[4]\hfill
+
+    Write and solve the \textbf{work} recurrence for the naive \code{isBalanced}.
+
+    \begin{solutionorbox}[25em]
+      At each node the two \code{height} calls walk the whole subtree, costing
+      $O(n)$, and we recur on both halves:
+      $$W(n) = 2W(n/2) + O(n).$$
+      By the recursion tree each of the $\log n$ levels does $O(n)$ work, so
+      $$W(n) = O(n \log n).$$
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[4]\hfill
+
+    Now suppose we have an unbalanced spine. Write
+    and solve the \textbf{work} recurrence for the naive \code{isBalanced} on a
+    spine of \code{n} nodes.
+
+    \begin{solutionorbox}[25em]
+      There is one recursive call per node, and \code{height} at the top walks all
+      \code{n} nodes, then $n-1$, and so on:
+      $$W(n) = W(n-1) + O(n) = O(n) + O(n-1) + \cdots = O(n^2).$$
+
+      On a spine \code{height} rescans the entire remaining chain at every level,
+      so the naive version is \textbf{quadratic} --- not merely a $\log n$ factor
+      worse than the balanced case.
+    \end{solutionorbox}
+
+    \begin{EnvUplevel}
+    Consider the following implementation of \code{isBalanced}
+    that only visits each node once:
+
+    \begin{codeblock}
+      fun check Empty = (true, 0)
+        | check (Node (l, _, r)) =
+            let
+              val (bl, hl) = check l
+              val (br, hr) = check r
+            in
+              ( bl andalso br
+                  andalso abs (hl - hr) <= 1,
+                1 + Int.max (hl, hr) )
+            end
+
+      fun isBalanced T =
+        let
+          val (bl, _) = check T
+        in
+          bl
+        end
+    \end{codeblock}
+    \end{EnvUplevel}
+
+  %   Implement \code{isBalanced} so that it visits each node only once, achieving
+  %   a better time complexity than the naive version.
+
+  %   \textbf{Hint:} You may find writing a recursive helper helpful.
+
+  %   \begin{solutionorbox}[28em]
+  %     \begin{codeblock}
+  %       fun check Empty = (true, 0)
+  %         | check (Node (l, _, r)) =
+  %             let
+  %               val (bl, hl) = check l
+  %               val (br, hr) = check r
+  %             in
+  %               ( bl andalso br
+  %                   andalso abs (hl - hr) <= 1,
+  %                 1 + Int.max (hl, hr) )
+  %             end
+
+  %       fun isBalanced T = #1 (check T)
+  %     \end{codeblock}
+
+  %     Each node is visited once and does $O(1)$ work: it recurses into each child
+  %     \textit{once}, getting back both the child's balancedness and its height,
+  %     and combines them. No separate \code{height} traversal is ever needed.
+  %   \end{solutionorbox}
+
+  % \newpage
+
+  \newpage
+  \part[4]\hfill
+
+    Write, but do not solve the \textbf{work} recurrence for
+    \code{check} on a \textbf{balanced} tree.
+
+    \begin{solutionorbox}[12em]
+      Each node does $O(1)$ work of its own and we recur on both halves:
+      $$W(n) = 2W(n/2) + O(1).$$
+      Note that \code{check} visits every node exactly once, so this recurrence
+      does not depend on the tree being balanced --- unlike the naive version,
+      whose repeated \code{height} calls made its work shape-dependent.
+    \end{solutionorbox}
+
+  \part[4]\hfill
+
+    Write, but do not solve the \textbf{span} recurrence for
+    \code{check} on a \textbf{balanced} tree.
+
+    \begin{solutionorbox}[13em]
+      $$S(n) = S(n/2) + O(1).$$
+
+      The $2$ becomes a $1$: the recursive calls \code{check l} and \code{check r}
+      are \textbf{independent}, so they run \textbf{in parallel} and the span
+      follows only the deeper subtree, rather than summing both as the work does.
+    \end{solutionorbox}
+\end{parts}
+
+%% --- imperative --------------------------------------------------------------
+%% (was \input{draft_memoize.tex})
+\newpage
+\titledquestion{Memoize Anything}
+
+\textbf{Memoize Anything}
+
+\textit{Memoization} caches a function's results: the first call on an argument
+computes and stores the answer, and later calls read it back. We will write a
+higher-order \code{memoize} that adds a private cache to \textit{any} function.
+
+\begin{parts}
+  \part[8]\hfill
+
+    Implement \code{memoize}:
+    \spec
+      {memoize}
+      {\code{(int -> 'a) -> (int -> 'a)}}
+      {\code{f} is total}
+      {\code{memoize f} evaluates to a function that, on input \code{n}, returns
+      \code{f n}, but computes \code{f n} at most once for each \code{n},
+      caching the result for future calls.}
+
+    For this function, you should use a cache which is just an \code{(int * 'a) list}
+    which stores all the previously computed results. You are given the following
+    helper, which looks a key up in such a cache:
+
+    \begin{codeblock}[autogobble=false]
+fun isInCache (n:int) (cache : (int * 'a) list) : 'a option =
+  case List.find (fn (k, _) => k = n) cache of
+    SOME (_, v) => SOME v
+  | NONE => NONE
+    \end{codeblock}
+
+    \vspace{-15pt}
+    \textbf{Hint:} A cache implies that you will need to use some mutability.
+
+    \begin{solutionorbox}[27em]
+      \begin{codeblock}
+        fun memoize (f : int -> 'a) : int -> 'a =
+          let
+            val cache : (int * 'a) list ref = ref []
+          in
+            fn n =>
+              case isInCache n (!cache) of
+                SOME v => v
+              | NONE =>
+                  let
+                    val v = f n
+                  in
+                    cache := (n, v) :: !cache;
+                    v
+                  end
+          end
+      \end{codeblock}
+
+      The returned function closes over \code{cache}, which is allocated once,
+      when \code{memoize f} is evaluated. On each call it looks \code{n} up; on a
+      hit it returns the stored value, and on a miss it computes \code{f n},
+      stores it, and returns it.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[5]\hfill
+
+    Is \code{memoize f} always extensionally equivalent to \code{f}, for any
+    function \code{f}? Justify with
+    reference to a condition on \code{f}, and if the answer is no,
+    give an \code{f} where it fails.
+
+    \begin{solutionorbox}[18em]
+      Only if \code{f} is \textbf{pure} (referentially transparent). For a pure
+      \code{f}, \code{f n} always evaluates to the same value with no side
+      effects, so returning a cached result is indistinguishable from
+      recomputing --- \code{memoize f} $\eeq$ \code{f}.
+
+      But if \code{f} has side effects, memoizing changes observable behavior.
+      For example:
+      \begin{codeblock}
+        fun noisy n = (print "!"; n + 1)
+      \end{codeblock}
+      Calling \code{noisy 5} three times prints \code{"!!!"}, but calling
+      \code{(memoize noisy) 5} three times prints only \code{"!"} --- the cache
+      suppresses the later effects. So \code{memoize noisy} is \textbf{not}
+      equivalent to \code{noisy}.
+
+      Memoization is safe exactly when the wrapped function's only observable
+      output is its return value.
+    \end{solutionorbox}
+
+  \part[3]\hfill
+
+    A student reasons that the recursive calls in the Fibonacci function are
+    what make it slow, so they try to fix it with the following
+    implementation:
+
+    \begin{codeblock}
+      fun fib n =
+        if n < 2 then n
+        else (memoize fib) (n - 1) + (memoize fib) (n - 2)
+    \end{codeblock}
+
+    This is extensionally correct but still exponential. What went wrong?
+
+    \begin{solutionorbox}[16em]
+      \code{memoize fib} is a \textbf{function call} that allocates a
+      \textbf{fresh, empty cache} every time it is evaluated. So each
+      \code{(memoize fib) (n-1)} builds a brand-new memoizer with an empty
+      table, uses it for a single lookup (which always misses), computes
+      \code{fib (n-1)} from scratch, stores the result in that table --- and
+      then \textbf{throws the table away}, since nothing holds onto it. The next
+      recursive call builds yet another fresh empty cache.
+
+      No cache is ever \textbf{shared} across the calls that ought to reuse each
+      other's results, so nothing is ever actually reused, and the work stays
+      exponential.
+
+      For memoization to help, a \textbf{single} cache must be allocated
+      \textbf{once} and consulted by \textbf{all} the recursive calls --- not a
+      new one created at each call site.
+    \end{solutionorbox}
+
+  \newpage
+
+  \begin{EnvUplevel}
+    Dr. Ryland Grace (of Project Hail Mary fame) has decided to use modular
+    abstraction to establish an API for memoized functions, so his space journey
+    takes less time! He proposes the following signature:
+    \begin{codeblock}
+      signature MEMOIZED =
+        sig
+          type ('a, 'b) memoized
+          val new   : ('a -> 'b) -> ('a, 'b) memoized
+          val apply : ('a, 'b) memoized -> 'a -> 'b
+        end
+    \end{codeblock}
+
+    His reasoning is that by writing a structure like so:
+    \begin{codeblock}
+      structure Memoized : MEMOIZED =
+        struct
+          type ('a, 'b) memoized = 'a -> 'b
+
+          (* ... *)
+        end
+    \end{codeblock}
+    he can then write functions that take in an \code{('a, 'b) memoized},
+    guaranteeing that the input function is one that is automatically
+    memoizing.
+  \end{EnvUplevel}
+
+  \part[3]\hfill
+
+    There is a flaw in Dr. Grace's plan. What is it?
+
+    \begin{solutionorbox}[15em]
+      He used \textbf{transparent} ascription (\code{:}) rather than sealing
+      (\code{:>}), so the definition \code{('a, 'b) memoized = 'a -> 'b} remains
+      visible to clients. The type is therefore not abstract at all: it is a
+      synonym for \code{'a -> 'b}, and \textit{every} function of that type
+      already counts as a \code{memoized}.
+
+      So a client can pass a perfectly ordinary, non-memoizing function wherever
+      an \code{('a, 'b) memoized} is expected --- \code{fn x => x + 1}
+      typechecks fine --- and the intended guarantee is worth nothing.
+
+      Writing \code{structure Memoized :> MEMOIZED} instead makes the type
+      genuinely abstract, so the only way to obtain one is \code{new}.
+    \end{solutionorbox}
+\end{parts}
+
+\newpage
+\titledquestion{Extra Credit: Type Design}
+
+\textbf{Extra Credit: Type Design}
+
+Consider the problem of animals on a farm.
+
+You have cats, dogs, horses, and cows. They have the following specifications:
+\begin{itemize}
+  \item All of the animals have names.
+  \item Some cows were bought from other farmers, meaning that they
+  have an associated name of their seller, and a price (which is a \code{real})
+  that they were bought for. All other animals were raised on the farm, though.
+  \item All dogs have a working status, which is either primarily as a pet,
+  a herder, or a guard dog. If the dog is a pet, then it also has a best friend,
+  who has a name. All other animals are unemployed.
+  \item The horses all have a particular day of the week that they prefer to
+  run on. Some of them have two.
+  \item Some horses are champion racehorses, and have any number of named accolades
+  that they personally have won. We are interested in the names of those accolades,
+  specifically.
+  \item None of the animals are particularly big fans of Smash Mouth.
+\end{itemize}
+
+\vspace{20pt}
+
+\begin{center}
+\includegraphics{../../../../crucible/farms.png}
+\end{center}
+
+\newpage
+
+\begin{parts}
+  \bonuspart[3]\hfill
+
+    Come up with a type \code{animal} that faithfully represents the information
+    of an animal on the farm. This type should have no illegal representation,
+    meaning that any value of this type should represent all and only
+    the relevant information to one of those specific animals.
+
+    It should also be as un-redundant as possible, meaning there should not be
+    different values that represent the same animal. It should also be as
+    simple and elegant as possible.
+
+    You may use as many \code{type} and \code{datatype} declarations as you wish.
+
+    \begin{solutionorbox}[35em]
+      \begin{codeblock}
+        datatype dog_job = Pet of string | Herder | Guard
+
+        datatype day = M | Tu | We | Th | F | Sa | Su
+
+        type seller_info = string * real
+
+        datatype animal_kind =
+            Dog of dog_job
+          | Cat
+          | Horse of day * day option * string list
+          | Cow of seller_info option
+
+        type animal = string * animal_kind
+      \end{codeblock}
+    \end{solutionorbox}
+\end{parts}
+
+
+%% --- appendices --------------------------------------------------------------
+%% (was \input{q/appendix.tex})
+\newpage
+
+\textbf{Appendix: The \code{SEQUENCE} Signature}
+
+\begin{codeblock}
+  signature SEQUENCE =
+    sig
+      (* ... *)
+
+      val empty : unit -> 'a seq
+      val singleton : 'a -> 'a seq
+      val tabulate : (int -> 'a ) -> int -> 'a seq
+      val fromList : 'a list -> 'a seq
+
+      val nth : 'a seq -> int -> 'a
+      val null : 'a seq -> bool
+      val length : 'a seq -> int
+      val toList : 'a seq -> 'a list
+
+      val take : 'a seq * int -> 'a seq
+      val drop : 'a seq * int -> 'a seq
+      val append : 'a seq * 'a seq -> 'a seq
+
+      val filter : ('a -> bool) -> 'a seq -> 'a seq
+      val map : ('a -> 'b) -> 'a seq -> 'b seq
+      val reduce : ('a * 'a -> 'a) -> 'a -> 'a seq -> 'a
+
+      (* ... *)
+    end
+\end{codeblock}
+
+\vspace{20pt}
+
+\textbf{Appendix: The \code{STREAM} Signature}
+
+\begin{codeblock}
+signature STREAM =
+  sig
+    (* ... *)
+
+    val delay : (unit -> 'a front) -> 'a stream
+    val expose : 'a stream -> 'a front
+
+    val empty : 'a stream
+    val cons : 'a * 'a stream -> 'a stream
+    val fromList : 'a list -> 'a stream
+    val tabulate : (int -> 'a) -> 'a stream
+
+    (* ... *)
+  end
+\end{codeblock}
+
+
+
+% ------------------------------------------------------------------------------
+
+
+\end{questions}
+
+\end{document}

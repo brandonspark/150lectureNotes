@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -35,7 +35,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Compilers} % TODO
     \subtitle{Making programming languages real} % TODO
-    \date{01 August 2023} % TODO
+    \date{21 July 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -239,6 +239,29 @@
 \begin{frame}[fragile]
   \frametitle{Early Computer Hardware}
 
+  \begin{minipage}{0.6\textwidth}
+    Joseph Marie Jacquard (1752-1834), inventor of the Jacquard loom.
+
+    \vspace{10pt}
+
+    Made-to-order and constructed via 24,0000 punched cards on a
+    Jacquard loom. Charles Babbage owned one of these portraits,
+    and was inspired by it to build the Analytical Engine.
+
+
+  \end{minipage}
+  \begin{minipage}{0.35\textwidth}
+  \begin{center}
+  \includegraphics[width=0.9\textwidth]{jacquard.jpg}
+  \end{center}
+  \end{minipage}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Early Computer Hardware}
+
   By the beginning of the 1900s, Herman Hollerith had the idea of being able to
   feed data into a machine via use of punch card, for the purposes of data
   processing, record-keeping, and basic arithmetic operations.
@@ -247,17 +270,16 @@
   \vspace{\fill}
 
   He would found the Tabulating Machine Company on this premise, primarily
-  using punched cards for the purpose of data storage. He then would realize
-  this was a stupid name, and rename it to International Business Machines
+  using punched cards for the purpose of data storage. This was later
+  realized to be a stupid name, and it was renamed to the International Business Machines
   Corporation, now known as IBM.
 
   \pause
   \vspace{\fill}
 
   Fast forward a couple of decades, and Konrad Zuse comes out with the Z3, a
-  working, programmable electrical computer. Punched cards were used both to
-  submit program code to the machine, as well as to store the data that it
-  kept and output.
+  working, programmable electrical computer. Punched cards were still in use,
+  however, to store the memory of the machine.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -296,7 +318,7 @@
 \begin{frame}[fragile]
   \frametitle{Assembly Programming}
 
-  In the 1940s, programs were now being written in assembly language, the lowest
+  In the 1940s, programs were now being written in assembly language, the lowest*
   form of language understandable by computers. These are essentially just blocks
   of bits that have some particular meaning to the computer, bijected with
   English words so that we can remember what they do.
@@ -357,8 +379,9 @@
   \vspace{\fill}
 
   One such person was John W. Backus, in the 1950s, whose idea was that
-  maybe we don't need to write assembly by hand. Maybe we can write instructions
-  that could then be converted into the assembly itself.
+  maybe we don't need to write assembly by hand. Maybe we can write
+  a program which can turn human-readable instructions into the assembly
+  itself.
 
   \pause
   \vspace{\fill}
@@ -433,7 +456,9 @@
   \pause
   \vspace{\fill}
 
-  In a broad sense, we should have that \code{interpret} $\eeq$ \code{run o compile}.
+  In a broad sense, we should have that \code{interpret} $\eeq$ \code{run o compile}\footnote{
+    More readably, \code{interpret prog} $\eeq$ \code{run (compile prog)}
+  }.
   Put simply, interpreting a program is the same as compiling it first, and then
   running it.
 \end{frame}
@@ -456,6 +481,12 @@
 
   I am also an interpreter, because I natively speak English. When I hear English,
   I immediately understand its meaning, without needing to mentally translate it.
+  \footnote{
+    This is a somewhat imperfect analogy, because you could argue
+    that an interpreter does have a real-time translation equivalent.
+    But it happens so quickly that for all intents and purposes, you could
+    consider an interpreter to not have a true translated "middle ground".
+  }
 \end{frame}
 
 \begin{frame}[fragile]
@@ -468,7 +499,10 @@
   \vspace{\fill}
 
   For instance, PyPy is a Python implementation written in Python. Similarly,
-  the SML/NJ compiler is written in SML, and the Rust compiler is written in Rust.
+  the SML/NJ compiler is written in SML, and the Rust compiler is written in Rust\footnote{
+    But before it was written in Rust, it was written in OCaml, which
+    is essentially SML!
+  }.
 
   \pause
   \vspace{\fill}
@@ -482,6 +516,36 @@
   to denote a function of type \code{string -> string}, which takes in code written
   in the language \textlangle lang\textrangle, and outputs assembly instructions.
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Programming Languages as Hammers}
+
+  I find it is easiest to understand this by way of analogy.
+
+  \pause
+  \vspace{\fill}
+
+  Suppose you are John W. Whackus, american carpenter scientist,
+  and you are very enthusiastic about hand tools. You have an idea
+  in your head of a hand tool with a weighted head that can be used to
+  easily deliver precise impact.
+
+  \pause
+  \vspace{\fill}
+
+  You call this a hammer, but unfortunately it doesn't exist yet--nobody
+  has thought of it or built it before.
+
+  \pause
+  \vspace{\fill}
+
+  Building the metallic head of the hammer requires the kind of precise
+  blunt force that you would like to have a hammer for in the first place.
+  But, nothing stops you from using a random rock instead, since hammers
+  don't exist yet. The key is that once you use the rock to build the first
+  hammer, you can use that hammer to build the next hammer, and so on.
+\end{frame}
+
 
 \begin{frame}[fragile]
   \frametitle{Programming Languages as Ideas}
@@ -609,7 +673,8 @@
   compilers are just transformations on data. Functional programming mediates that
   relationship by enforcing typed guarantees on that data, as well as offering
   fundamental constructs (pattern matching, datatype declarations) that make
-  the entire process an absolute joy.
+  the entire process an absolute joy\footnote{If you recall how nice red-black trees
+  are in SML, this is the same reason why compilers are nice in SML.}.
 
   \pause
   \vspace{\fill}
@@ -733,7 +798,7 @@
   \pause
   \vspace{\fill}
 
-  \begin{codeblock}[keywordstyle=, morekeywords={}]
+  \begin{codeblock}[keywordstyle=, morekeywords={}, style=expandedHL]
     <bvalb> <gxg> <p=p> <r2r> <p-p> <r1r>
 
     <bfunb> <gfoog> <p(p><gyg> <p:p> <gintg><p)p> <p=p> <r5r> <p+p> <gxg>
@@ -987,7 +1052,7 @@
         child{node[box, xshift=1in] (M2) {\code{FunDec}}
           child{node[bhex, xshift=-1cm] (R1) {\code{foo}}}
           child{node[box, fill=bgRed] (R2) {\code{TypedPat}\strut}
-            child{node[bhex] (RU1) {\code{x}}}
+            child{node[bhex] (RU1) {\code{y}}}
             child{node[box, fill=bgOrange] (RU2) {\code{int}}}
           }
           child{node[circ, xshift=2cm, minimum size=0.8cm] (R3) {\code{+}}
@@ -1020,7 +1085,7 @@
       | FunDec of string * pat list * exp
           (* fun <id> <p1> ... <pn> = <e> *)
       | (* ... *)
-    and pattern =
+    and pat =
         IdPat of string
       | TuplePat of pattern list        (* (p1, p2, ..., pn) *)
       | (* ... *)
@@ -1244,10 +1309,9 @@
   might look like:
 
   \pause
-  {\small
+  {\footnotesize
   \begin{codeblock}
     datatype ty = IntTy | StringTy | RealTy | (* ... *)
-
     fun typecheck (e : exp) : ty =
       case e of
         Int _ => IntTy
@@ -1264,7 +1328,12 @@
   \pause
   \vspace{\fill}
 
-  We see it's just a straightforward recursive function on a tree.
+  We see it's just a straightforward recursive function on a tree\footnote{
+    Type \textit{inference}, where we may not have complete information over
+    what type our components are, takes a more complex algorithm. The
+    typical way this is implemented is with a technique called Hindley-Milner
+    type inference, and is beyond the scope of this lecture.
+  }.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1430,7 +1499,7 @@
       case e of
         Plus  (Int i1, Int i2) => Int (i1 + i2)
       | Minus (Int i1, Int i2) => Int (i1 - i2)
-      `| Div   (Int i1, Int 0) => e`
+      `| Div   (Int i1, Int 0)  => e`
       | Div   (Int i1, Int i2) => Int (i1 div i2)
       | _ => e
   \end{codeblock}
@@ -1478,10 +1547,10 @@
       | Minus (Int i1, Int i2) => Int (i1 - i2)
       | Div   (Int i1, Int 0)  => e
       | Div   (Int i1, Int i2) => Int (i1 div i2)
-      `| Plus  (e1, e2) => Plus  (cfold e1, cfold e2)`
-      `| Minus (e1, e2) => Minus (cfold e1, cfold e2)`
-      `| Div   (e1, e2) => Div   (cfold e1, cfold e2)`
-      `(* ... many more cases ... *)`
+      `| Plus  (e1, e2) => cfold (Plus  (cfold e1, cfold e2))`
+      `| Minus (e1, e2) => cfold (Minus (cfold e1, cfold e2))`
+      `| Div   (e1, e2) => cfold (Div   (cfold e1, cfold e2))`
+      `(* ... many such cases ... *)`
   \end{codeblock}
   }
 
@@ -1846,7 +1915,9 @@
 
   \vspace{\fill}
 
-  Then, we introduce additional unsafe behavior!
+  Then, we introduce additional unsafe behavior\footnote{Arguably,
+  due to integer overflow, moving the multiplication was also
+  problematic.}!
 
   \pause
   \vspace{\fill}

@@ -40,7 +40,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Modules III: Red-Black Trees} % TODO
     \subtitle{Self-balancing in black and crimson} % TODO
-    \date{13 July 2023} % TODO
+    \date{2 July 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -1739,7 +1739,7 @@
       let
         fun ins T = (* ... *)
       in
-        case ins (k, v) T of
+        case ins T of
           Red v => Black v
         | other => other
       end
@@ -1757,6 +1757,13 @@
 
   Now, we must define the \code{ins} function, which will do the real work of
   the insertion algorithm.
+
+  \pause
+  \vspace{\fill}
+
+  Note that the \code{ins} function is written as not taking in the
+  key-value pair \code{(k, v)} explicitly, as it inherits it from being
+  in the body of \code{insert}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1929,7 +1936,7 @@
                   | LESS    => Red (ins l, (k', v'), r)
                   | GREATER => Red (l, (k', v'), ins r))
           in
-            case ins (k, v) T of
+            case ins T of
               Red v => Black v
             | other => other
           end
@@ -2256,5 +2263,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{DICHROMATIC}
 
 \end{document}

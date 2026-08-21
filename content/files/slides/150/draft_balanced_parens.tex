@@ -1,0 +1,144 @@
+\newpage
+\titledquestion{Balancing Act}
+
+\textbf{Balancing Act}
+
+A sequence of parentheses is \textit{balanced} if every open parenthesis is
+matched by a later close parenthesis, and no close parenthesis appears before
+its matching open. We represent such a sequence as a list:
+
+\begin{codeblock}
+  datatype paren = L | R
+
+  type parens = paren list
+\end{codeblock}
+
+where \code{L} stands for \code{(} and \code{R} stands for \code{)}.
+
+So, for instance:
+\begin{itemize}
+  \item \code{[L, R]} is balanced, representing \code{()}
+  \item \code{[L, L, R, R]} is balanced, representing \code{(())}
+  \item \code{[L, R, L, R]} is balanced, representing \code{()()}
+  \item \code{[]} is balanced, representing the empty sequence
+  \item \code{[R, L]} is \textbf{not} balanced, representing \code{)(}
+  \item \code{[L, L, R]} is \textbf{not} balanced, representing \code{((}\code{)}
+\end{itemize}
+
+\begin{parts}
+  \part[3]\hfill
+
+    A student proposes the following approach: ``count the number of \code{L}s
+    and the number of \code{R}s, and return \code{true} if they are equal.''
+
+    Give a value of type \code{parens} which shows this approach is wrong, and
+    state in one sentence the property that this approach fails to capture.
+
+    \begin{solutionorbox}[8em]
+      \code{[R, L]} has one \code{L} and one \code{R}, but is not balanced.
+
+      Counting ignores \textbf{order}: at no point may the number of \code{R}s
+      seen so far exceed the number of \code{L}s seen so far. Equal totals is
+      necessary, but not sufficient.
+    \end{solutionorbox}
+
+  \part[3]\hfill
+
+    A second student, having read your answer above, proposes: ``keep a running
+    counter, starting at 0. Add 1 for each \code{L}, subtract 1 for each
+    \code{R}. Return \code{true} if the final counter is 0.''
+
+    Give a value of type \code{parens} which shows that \textbf{this} approach
+    is also wrong.
+
+    \begin{solutionorbox}[8em]
+      \code{[L, R, R, L]}. The counter goes \code{1, 0, ~1, 0}, ending at 0,
+      but the sequence is not balanced --- it dips below zero at the third
+      element.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[10]\hfill
+
+    Now, implement \code{balanced}:
+
+    \spec
+      {balanced}
+      {\code{parens -> bool}}
+      {\code{true}}
+      {\code{balanced ps} $\eeq$ \code{true} if and only if \code{ps} is
+      balanced, and \code{false} otherwise}
+
+    \begin{constraint}
+      Your solution must traverse the list \textbf{exactly once}, and that
+      traversal must be a single call to \code{foldl}. You may not use
+      explicit recursion, \code{rev}, or any auxiliary list.
+    \end{constraint}
+
+    \textbf{Hint:} Your two counterexamples above tell you two different things
+    that can go wrong. What does your accumulator need to remember in order to
+    detect \textit{both} of them?
+
+    \begin{solutionorbox}[26em]
+      The accumulator must track the running depth \textit{and} whether the
+      sequence has already gone irrecoverably wrong. \code{int option} does
+      this: \code{SOME d} means ``still valid, at depth \code{d}'', and
+      \code{NONE} means ``already broken, and nothing can fix it''.
+
+      \begin{codeblock}
+        fun balanced ps =
+          case
+            foldl
+              (fn (_, NONE) => NONE
+                | (L, SOME d) => SOME (d + 1)
+                | (R, SOME d) =>
+                    if d = 0 then NONE else SOME (d - 1))
+              (SOME 0)
+              ps
+          of
+            SOME 0 => true
+          | _ => false
+      \end{codeblock}
+
+      Note that the post-processing step is essential: ending in
+      \code{SOME d} for \code{d > 0} means unmatched open parens remain, as in
+      \code{[L, L, R]}.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[4]\hfill
+
+    Suppose we now want to handle two \textit{kinds} of bracket, which must be
+    matched with their own kind:
+
+    \begin{codeblock}
+      datatype kind = Round | Square
+      datatype bracket = Open of kind | Close of kind
+    \end{codeblock}
+
+    So \code{[Open Round, Open Square, Close Square, Close Round]} (that is,
+    \code{([])}) is balanced, but
+    \code{[Open Round, Open Square, Close Round, Close Square]} (that is,
+    \code{([)]}) is not.
+
+    You do \textbf{not} need to write any code. State what the accumulator type
+    must become, and explain in one or two sentences why an \code{int} depth is
+    no longer sufficient.
+
+    \begin{solutionorbox}[14em]
+      The accumulator must become something like \code{kind list option} ---
+      that is, a \textbf{stack} of the currently-open bracket kinds (still
+      wrapped in an \code{option}, or with a dedicated failure representation).
+
+      A depth counter records only \textit{how many} brackets are open, not
+      \textit{which} ones. On seeing \code{Close Round} we must check that the
+      most recently opened bracket was a \code{Round}, which requires
+      remembering the kinds in order.
+
+      Observe that the previous part's \code{int} accumulator was really this
+      stack all along --- with only one kind of bracket, the only information
+      a stack carries is its length.
+    \end{solutionorbox}
+\end{parts}

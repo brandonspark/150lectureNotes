@@ -1,0 +1,16 @@
+\part[3]\hfill
+
+  True or false: If \code{e1} $\eeq$ \code{e2}, then \code{e1} and
+  \code{e2} must have the same runtime cost.
+
+  \begin{solutionorlines}[5em] False. Equivalence says the two expressions
+  produce the same value, not that they get there the same way. For instance
+  a naive \code{reverse} using \code{@} is equivalent to an accumulator-based
+  one, but costs $O(n^2)$ instead of $O(n)$. \end{solutionorlines}
+
+
+% -----------------------------------------------------------------------------
+% 4. Mutation breaks referential transparency.
+%    Misunderstanding: students believe you can always substitute equals for
+%    equals (replace `f x` by its "value"), even in the presence of effects.
+% -----------------------------------------------------------------------------

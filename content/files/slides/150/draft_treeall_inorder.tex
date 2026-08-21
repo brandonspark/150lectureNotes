@@ -1,0 +1,121 @@
+
+\newpage
+
+\vspace*{\fill}
+
+THIS PAGE INTENTIONALLY LEFT BLANK
+
+I WOULDN'T LEAVE THIS BLANK UNINTENTIONALLY, THAT'S FOR SURE
+
+WHAT DO YOU THINK I AM, STUPID?
+
+\vspace*{\fill}
+
+\newpage
+
+
+\titledquestion{Checking Every Element}
+
+\textbf{Checking Every Element}
+
+For the type of polymorphic trees, consider the functions \code{treeAll}, which checks
+that every element of a tree satisfies a predicate, and \code{all}, which checks
+that every element of a list satisfies a predicate. Additionally provided is the
+\code{inorder} function, which returns the inorder traversal of a tree.
+\begin{codeblock}
+  datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree
+
+  fun treeAll p Empty = true
+    | treeAll p (Node (l, x, r)) =
+        p x andalso treeAll p l andalso treeAll p r
+
+  fun all p [] = true
+    | all p (x :: xs) = p x andalso all p xs
+
+  fun inorder Empty = []
+    | inorder (Node (l, x, r)) = inorder l @ (x :: inorder r)
+\end{codeblock}
+
+Checking a predicate over a tree directly should agree with flattening to the
+inorder list and checking that. Prove it.
+
+\begin{parts}
+  \part[15]\hfill
+
+    \textbf{Theorem.} For all values \code{p : 'a -> bool} and \code{T : 'a tree}:
+    $$\code{treeAll p T} \;\eeq\; \code{all p (inorder T)}$$
+
+    You may use the following facts without proof:
+
+    \textbf{Lemma 1:} For any value
+    \code{T : 'a tree}, \code{inorder T} evaluates to a value.
+
+    \textbf{Lemma 2:} For total \code{p} and any
+    value \code{L : 'a list}, \code{all p L} evaluates to a value.
+
+    \textbf{Lemma 3:} For total \code{p} and any
+    value \code{T : 'a tree}, \code{treeAll p T} evaluates to a value.
+
+    \textbf{Lemma 4:} For total \code{p} and any
+    values \code{A, B : 'a list},
+    $$\code{all p (A @ B)} \;\eeq\;
+      \code{all p A andalso all p B}$$
+
+    \begin{constraint}
+      You may assume \code{p} is total.
+    \end{constraint}
+
+    \begin{solutionorbox}[50em]
+
+      By structural induction on \code{T : 'a tree}.
+
+      \vspace{6pt}
+      \textbf{Base case:} \code{T = Empty}.
+      \begin{align*}
+        \code{treeAll p Empty}
+        &\eeq \code{true} \tag{clause 1 of \code{treeAll}} \\
+        &\eeq \code{all p []} \tag{clause 1 of \code{all}} \\
+        &\eeq \code{all p (inorder Empty)} \tag{clause 1 of \code{inorder}}
+      \end{align*}
+
+      \vspace{6pt}
+      \textbf{Inductive case:} \code{T = Node (l, x, r).}
+
+      \noindent IH$_l$: \code{treeAll p l} $\eeq$ \code{all p (inorder l)}.
+
+      \noindent IH$_r$: \code{treeAll p r} $\eeq$ \code{all p (inorder r)}.
+
+      \noindent WTS: \code{treeAll p (Node (l,x,r))} $\eeq$
+      \code{all p (inorder (Node (l,x,r)))}.
+
+      \vspace{4pt}
+      We start from the \textbf{right}-hand side and reach the left:
+      \begin{align*}
+        & \code{all p (inorder (Node (l,x,r)))} \\
+        &\eeq \code{all p (inorder l @ (x :: inorder r))}
+          \tag{clause 2 of \code{inorder}} \\
+        &\eeq \code{all p (inorder l)} \\
+        & \quad\; \code{andalso all p (x :: inorder r)}
+          \tag{Lemmas 1, 4} \\
+        &\eeq \code{all p (inorder l)} \\
+        & \quad\; \code{andalso (p x andalso all p (inorder r))}
+          \tag{clause 2 of \code{all}} \\
+        &\eeq \code{p x andalso all p (inorder l)} \\
+        & \quad\; \code{andalso all p (inorder r)}
+          \tag{\code{andalso} assoc.\ / comm., Lemma 2 and \code{p} total} \\
+        &\eeq \code{p x andalso treeAll p l andalso treeAll p r}
+          \tag{IH$_l$, IH$_r$, Lemma 3} \\
+        &\eeq \code{treeAll p (Node (l,x,r))}
+          \tag{clause 2 of \code{treeAll}}
+      \end{align*}
+
+      which is the left-hand side. By the principle of structural induction, the
+      theorem holds for all \code{T : 'a tree}. $\qed$
+    \end{solutionorbox}
+
+    \newpage
+
+    \begin{solutionorbox}[50em]
+
+    \end{solutionorbox}
+\end{parts}

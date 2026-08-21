@@ -121,7 +121,10 @@
   \pause
   \vspace{\fill}
 
-  Let's write a library for dictionaries.
+  Let's write a library for dictionaries\footnote{For pedagogical reasons,
+  for the rest of this lecture we will use the type variable \code{'a}
+  (when pertinent) to refer to the type of keys in the dictionary, and
+  \code{'b} to refer to the type of values in the dictionary.}.
 
   \pause
   \vspace{\fill}
@@ -130,11 +133,11 @@
     signature STR_DICT =
       sig
         type key = string
-        type 'a t
+        type 'b t
 
-        val empty : 'a t
-        val insert : key * 'a -> 'a t -> 'a t
-        val lookup : key -> 'a t -> 'a option
+        val empty : 'b t
+        val insert : key * 'b -> 'b t -> 'b t
+        val lookup : key -> 'b t -> 'b option
       end
   \end{codeblock}
 \end{frame}
@@ -147,13 +150,14 @@
     structure Dict :> STR_DICT =
       struct
         type key = string
-        type 'a t = (key * 'a) tree
+        type 'b t = (key * 'b) tree
 
         val empty = []
         fun insert (k, v) L = (k, v) :: remove (k, v) L
         fun lookup k [] = NONE
           | lookup k ((k', v')::xs) =
               if k = k' then SOME v'
+              else lookup k xs
       end
   \end{codeblock}
 \end{frame}
@@ -210,7 +214,7 @@
     structure Dict :> STR_DICT =
       struct
         type key = string
-        type 'a t = (key * 'a) tree
+        type 'b t = (key * 'b) tree
 
         val empty = Empty
 
@@ -243,12 +247,12 @@
             | LESS    => Node (insert (k, v) L, (k', v'), R)
             | GREATER => Node (L, (k', v'), insert (k, v) R)
 
-      fun lookup (k, v) Empty = NONE
-        | lookup (k, v) (Node (L, (k', v'), R)) =
+      fun lookup k Empty = NONE
+        | lookup k (Node (L, (k', v'), R)) =
             case String.compare (k, k') of
               EQUAL   => SOME v'
-            | LESS    => lookup (k, v) L
-            | GREATER => lookup (k, v) R
+            | LESS    => lookup k L
+            | GREATER => lookup k R
     end
 \end{codeblock}
 \end{frame}
@@ -256,7 +260,7 @@
 \begin{frame}[fragile]
   \frametitle{Dictionary Invariants}
 
-  Note that we chose to opaquely ascribe to the \code{DICT} signature.
+  Note that we chose to opaquely ascribe to the \code{STR_DICT} signature.
 
   \pause
   \vspace{\fill}
@@ -342,8 +346,8 @@
           | insert (k, v) (Node (L, (k', v'), R)) =
               (* what do we do now? *)
 
-        fun lookup (k, v) Empty = NONE
-          | lookup (k, v) (Node (L, (k', v'), R)) =
+        fun lookup k Empty = NONE
+          | lookup k (Node (L, (k', v'), R)) =
               (* or here... *)
     end
   \end{codeblock}
@@ -391,7 +395,7 @@
   \pause
   \vspace{\fill}
 
-  This looks better. We use the same familiar of parameterizing our
+  This looks better. We use the same familiar pattern of parameterizing our
   \code{insert} and \code{lookup} functions by a comparison function.
 \end{frame}
 
@@ -399,7 +403,7 @@
   \frametitle{An Implementation for Polymorphic Dictionaries, v2}
 
   \begin{codeblock}
-    structure Dict :> STR_DICT =
+    structure Dict :> POLY_DICT =
       struct
         type ('a, 'b) t = ('a * 'b) tree
 
@@ -426,12 +430,12 @@
             | LESS    => Node (insert `cmp` (k, v) L, (k', v'), R)
             | GREATER => Node (L, (k', v'), insert `cmp` (k, v) R)
 
-      fun lookup `cmp` (k, v) Empty = NONE
-        | lookup `cmp` (k, v) (Node (L, (k', v'), R)) =
+      fun lookup `cmp` k Empty = NONE
+        | lookup `cmp` k (Node (L, (k', v'), R)) =
             case `cmp` (k, k') of
               EQUAL   => SOME v'
-            | LESS    => lookup `cmp` (k, v) L
-            | GREATER => lookup `cmp` (k, v) R
+            | LESS    => lookup `cmp` k L
+            | GREATER => lookup `cmp` k R
     end
   \end{codeblock}
 \end{frame}
@@ -885,7 +889,7 @@
 
     structure IntOrd : ORD =
       struct
-        type t = string
+        type t = int
         val compare = Int.compare
       end
   \end{codeblock}
@@ -932,12 +936,12 @@
       sig
         `structure Key : ORD`
 
-        (* mapping keys of type Key.t to values of 'a *)
-        type `'a` t
+        (* mapping keys of type Key.t to values of 'b *)
+        type `'b` t
 
-        val empty : 'a t
-        val insert : `Key.t` * 'a -> 'a t -> 'a t
-        val lookup : `Key.t` -> 'a t -> 'a option
+        val empty : 'b t
+        val insert : `Key.t` * 'b -> 'b t -> 'b t
+        val lookup : `Key.t` -> 'b t -> 'b option
       end
   \end{codeblock}
   }
@@ -969,7 +973,7 @@
       struct
         `structure Key = StrOrd`
 
-        type `'a` t = `(Key.t * 'a)` tree
+        type `'b` t = `(Key.t * 'b)` tree
 
         val empty = Empty
 
@@ -990,12 +994,12 @@
             | LESS    => Node (insert (k, v) L, (k', v'), R)
             | GREATER => Node (L, (k', v'), insert (k, v) R)
 
-      fun lookup (k, v) Empty = NONE
-        | lookup (k, v) (Node (L, (k', v'), R)) =
+      fun lookup k Empty = NONE
+        | lookup k (Node (L, (k', v'), R)) =
             case `Key.compare` (k, k') of
               EQUAL   => SOME v'
-            | LESS    => lookup (k, v) L
-            | GREATER => lookup (k, v) R
+            | LESS    => lookup k L
+            | GREATER => lookup k R
     end
   \end{codeblock}
 
@@ -1014,9 +1018,9 @@
   \pause
   \vspace{\fill}
 
-  \begin{mdframed}[leftmargin=0.5cm, roundcorner=10pt, backgroundcolor=black!86!white, rightmargin=0.5cm]
+  \begin{mdframed}[leftmargin=0.8cm, roundcorner=10pt, backgroundcolor=black!86!white, rightmargin=0.8cm]
   \begin{center}
-  \includegraphics[scale=0.5]{using_functor}
+  \includegraphics[scale=0.43]{using_functor}
   \end{center}
   \end{mdframed}
 
@@ -1035,12 +1039,12 @@
       sig
         structure Key : ORD
 
-        (* mapping keys of type Key.t to values of 'a *)
-        type 'a t
+        (* mapping keys of type Key.t to values of 'b *)
+        type 'b t
 
-        val empty : 'a t
-        val insert : `Key.t` * 'a -> 'a t -> 'a t
-        val lookup : `Key.t` -> 'a t -> 'a option
+        val empty : 'b t
+        val insert : `Key.t` * 'b -> 'b t -> 'b t
+        val lookup : `Key.t` -> 'b t -> 'b option
       end
   \end{codeblock}
   }
@@ -1049,8 +1053,10 @@
   \vspace{\fill}
 
   Recall that \code{StrDict} opaquely ascribes to this signature, \code{POLY_DICT}. This hides the
-  type of \code{'a t}, as we wanted, but it also hides the type of \code{Key.t}! There's nothing
-  here which tells us that \code{Key.t} is \code{string}.
+  type of \code{'b t}, as we wanted, but it also hides the type of \code{Key.t}! There's nothing
+  here which tells us that \code{Key.t} is \code{string}\footnote{Also a reminder that
+  we are using only \code{'b} instead of \code{'a}, as we are only polymorphic
+  in the type of values, not keys.}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1087,7 +1093,7 @@
       struct
         structure Key = StrOrd
 
-        type 'a t = (Key.t * 'a) tree
+        type 'b t = (Key.t * 'b) tree
 
         val empty = Empty
 
@@ -1110,9 +1116,9 @@
   \pause
   \vspace{\fill}
 
-  \begin{mdframed}[leftmargin=1cm, roundcorner=10pt, backgroundcolor=black!86!white, rightmargin=1cm]
+  \begin{mdframed}[leftmargin=1.3cm, roundcorner=10pt, backgroundcolor=black!86!white, rightmargin=1.3cm]
   \begin{center}
-  \includegraphics[scale=0.7]{using_functor2}
+  \includegraphics[scale=0.4]{using_functor2}
   \end{center}
   \end{mdframed}
 \end{frame}
@@ -1380,16 +1386,25 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    `functor MkDict (Key : ORD)` :> POLY_DICT =
+    `functor MkDict (Key : ORD)` :>
+        POLY_DICT where type Key.t = `Key.t` =
       struct
         structure Key = `Key`
 
-        type 'a t = (Key.t * 'a) tree
+        type 'b t = (Key.t * 'b) tree
 
         val empty = Empty
 
       (* ... *)
   \end{codeblock}
+
+
+  \pause
+  \vspace{\fill}
+
+  Note that here we replaced our monomorphized type of \code{Key.t} from
+  the hard-coded \code{string} to the \code{Key.t} type provided in the input
+  structure.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1405,12 +1420,12 @@
             | LESS    => Node (insert (k, v) L, (k', v'), R)
             | GREATER => Node (L, (k', v'), insert (k, v) R)
 
-      fun lookup (k, v) Empty = NONE
-        | lookup (k, v) (Node (L, (k', v'), R)) =
+      fun lookup k Empty = NONE
+        | lookup k (Node (L, (k', v'), R)) =
             case Key.compare (k, k') of
               EQUAL   => SOME v'
-            | LESS    => lookup (k, v) L
-            | GREATER => lookup (k, v) R
+            | LESS    => lookup k L
+            | GREATER => lookup k R
     end
   \end{codeblock}
   }
@@ -1471,12 +1486,12 @@
       sig
         structure Key : ORD
 
-        (* mapping keys of type Key.t to values of 'a *)
-        type 'a t
+        (* mapping keys of type Key.t to values of 'b *)
+        type 'b t
 
-        val empty : 'a t
-        val insert : Key.t * 'a -> 'a t -> 'a t
-        val lookup : Key.t -> 'a t -> 'a option
+        val empty : 'b t
+        val insert : Key.t * 'b -> 'b t -> 'b t
+        val lookup : Key.t -> 'b t -> 'b option
       end
   \end{codeblock}
 \end{frame}
@@ -1485,11 +1500,12 @@
 
   \tiny
   \begin{codeblock}
-    functor MkDict (Key : ORD) :> POLY_DICT =
+    functor MkDict (Key : ORD) :>
+        POLY_DICT where type Key.t = Key.t =
       struct
         structure Key = Key
 
-        type 'a t = (Key.t * 'a) tree
+        type 'b t = (Key.t * 'b) tree
 
         val empty = Empty
 
@@ -1500,12 +1516,12 @@
               | LESS    => Node (insert (k, v) L, (k', v'), R)
               | GREATER => Node (L, (k', v'), insert (k, v) R)
 
-        fun lookup (k, v) Empty = NONE
-          | lookup (k, v) (Node (L, (k', v'), R)) =
+        fun lookup k Empty = NONE
+          | lookup k (Node (L, (k', v'), R)) =
               case Key.compare (k, k') of
                 EQUAL   => SOME v'
-              | LESS    => lookup (k, v) L
-              | GREATER => lookup (k, v) R
+              | LESS    => lookup k L
+              | GREATER => lookup k R
       end
   \end{codeblock}
 \end{frame}
@@ -1523,5 +1539,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{CLASS}
 
 \end{document}

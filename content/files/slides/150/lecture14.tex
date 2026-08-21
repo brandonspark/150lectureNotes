@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Modules I: Structures and Signatures} % TODO
     \subtitle{Structuring software} % TODO
-    \date{06 July 2023} % TODO
+    \date{25 June 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -179,7 +179,7 @@
 
   \begin{codeblock}
     val y = Foo.Bar 1
-    val z = raise Foo.E y
+    val _ = raise Foo.E y
   \end{codeblock}
   to access the inner contents.
 
@@ -675,7 +675,7 @@
   \frametitle{Opening Up}
 
   \begin{center}
-    \includegraphics[scale=0.35]{open}
+    \includegraphics[scale=0.25]{open}
   \end{center}
 
   \noteBox{}{The \code{open} keyword allows you to open all the things in a
@@ -827,7 +827,7 @@
   \vspace{\fill}
 
   \begin{center}
-    \includegraphics[scale=0.45]{opaque_cast}
+    \includegraphics[scale=0.4]{opaque_cast}
   \end{center}
 \end{frame}
 
@@ -1012,11 +1012,11 @@
   value used to represent both, via using \code{IntSet} transparently:
 
   \begin{center}
-    \includegraphics[scale=0.45]{rep}
+    \includegraphics[scale=0.35]{rep}
   \end{center}
 
   We see that the actual value we obtain in either case, when we expose the
-  inner representation, is \code{[1, 2]} and \code{[2, 1]}.
+  inner representation, is \code{[2, 1]} and \code{[1, 2]}.
 
   \pause
   \vspace{\fill}

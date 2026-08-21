@@ -1,0 +1,105 @@
+\titledquestion{Commutative Shrubs}
+
+\textbf{Commutative Shrubs}
+
+Commutative binary operations are mathematical functions with the characteristic
+that, if the operation is $\otimes$, then $x \otimes y \eeq y \otimes x$, for
+all $x$ and $y$.
+
+In terms of SML, we can phrase it as:
+
+\textbf{Definition.} A value \code{f : t * t -> t} is called \textit{commutative} if
+we have that \\
+\code{f (v1, v2)} $\eeq$ \code{f (v2, v1)} for all values \code{v1, v2 : t}.
+
+In this problem, we will be dealing with the type of polymorphic shrubs. This is
+defined as:
+\begin{codeblock}
+  datatype 'a shrub =
+      Leaf of 'a
+    | Branch of 'a shrub * 'a shrub
+\end{codeblock}
+
+Consider the following code for an \code{invert : 'a shrub -> 'a shrub} function,
+which flips a shrub over the vertical axis.
+\begin{codeblock}
+  fun invert (Leaf x) = Leaf x
+    | invert (Branch (L, R)) =
+        Branch (invert R, invert L)
+\end{codeblock}
+and the following \code{shrubreduce} function, which folds a shrub with
+some function:
+\begin{codeblock}
+  fun shrubreduce f (Leaf x) = x
+    | shrubreduce f (Branch (L, R)) =
+        f (shrubreduce f L, shrubreduce f R)
+\end{codeblock}
+
+You may abbreviate \code{shrubreduce} as \code{sr} if you like.
+
+\begin{parts}
+  \part[15]\hfill
+
+    Prove that, given a \textbf{total}, \textbf{commutative} function \code{f : t * t -> t}, that
+    $$\code{shrubreduce f (invert T)} \eeq \code{shrubreduce f T}$$
+
+    You may use the following lemmas:
+
+    \textbf{Lemma 1 (totality of \code{invert}):} For any value \code{T},
+    \code{invert T} evaluates to a value.
+
+    \textbf{Lemma 2 (totality of \code{shrubreduce}):} For total \code{f} and
+    any value \code{T}, \code{shrubreduce f T} evaluates to a value.
+
+    \begin{solutionorbox}[13em]
+
+      Let \code{x : t} be arbitrary.
+
+      \textbf{Base case:}
+
+      WTS \code{shrubreduce f (invert (Leaf x))} $\eeq$ \code{shrubreduce f (Leaf x)}
+
+      LHS:
+      \begin{align*}
+        & \code{shrubreduce f (invert (Leaf x))} \\
+        &\eeq \code{shrubreduce f (Leaf x)} \tag{clause 1 of \code{invert}} \\
+        &\eeq \code{x} \tag{clause 1 of \code{shrubreduce}} \\
+      \end{align*}
+
+      RHS:
+      \begin{align*}
+        & \code{shrubreduce f (Leaf x)} \\
+        &\eeq \code{x} \tag{clause 1 of \code{shrubreduce}} \\
+      \end{align*}
+
+      \textbf{Inductive case:} Let \code{x : t} be arbitrary.
+
+      IH1: Assume \code{shrubreduce f (invert L)} $\eeq$ \code{shrubreduce f L}
+
+      IH2: Assume \code{shrubreduce f (invert R)} $\eeq$ \code{shrubreduce f R}
+
+      WTS: \code{shrubreduce f (invert (Branch (L, x, R)))} $\eeq$
+          \code{shrubreduce f (Branch (L, x, R))}
+
+      LHS:
+      \begin{align*}
+        & \code{shrubreduce f (invert (Branch (L, R)))} \\
+        &\eeq \code{shrubreduce f (Branch (invert R, invert L))} \tag{clause 2 of \code{invert}} \\
+        &\eeq \code{f (shrubreduce f (invert R), shrubreduce f (invert L))}
+          \tag{Lemma 1, clause 2 of \code{shrubreduce}} \\
+        &\eeq \code{f (shrubreduce f R, shrubreduce f L)}
+          \tag{IH1 and IH2} \\
+        &\eeq \code{f (shrubreduce f L, shrubreduce f R)}
+          \tag{Lemma 2, commutativity of \code{f}} \\
+      \end{align*}
+
+      RHS:
+      \begin{align*}
+        & \code{shrubreduce f (Branch (L, R))} \\
+        &= \code{f (shrubreduce f L, shrubreduce f R)} \tag{clause 2 of \code{shrubreduce}} \\
+      \end{align*}
+    \end{solutionorbox}
+
+\end{parts}
+
+\newpage

@@ -69,14 +69,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% Code Specification %%
 %%%%%%%%%%%%%%%%%%%%%%%%
+\definecolor{node_color}{RGB}{230, 230, 230}
+
 % spec
-\RequirePackage{framed}
+\definecolor{spec_color}{RGB}{238, 238, 238}
+\definecolor{spec_border}{RGB}{80, 80, 80}
 \newrobustcmd{\spec}[4]{
-    \begin{framed}
+    \begin{tcolorbox}[colback=spec_color, colframe=spec_border, boxrule=0.5pt,
+                      arc=2pt, left=6pt, right=6pt, top=6pt, bottom=6pt]
     \code{#1 : #2}\par
     \ifstrempty{#3}{}{\par REQUIRES: #3}
     \ifstrempty{#4}{}{\par ENSURES: #4}
-    \end{framed}
+    \end{tcolorbox}
 }
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -449,7 +453,11 @@
     moredelim=**[is][\color{fgCodeBlue}]{<b}{b>},
     moredelim=**[is][\color{black}]{<bl}{bl>},
     moredelim=**[is][\color{fgCodeGreen}]{<g}{g>},
-    moredelim=**[is][\color{fgCodeOrange}]{<p}{p>}
+}
+% Opt-in <p...p> (orange) delimiter: collides with <pat>/<exp>/<p1> in listing
+% comments, so enable per-block: \begin{codeblock}[style=expandedHL]
+\lstdefinestyle{expandedHL}{
+    moredelim=**[is][\color{fgCodeOrange}]{<p}{p>},
 }
 
 \lstdefinelanguage{ocaml}{
@@ -602,6 +610,17 @@
         {\color{#1} #2}%
     }%
 }
+
+% customColorBox{box color}{text color}{content}
+% Like customBox, but with a parameterizable box (background) color and
+% text color, and no leading \par so following content flows inline.
+\newrobustcmd{\customColorBox}[3]{%
+    \tcbox[on line,
+    boxsep=3pt,colback=#1, left=0pt,right=0pt,top=0pt,bottom=0pt, boxrule=0pt]{%
+        {\color{#2} #3}%
+    }%
+}
+
 \newrobustcmd{\defBox}[1]{\par%
     \customBox{Def}{#1}
 }
@@ -659,10 +678,8 @@
     \customBox{Note}{#1}
 }
 
-\newrobustcmd{\badBox}[1][white]{\par%
-    \colorbox{red}{%
-        {\color{#1} Warning}%
-    }%
+\newrobustcmd{\badBox}[1]{\par%
+    \customColorBox{red}{white}{Warning}~#1%
 }
 
 \newrobustcmd{\sectionSlide}[2]{
@@ -692,6 +709,32 @@
 %   \end{center}
 % \end{frame}
 }
+
+\newrobustcmd{\slido}[2]{
+\begin{frame}[plain]
+  \begin{center}
+    {\huge \color{presentColor} \intermedium{Slido code: #1}}
+    \vspace{10pt}
+
+    \includegraphics[width=0.4\textwidth]{#2}
+
+    \color{presentColor} \intermedium{Go to slido.com to ask anonymously!}
+  \end{center}
+\end{frame}
+}
+
+\newrobustcmd{\lecturePassword}[1]{
+\begin{frame}[plain]
+  \begin{center}
+    {\huge \color{presentColor} \intermedium{Post-lecture attendance poll}}
+
+    \vspace{10pt}
+
+    \color{presentColor} \intermedium{Password: #1}
+  \end{center}
+\end{frame}
+}
+
 
 \newrobustcmd{\quizBreak}[1]{
 % \begin{frame}[plain]

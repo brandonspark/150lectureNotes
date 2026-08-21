@@ -1,0 +1,165 @@
+\titledquestion{Arrays}
+
+\textbf{Arrays}
+
+We discussed \textit{sequences} in lecture, which are immutable arrays that
+admit nice parallel properties due to having constant-time access to each
+index.
+
+Sequences, however, have some memory disadvantages. For instance, to map a function
+on a sequence, we need to allocate a brand new sequence. For some applications,
+this can be rather disadvantageous.
+
+Imperative arrays can perform \textit{in-place} operations, which means performing
+operations on an array \textit{without} having to allocate a brand new array. In
+other words, by reusing the same space in place, via mutation.
+
+Sequences are not naturally in-place. But what if we combine them with reference
+cells? Consider the following type:
+
+\begin{codeblock}
+  type 'a array = 'a ref Seq.t
+\end{codeblock}
+
+Now we have recovered arrays from sequences.
+
+\begin{parts}
+  \part[5]\hfill
+
+    Implement the following function:
+    \spec
+      {update}
+      {\code{'a array -> int * 'a -> unit}}
+      {\code{true}}
+      {\code{update A (i, x)} updates the \code{i}th index of the array \code{A} to
+      the element \code{x}. Raises \code{Range} if out of range.}
+
+    Assume that there exists an exception \code{Range} declared somewhere.
+
+    \begin{solutionorbox}[15em]
+      \begin{codeblock}
+        fun update A (n, x) =
+          if n >= Seq.length x orelse n < 0 then
+            raise Range
+          else
+            Seq.nth A n := x
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[5]\hfill
+
+    Implement the following function:
+    \spec
+      {tabulate}
+      {\code{(int -> 'a) -> int -> 'a array}}
+      {\code{f} is total, \code{n >= 0}}
+      {\code{tabulate f n} evaluates to a fresh array of length \code{n},
+      where the \code{i}th index is equivalent to \code{f i}}
+
+    \begin{solutionorbox}[15em]
+      \begin{codeblock}
+        fun tabulate f n =
+          Seq.tabulate (fn i => ref (f i)) n
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \part[5]\hfill
+
+    Implement the following function:
+    \spec
+      {map}
+      {\code{('a -> 'a) -> 'a array -> unit}}
+      {\code{f} is total}
+      {\code{map f A} maps all the elements \code{x} in \code{A} to \code{f x},
+      in-place}
+
+    You may assume the existence of
+    \code{Seq.iter : ('a -> unit) -> 'a Seq.t -> unit}, which simply
+    applies a function to each element of a sequence.
+
+    \begin{solutionorbox}[15em]
+      \begin{codeblock}
+        fun map f A =
+          (Seq.map (fn r => r := f (!r)) A; ())
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[12]\hfill
+
+    Now, let's do a fun use case for in-place algorithms: in-place sorting.\footnote{
+      Any reasonable $O(n \log n)$ algorithm would be absurd to ask you to implement
+      during an exam, especially in-place. But we can do a basic one. Let's do bubblesort.
+    }
+
+    Bubblesort is a sorting algorithm which is done by repeatedly swapping
+    out-of-order adjacent elements, until the array is completely sorted. We can
+    describe the algorithm as follows:
+
+    \begin{lstlisting}[style=15150code, numbers=none]
+      for adjacent pairs in array:
+        if pair is out of order:
+          swap them
+
+      if any pairs were swapped, go back to loop
+    \end{lstlisting}
+
+    Implement the following function:
+    \spec
+      {bubsort}
+      {\code{('a * 'a -> order) -> 'a array -> unit}}
+      {\code{cmp} is a valid comparison function}
+      {\code{bubsort cmp A} sorts the array \code{A} via \code{cmp}, in-place}
+
+    You may use the following \code{swap : 'a ref -> 'a ref -> unit} function:
+
+    \begin{codeblock}
+      fun swap r1 r2 =
+        let
+          val r1_v = !r1
+        in
+          ( r1 := !r2; r2 := r1_v )
+        end
+    \end{codeblock}
+
+    We give you the following skeleton of code, where
+    \code{adj_pairs : 'a array -> ('a ref * 'a ref) list} obtains all of the
+    adjacent pairs within a list. So for instance,
+    \code{adj_pairs} $\langle \code{r1}, \code{r2}, \code{r3} \rangle$ $\eeq$
+    \code{[(r1, r2), (r2, r3)]}.
+
+    \begin{codeblock}
+      fun bubsort cmp A =
+        let
+          val pairs = adj_pairs A
+
+          fun aux pairs = (* Implement me! *)
+        in
+          aux pairs
+        end
+    \end{codeblock}
+
+    \newpage
+
+    \begin{solutionorbox}[45em]
+      \begin{codeblock}
+        fun aux pairs =
+          if
+            List.foldl (fn ((r1, r2), acc) =>
+              case cmp (!r1, !r2) of
+                GREATER => (swap r1 r2; true)
+              | _ => acc
+            ) false pairs
+          then
+            aux pairs
+          else
+            ()
+      \end{codeblock}
+
+    \end{solutionorbox}
+\end{parts}
+
+\newpage

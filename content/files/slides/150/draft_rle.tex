@@ -1,0 +1,82 @@
+\newpage
+\titledquestion{Run-Length Encoding}
+
+\textbf{Run-Length Encoding}
+
+\textbf{Run-length encoding} replaces each maximal run of equal adjacent
+elements by a \code{(count, element)} pair:
+
+\begin{center}
+  \code{[1, 1, 1, 2, 2, 3]} \quad compresses to \quad
+  \code{[(3, 1), (2, 2), (1, 3)]}
+\end{center}
+
+Only \textbf{adjacent} equal elements share a run: \code{[1, 2, 2, 1]} gives
+\code{[(1, 1), (2, 2), (1, 1)]}, not \code{[(2, 1), (2, 2)]}.
+
+\begin{parts}
+  \part[8]\hfill
+
+    Implement \code{encode}:
+
+    \spec
+      {encode}
+      {\code{''a list -> (int * ''a) list}}
+      {\code{true}}
+      {\code{encode xs} evaluates to the run-length encoding of \code{xs}: a
+      list of \code{(count, element)} pairs, one per maximal run of adjacent
+      equal elements, in order.}
+
+    \begin{constraint}
+      Your solution must be a fold, with no explicit recursion.
+    \end{constraint}
+
+    \textbf{Hint:} look at the run at the front of the accumulator. When does
+    \code{x} join it, and when does it start a new one?
+
+    \begin{solutionorbox}[20em]
+      \begin{codeblock}
+        fun encode xs =
+          foldr
+            (fn (x, (n, y) :: rest) =>
+                  if x = y then (n + 1, y) :: rest
+                  else (1, x) :: (n, y) :: rest
+              | (x, []) => [(1, x)])
+            []
+            xs
+      \end{codeblock}
+
+      Because \code{foldr} processes right-to-left, the run being built sits at
+      the \textbf{head} of the accumulator. If the current element equals that
+      run's element, we extend the run; otherwise we push a fresh run of length
+      one.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[5]\hfill
+
+    Implement \code{decode}.
+
+    \spec
+      {decode}
+      {\code{(int * ''a) list -> ''a list}}
+      {\code{each count is} $\geq 1$}
+      {\code{decode runs} evaluates to the list obtained by expanding each
+      \code{(count, element)} run back into \code{count} copies of
+      \code{element}, in order.}
+
+    You may use \code{List.tabulate : int * (int -> 'a) -> 'a list}, where
+    \code{List.tabulate (n, f)} $\eeq$ \code{[f 0, f 1, ..., f (n-1)]}.
+
+    \begin{solutionorbox}[14em]
+      \begin{codeblock}
+        fun decode runs =
+          foldr
+            (fn ((n, x), acc) =>
+               List.tabulate (n, fn _ => x) @ acc)
+            []
+            runs
+      \end{codeblock}
+    \end{solutionorbox}
+\end{parts}

@@ -1,0 +1,83 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=169]{beamer}
+
+% Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+\newif\ifcolorlambda
+\colorlambdafalse % DEFAULT: false
+
+% Use auxcolor for syntax highlighting
+\newif\ifuseaux
+\useauxfalse % DEFAULT: false
+
+% Color settings
+\useauxtrue
+
+\newcommand{\auxColor}{6124e3}     % the color of note boxes and stuff
+\newcommand{\presentColor}{08A679} % the primary color of the slide borders
+\newcommand{\bgColor}{e1f2ea}      % the color of the background of the slide
+\newcommand{\darkBg}{8b98ad}
+\newcommand{\lambdaColor}{\auxColor}
+
+\colorlambdatrue
+
+\usepackage{listings} % code
+
+\setbeamertemplate{itemize items}[circle]
+% \setbeameroption{show notes on second screen=right}
+
+\usepackage{lectureSlides}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{Finding Bugs and Scaling Your Security Program}
+\subtitle{Using Semgrep to take your security game to the next level}
+\date{16 June 2024}
+\author{Brandon Wu}
+
+\begin{document}
+
+
+% 101 slides
+% 15 exercises given 5 minutes each is 75 minutes
+% leaving 75 minutes for 100 - 15 = 85 slides
+% - 10 = 75 for section delimiters
+% - 8 = 67 for animations
+% so it's more like 67 slides for 75 minutes
+
+% TODO: stats on customized rules?
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+
+
+    \begin{tikzpicture}
+      \node {
+        \begin{codeblock}
+          print
+        \end{codeblock}
+      };
+    \end{tikzpicture}
+
+\end{document}

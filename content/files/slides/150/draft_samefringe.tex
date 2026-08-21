@@ -1,0 +1,165 @@
+\newpage
+\titledquestion{The Fringe of the Matter}
+
+\textbf{The Fringe of the Matter}
+
+Consider shrubs, which store data only at their leaves:
+\begin{codeblock}
+  datatype 'a shrub = Leaf of 'a | Branch of 'a shrub * 'a shrub
+\end{codeblock}
+
+The \textbf{fringe} of a shrub is the sequence of its leaf values, read from left
+to right. For instance, both of the following trees have fringe
+\code{1, 2, 3}, even though they have completely different shapes:
+
+\begin{center}
+  \begin{tikzpicture}[
+    level distance=10mm,
+    level 1/.style={sibling distance=20mm},
+    level 2/.style={sibling distance=11mm},
+    every node/.style={font=\small},
+    dot/.style={circle, fill, inner sep=1.5pt}
+  ]
+    \node[dot] {}
+      child{node[dot] {}
+        child{node {\code{1}}}
+        child{node {\code{2}}}
+      }
+      child{node {\code{3}}}
+    ;
+  \end{tikzpicture}
+  \hspace{2cm}
+  \begin{tikzpicture}[
+    level distance=10mm,
+    level 1/.style={sibling distance=20mm},
+    level 2/.style={sibling distance=11mm},
+    every node/.style={font=\small},
+    dot/.style={circle, fill, inner sep=1.5pt}
+  ]
+    \node[dot] {}
+      child{node {\code{1}}}
+      child{node[dot] {}
+        child{node {\code{2}}}
+        child{node {\code{3}}}
+      }
+    ;
+  \end{tikzpicture}
+\end{center}
+
+We are curious whether two shrubs have the same fringe. We will choose to
+model the fringe of a shrub as a \textbf{stream} of its leaf values, avoiding
+constructing the list of all the leaf values up front. We write
+\code{S} to refer to the \code{STREAM} library, whose signature is in the appendix.
+
+You are given \code{append : 'a stream -> 'a stream -> 'a stream}, which appends two streams,
+as a helper function.
+
+\begin{parts}
+  \part[5]\hfill
+
+    Using \code{append}, implement \code{fringe}.
+
+    \spec
+      {fringe}
+      {\code{'a shrub -> 'a S.stream}}
+      {\code{true}}
+      {\code{fringe T} evaluates to the stream of the leaf values of \code{T},
+      in left-to-right order.}
+
+    \begin{solutionorbox}[14em]
+      \begin{codeblock}
+        fun fringe (Leaf x) = S.cons (x, S.empty)
+          | fringe (Branch (L, R)) = append (fringe L) (fringe R)
+      \end{codeblock}
+
+      The stream's suspended tail is what lets us stop early: the leaves of the
+      right subtree are not produced until something actually asks for them.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[3]\hfill
+
+    Suppose we had the following bad implementation of \code{append}:
+    \begin{codeblock}
+      fun appendBad S1 S2 =
+        case S.expose S1 of
+          S.Empty => S2
+        | S.Cons (x, S1') => S.cons (x, appendBad S1' S2)
+    \end{codeblock}
+
+    Is \code{appendBad} maximally lazy? If not, what goes wrong, and why does it
+    matter here?
+
+    \begin{solutionorbox}[10em]
+      No. It calls \code{S.expose S1} \textbf{before} anyone has requested an
+      element of the result, forcing a step of \code{S1}'s computation
+      immediately --- so merely \textit{building} the appended stream already
+      does work. The \code{S.delay} in the given version prevents this: nothing
+      is exposed until the resulting stream is itself exposed.
+
+      This matters here because \code{fringe} appends a stream per
+      \code{Branch}. With \code{appendBad}, simply constructing
+      \code{fringe T} would force its way down the shrub eagerly, and
+      \code{sameFringe} (below) could no longer short-circuit --- it would end up
+      producing the fringes it was supposed to avoid building.
+    \end{solutionorbox}
+
+  \part[8]\hfill
+
+    Implement \code{sameFringe}. You may find it helpful to define a helper function.
+
+    \spec
+      {sameFringe}
+      {\code{'a shrub * 'a shrub -> bool}}
+      {\code{true}}
+      {\code{sameFringe (T1, T2)} $\eeq$ \code{true} if \code{T1} and \code{T2}
+      have the same fringe, and \code{false} otherwise.}
+
+    \begin{constraint}
+      Your solution must stop on the first mismatched leaf.
+    \end{constraint}
+
+    \vspace{3.5cm}
+
+    THIS SECTION LEFT BLANK -- WRITE ANSWER ON NEXT PAGE
+
+    \newpage
+
+
+
+    \begin{solutionorbox}[30em]
+      \begin{codeblock}
+        fun sameFringe (T1, T2) =
+          let
+            fun walk S1 S2 =
+              case (S.expose S1, S.expose S2) of
+                (S.Empty, S.Empty) => true
+              | (S.Cons (x, S1'), S.Cons (y, S2')) =>
+                  x = y andalso walk S1' S2'
+              | _ => false
+          in
+            walk (fringe T1) (fringe T2)
+          end
+      \end{codeblock}
+
+      The \code{andalso} is what short-circuits: on the first mismatched pair of
+      leaves, \code{walk} returns \code{false} without exposing any more of
+      either stream. The final \code{\_} case handles fringes of different
+      lengths (one stream empty while the other is not).
+    \end{solutionorbox}
+
+  \part[3]\hfill
+
+    Why can this be more efficient than flattening both shrubs to lists and
+    comparing with \code{=}?
+
+    \begin{solutionorbox}[10em]
+      The list-based approach must fully traverse \textbf{both} trees and build
+      \textbf{both} complete fringe lists before it can compare anything. The
+      stream-based approach produces leaves only on demand and compares them one
+      at a time, so as soon as the two fringes first differ it stops --- having
+      traversed only as far into each shrub as that first mismatch, and never
+      allocating either full fringe.
+    \end{solutionorbox}
+\end{parts}

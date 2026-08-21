@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Sequences} % TODO
     \subtitle{Making our data structures parallel} % TODO
-    \date{20 July 2023} % TODO
+    \date{07 July 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -683,8 +683,8 @@
 \begin{frame}[fragile]
   \frametitle{More on Cost Graphs}
 
-  We will also use the following shorthand for many simultaneously
-  forking paths:
+  For simplicity, we will assume that our forking model allows us to
+  fork any number of graphs at once:
 
   \begin{center}
     \begin{tikzpicture}
@@ -711,7 +711,8 @@
   \vspace{\fill}
 
   This could be desugared as just many parallel composed graphs on top of each
-  other, but nobody has time for that.
+  other, but nobody has time for that\footnote{Literally. Assuming only binary forking
+  leads to slightly different cost bounds.}.
 
   \pause
   \vspace{\fill}
@@ -1778,5 +1779,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{COPLANAR}
 
 \end{document}

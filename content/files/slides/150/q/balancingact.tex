@@ -1,0 +1,79 @@
+\titledquestion{Balancing Act}
+
+\textbf{Balancing Act}
+
+A sequence of parentheses is \textit{balanced} if every open parenthesis is
+matched by a later close parenthesis, and no close parenthesis appears before
+its matching open. We represent such a sequence as a list:
+
+\begin{codeblock}
+  datatype paren = L | R
+
+  type parens = paren list
+\end{codeblock}
+
+where \code{L} stands for \code{(} and \code{R} stands for \code{)}.
+
+So, for instance:
+\begin{itemize}
+  \item \code{[L, R]} is balanced, representing \code{()}
+  \item \code{[L, L, R, R]} is balanced, representing \code{(())}
+  \item \code{[L, R, L, R]} is balanced, representing \code{()()}
+  \item \code{[]} is balanced, representing the empty sequence
+  \item \code{[R, L]} is \textbf{not} balanced
+  \item \code{[L, L, R]} is \textbf{not} balanced
+\end{itemize}
+
+\begin{parts}
+  \part[10]\hfill
+
+    Implement \code{balanced}:
+
+    \spec
+      {balanced}
+      {\code{parens -> bool}}
+      {\code{true}}
+      {\code{balanced ps} $\eeq$ \code{true} if and only if \code{ps} is
+      balanced, and \code{false} otherwise}
+
+    \begin{constraint}
+      Your solution must traverse the list \textbf{exactly once}, and that
+      traversal must be a single call to \code{foldl}. You may not use
+      explicit recursion, \code{rev}, or any auxiliary list.
+    \end{constraint}
+
+    \textbf{Hint:} Your two counterexamples above tell you two different things
+    that can go wrong. What does your accumulator need to remember in order to
+    detect \textit{both} of them?
+
+    \begin{solutionorbox}[26em]
+      The accumulator must track the running depth \textit{and} whether the
+      sequence has already gone irrecoverably wrong. \code{int option} does
+      this: \code{SOME d} means ``still valid, at depth \code{d}'', and
+      \code{NONE} means ``already broken, and nothing can fix it''.
+
+      \begin{codeblock}
+        fun balanced ps =
+          case
+            foldl
+              (fn (_, NONE) => NONE
+                | (L, SOME d) => SOME (d + 1)
+                | (R, SOME d) =>
+                    if d = 0 then NONE else SOME (d - 1))
+              (SOME 0)
+              ps
+          of
+            SOME 0 => true
+          | _ => false
+      \end{codeblock}
+
+      Note that the post-processing step is essential: ending in
+      \code{SOME d} for \code{d > 0} means unmatched open parens remain, as in
+      \code{[L, L, R]}.
+    \end{solutionorbox}
+
+  \newpage
+
+\end{parts}
+
+\newpage

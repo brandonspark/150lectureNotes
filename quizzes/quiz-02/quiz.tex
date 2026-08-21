@@ -1,0 +1,378 @@
+\documentclass[crop=false]{standalone}
+\usepackage{15150toolbox}
+\usepackage{comment}
+\usepackage{needspace}
+
+% Toggle: set \soltrue to render solutions inline (blue boxes).
+\newif\ifsol
+\soltrue   % comment this line for the student version
+
+\ifsol
+  \newenvironment{solution}
+    {\par\color{solution_color}\begin{framed}\textbf{Solution.}\par}
+    {\end{framed}}
+\else
+  \excludecomment{solution}
+\fi
+
+% Lecture-slide macros that aren't defined in 15150toolbox.
+\newcommand{\term}[1]{\textbf{\textit{#1}}}
+\newcommand{\thmBox}[2]{\par\noindent\begin{mdframed}[backgroundcolor=blue!8,hidealllines=true]\textbf{Theorem#1.} #2\end{mdframed}}
+\newcommand{\bcBox}[1]{\par\noindent\textbf{Base case.} #1\par}
+\newcommand{\ihBox}[2]{\par\noindent\textbf{Inductive hypothesis#1.} #2\par}
+\newcommand{\isBox}[2]{\par\noindent\textbf{Inductive step#1.} #2\par}
+
+\newcommand{\quizproblem}[3]{%
+  \needspace{5\baselineskip}%
+  \stepcounter{problem}%
+  \ifsol
+    \subsection*{Problem \arabic{problem}. #1 \hfill \timing{#2} \quad (#3 pts)}%
+  \else
+    \subsection*{Problem \arabic{problem}. #1 \hfill (#3 pts)}%
+  \fi
+}
+
+\newcommand{\subpts}[1]{\textbf{(#1 pts)}}
+
+\newcommand{\answerspace}[1]{\ifsol\else\vspace{#1}\par\fi}
+
+\printout{Quiz 2}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textbf{15-150 --- Quiz 2}} \\
+  \vspace{4pt}
+  Topics: \textit{Induction and Recursion}; \textit{Structural Induction and Tail Recursion}; \\
+  \textit{Trees}; \textit{Asymptotic Analysis} \\
+  \vspace{4pt}
+  \textit{60 minutes.}
+\end{center}
+
+\vspace{1em}
+
+\noindent\textbf{Name:} \hrulefill \hspace{2em} \textbf{Andrew ID:} \hrulefill
+
+\vspace{1em}
+
+% =============================================================================
+% PROBLEM 1 --- Write contains
+% =============================================================================
+
+\quizproblem{A Tree Function}{6}{8}
+
+The \code{tree} datatype is defined as:
+
+\begin{codeblock}
+  datatype tree = Empty | Node of tree * int * tree
+\end{codeblock}
+
+Write a function \code{contains} satisfying the following specification:
+
+\spec
+  {contains}
+  {int * tree -> bool}
+  {true}
+  {\code{contains (n, T)} evaluates to \code{true} if \code{n} appears as
+   the value at some \code{Node} in \code{T}, and \code{false} otherwise.}
+
+\answerspace{6cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun contains (n : int, Empty : tree) : bool = false
+    | contains (n, Node (L, x, R)) =
+        n = x orelse contains (n, L) orelse contains (n, R)
+\end{codeblock}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 3 pts: \code{Empty} $\to$ \code{false}
+  \item 5 pts: \code{Node} case combines equality check with both
+    recursive calls via \code{orelse}. $-1$ per missing piece (eq check,
+    \code{L} recur, \code{R} recur). \code{andalso}: $-2$.
+\end{itemize}
+\code{case} on the tuple, reordered disjuncts, etc.\ are fine.
+\end{solution}
+
+% =============================================================================
+% PROBLEM 2 --- Datatype types
+% =============================================================================
+
+\vspace{1em}
+\quizproblem{Datatype Constructors}{6}{8}
+
+Consider the following \code{datatype} declaration:
+
+\begin{codeblock}
+  datatype coin = Heads
+                | Tails
+                | Stack of coin * coin
+\end{codeblock}
+
+For each expression below, write its type if it is well-typed, or write
+``ill-typed'' with a short reason.
+
+\vspace{0.5em}
+
+\begin{center}
+\begin{tabular}{|l|p{6.5cm}|}
+  \hline
+  \textbf{Expression} & \textbf{Type, or ill-typed (why)} \\
+  \hline
+  \code{Stack}                                    & \\[2em] \hline
+  \code{Stack (Heads, Stack (Tails, Heads))}      & \\[2em] \hline
+  \code{Stack (Heads, 5)}                         & \\[2em] \hline
+  \code{SOME Heads}                               & \\[2em] \hline
+  \code{[Heads, 0]}                               & \\[2em] \hline
+\end{tabular}
+\end{center}
+
+\begin{solution}
+\begin{center}
+\begin{tabular}{|l|l|}
+  \hline
+  \code{Stack}                                    & \code{coin * coin -> coin} \\ \hline
+  \code{Stack (Heads, Stack (Tails, Heads))}      & \code{coin} \\ \hline
+  \code{Stack (Heads, 5)}                         & ill-typed (\code{5 : int}, not \code{coin}) \\ \hline
+  \code{SOME Heads}                               & \code{coin option} \\ \hline
+  \code{[Heads, 0]}                               & ill-typed (heterogeneous list) \\ \hline
+\end{tabular}
+\end{center}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 2 pts each: \code{Stack}, \code{Stack (Heads, 5)}, \code{[Heads, 0]}
+  \item 1 pt each: \code{Stack (Heads, Stack (Tails, Heads))}, \code{SOME Heads}
+\end{itemize}
+Ill-typed without a reason: half credit.
+The likely error on \code{Stack} alone is writing \code{coin}.
+\end{solution}
+
+% =============================================================================
+% PROBLEM 3 --- Strengthening the theorem
+% =============================================================================
+
+\clearpage
+\quizproblem{Strengthening the Theorem}{6}{12}
+
+Recall the tail-recursive reverse function \code{trev} and its wrapper
+\code{rev} from lecture:
+
+\begin{codeblock}
+  fun trev ([] : int list, acc : int list) : int list = acc
+    | trev (x::xs, acc) = trev (xs, x::acc)
+
+  fun rev (L : int list) : int list = trev (L, [])
+\end{codeblock}
+
+Also recall the naive reverse \code{rev'} from lecture, which we will
+use as the reference implementation:
+
+\begin{codeblock}
+  fun rev' ([] : int list) : int list = []
+    | rev' (x::xs) = rev' xs @ [x]
+\end{codeblock}
+
+A student tries to prove the following theorem by structural induction
+on \code{L}:
+
+\thmBox{}{\, For all values \code{L : int list},
+\code{rev L} $\eeq$ \code{rev' L}.}
+
+The base case goes through fine. In the inductive case \code{L = x::xs},
+the student assumes the IH \code{rev xs} $\eeq$ \code{rev' xs}, and
+writes:
+
+\begin{align*}
+  \code{rev (x::xs)} \eeq\ &\code{trev (x::xs, [])}      \tag{def.\ of \code{rev}} \\
+                    \eeq\ &\code{trev (xs, [x])}        \tag{clause 2 of \code{trev}} \\
+                    \eeq\ &\ ???
+\end{align*}
+
+\begin{quote}
+\emph{``...Now what do I do?''}
+\end{quote}
+
+\vspace{0.3em}
+
+\textbf{(a)} \subpts{4} In \textbf{one sentence}, explain why the IH
+above is too weak to finish this proof.
+
+\answerspace{3cm}
+
+\begin{solution}
+The IH is about \code{trev (xs, [])}, but the expression we have is
+\code{trev (xs, [x])} --- a different accumulator value.
+
+\textbf{Rubric:} 4 pts for naming the accumulator-value mismatch.
+``IH is wrong'' without saying why: 1 of 4.
+\end{solution}
+
+\vspace{0.3em}
+
+\textbf{(b)} \subpts{8} Write a \textbf{stronger theorem} which (i)
+implies the original theorem as a special case, and (ii) would give an
+inductive hypothesis general enough to finish the proof. You do
+\emph{not} need to write the proof, just the strengthened theorem
+statement.
+
+\answerspace{4cm}
+
+\begin{solution}
+For all values \code{L : int list} and all values \code{acc : int list},
+\code{trev (L, acc)} $\eeq$ \code{rev' L @ acc}.
+Original theorem is the \code{acc = []} case (since \code{rev' L @ []}
+$\eeq$ \code{rev' L}).
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 4 pts: quantifies over all \code{acc}
+  \item 4 pts: RHS is \code{rev' L @ acc} (the accumulator gets
+    \emph{appended}). \code{rev' L} alone: 0 on this bullet.
+    \code{acc @ rev' L}: $-2$ (wrong order). \code{rev' L :: acc} or
+    \code{rev' L + acc}: 0 --- doesn't typecheck.
+\end{itemize}
+Right quantifier, wrong RHS: 4 of 8.
+\end{solution}
+
+% =============================================================================
+% PROBLEM 4 --- Structural induction: invert (invert T) eeq T
+% =============================================================================
+
+\clearpage
+\quizproblem{An Induction Proof}{13}{12}
+
+Consider the following function, which mirrors a tree by swapping every
+left and right subtree:
+
+\begin{codeblock}
+  fun invert (Empty : tree) : tree = Empty
+    | invert (Node (L, x, R)) = Node (invert R, x, invert L)
+\end{codeblock}
+
+\thmBox{}{\, For all values \code{T : tree},
+\code{invert (invert T)} $\eeq$ \code{T}.}
+
+You may freely use, without proof:
+\begin{itemize}
+  \item \textbf{Lemma 1.} \code{invert} is total.
+\end{itemize}
+
+\vspace{0.3em}
+
+\textbf{Prove the theorem.} Use structural induction on \code{T}. Be sure
+to state your inductive hypotheses explicitly and justify each step of
+your calculation.
+
+\answerspace{14cm}
+
+\begin{solution}
+Structural induction on \code{T : tree}.
+
+\vspace{3pt}
+
+\bcBox{\, \code{T = Empty}.}
+\begin{align*}
+  \code{invert (invert Empty)}
+    \eeq\ &\code{invert Empty}   \tag{Clause 1 of \code{invert}}\\
+    \eeq\ &\code{Empty}          \tag{Clause 1 of \code{invert}}
+\end{align*}
+
+\ihBox{}{\, For some \code{L, R : tree}, \code{invert (invert L)} $\eeq$
+\code{L} and \code{invert (invert R)} $\eeq$ \code{R}.}
+
+\isBox{}{\, \code{T = Node (L, x, R)}. WTS
+\code{invert (invert (Node (L, x, R)))} $\eeq$ \code{Node (L, x, R)}.}
+
+\begin{align*}
+  &\code{invert (invert (Node (L, x, R)))} \\
+  \eeq\ &\code{invert (Node (invert R, x, invert L))}
+      \tag{Clause 2 of \code{invert}, \code{invert} total}\\
+  \eeq\ &\code{Node (invert (invert L), x, invert (invert R))}
+      \tag{Clause 2 of \code{invert}, \code{invert} total}\\
+  \eeq\ &\code{Node (L, x, R)}
+      \tag{IH twice}
+\end{align*}
+
+\textbf{Rubric:}
+\begin{itemize}
+  \item 2 pts: structural induction on \code{T} (not simple/strong)
+  \item 2 pts: base case
+  \item 2 pts: two IHs, quantified ``for some''. ``for all'': $-1$.
+    Only one IH: $-1$.
+  \item 4 pts: inductive step calculation. Missing totality citation:
+    $-1$. Using IH only once: $-2$. Each justified equational step:
+    1 pt.
+  \item 2 pts: IHs applied correctly to land on \code{Node (L, x, R)}
+\end{itemize}
+\end{solution}
+
+% =============================================================================
+% PROBLEM 5 --- Work and span recurrences
+% =============================================================================
+
+\vspace{1em}
+\quizproblem{Work and Span Recurrences}{7}{8}
+
+Consider the following function on trees:
+
+\begin{codeblock}
+  fun addOne (Empty : tree) : tree = Empty
+    | addOne (Node (L, x, R)) = Node (addOne L, x + 1, addOne R)
+\end{codeblock}
+
+Let $n$ denote the number of nodes in the input tree. For both parts
+below, you may use $c_0, c_1, \ldots$ for unspecified constants.
+\textbf{You do not need to solve the recurrence --- just write it down.}
+
+\vspace{0.5em}
+
+\textbf{(a)} \subpts{4} Write the recurrence for the \textbf{work} of
+\code{addOne}, in terms of $n$, \textbf{assuming the tree is maximally
+unbalanced} (i.e., the worst case).
+
+\answerspace{3.5cm}
+
+\begin{solution}
+\begin{align*}
+  W_{\code{addOne}}(0) &= c_0 \\
+  W_{\code{addOne}}(n) &= W_{\code{addOne}}(n - 1) + W_{\code{addOne}}(0) + c_1
+\end{align*}
+Worst case: one subtree has $n-1$ nodes, the other has $0$. Simplified
+form $W(n-1) + c$ also fine.
+
+\textbf{Rubric:} 1 pt base, 3 pts recursive case. Balanced split
+$W(n/2) + W(n/2) + c$: $-2$ (problem said worst case).
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(b)} \subpts{4} Now write the recurrence for the \textbf{span} of
+\code{addOne}, \textbf{still assuming the tree is maximally unbalanced}.
+Remember that, for span computations, tuples are evaluated in parallel.
+Briefly comment on what this says about parallelism in this case.
+
+\answerspace{4cm}
+
+\begin{solution}
+\begin{align*}
+  S_{\code{addOne}}(0) &= c_0 \\
+  S_{\code{addOne}}(n) &= \max\!\left(S_{\code{addOne}}(n-1),\,S_{\code{addOne}}(0)\right) + c_1 \\
+                       &= S_{\code{addOne}}(n-1) + c_1
+\end{align*}
+The two recursive calls run in parallel (tuple components), so we take
+$\max$ --- but on a maximally unbalanced tree, one subtree has $n-1$
+nodes and the other has $0$, so $\max$ is just the big one. The
+recurrence collapses to the same shape as the work recurrence:
+\textbf{parallelism doesn't help on a maximally unbalanced tree.}
+
+\textbf{Rubric:} 1 pt base, 2 pts recursive case (the
+$\max(S(n-1), S(0))$ form, or simplified $S(n-1) + c$).
+1 pt comment that span $=$ work here / parallelism doesn't help.
+$S(n/2) + c$ (ignored that tree is unbalanced): $-2$.
+$S(n-1) + S(0) + c$ (sum, not max): $-1$ --- gets the unbalanced split
+right but missed the parallelism step.
+\end{solution}
+
+\end{document}

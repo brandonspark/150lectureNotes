@@ -1,0 +1,53 @@
+% One step of the promise-REPL trace. Set these before \input-ing:
+%   \TraceLine    line number to mark (0 = none)
+%   \TraceNotif   system/world notification text
+%   \TraceWaiting contents of the waiting-on-the-world box
+%   \TraceInbox   contents of the loop's todo inbox
+%   \TraceTerm    terminal contents so far
+\begin{frame}[fragile]
+  \frametitle{Trace: The Promise REPL}
+
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{codeblock}[escapechar=@, basicstyle=\footnotesize\ttfamily]
+@\M{1}@fun ping n =
+@\M{2}@  upon (sleep n, fn () =>
+@\M{3}@    print ("pong! (waited...)"))
+@\M{4}@
+@\M{5}@fun repl () =
+@\M{6}@  ( print "repl> ";
+@\M{7}@    upon (read_line (), fn line =>
+@\M{8}@      case parse line of
+@\M{9}@        Help => (print helpText;
+@\M{10}@                 repl ())
+@\M{11}@      | Ping n => (ping n;
+@\M{12}@                   repl ())) )
+@\M{13}@
+@\M{14}@val () = repl ()
+\end{codeblock}
+    \end{column}
+    \begin{column}{0.41\textwidth}
+      {\scriptsize
+      \colorbox{highlightColor}{\parbox{0.95\linewidth}{%
+        \textbf{system:} \textit{\TraceNotif}}}
+
+      \vspace{4pt}
+      \fcolorbox{black}{boxColor}{\parbox{0.95\linewidth}{%
+        \textbf{waiting on the world}\\[1pt]
+        {\ttfamily \TraceWaiting}}}
+
+      \vspace{4pt}
+      \fcolorbox{black}{boxColor}{\parbox{0.95\linewidth}{%
+        \textbf{inbox (todo)}\\[1pt]
+        {\ttfamily \TraceInbox}}}
+      }
+    \end{column}
+  \end{columns}
+
+  \vspace{2pt}
+  {\scriptsize
+  \fcolorbox{black}{white}{\parbox{0.94\textwidth}{%
+    \textbf{terminal}\\[1pt]
+    {\ttfamily \TraceTerm}\vspace{1pt}}}}
+  \vspace{-6pt}
+\end{frame}

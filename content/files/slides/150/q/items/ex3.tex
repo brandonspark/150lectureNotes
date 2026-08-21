@@ -1,0 +1,30 @@
+\part[3]\hfill
+
+  Here are two implementations of a table lookup, which behave identically when
+  the key is present:
+  \begin{codeblock}
+    exception NotFound
+    fun findExn k []            = raise NotFound
+      | findExn k ((k',v)::rest) =
+          if k = k' then v else findExn k rest
+
+    fun findOpt k []            = NONE
+      | findOpt k ((k',v)::rest) =
+          if k = k' then SOME v else findOpt k rest
+  \end{codeblock}
+
+  Which of these \textbf{forces the caller} to account for the possibility that
+  the key is absent? Explain the difference in one or two sentences.
+
+  \begin{solutionorbox}[12em]
+    \code{findOpt}. Its result type \code{'a option} makes the possibility of
+    failure \textbf{visible in the type}: to use the result, the caller must
+    inspect it (case on \code{SOME}/\code{NONE}), so the absent case cannot be
+    ignored silently.
+
+    \code{findExn} returns an \code{'a} directly; the possibility of
+    \code{NotFound} is invisible in its type, so a caller can use the result as
+    if the key were always present --- and the program simply crashes at runtime
+    if it is not. The option version encodes the precondition in the type; the
+    exception version relies on the caller to remember it.
+  \end{solutionorbox}

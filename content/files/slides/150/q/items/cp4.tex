@@ -1,0 +1,26 @@
+\part[3]\hfill
+
+  For an arbitrary \code{f : t1 -> t2} and value \code{x : t1}, for some types
+  \code{t1} and \code{t2}, is it always the case that
+  $$\code{f x} \;\eeq\; \code{f x}\text{?}$$
+
+  If false, give a counterexample of SML code declaring such an \code{f} and \code{x}.
+
+  \begin{solutionorbox}[14em]
+    No. Two occurrences of the same expression are interchangeable only when
+    that expression is \textbf{effect-free}. If \code{f} mutates state, each
+    call can produce a different result:
+
+    \begin{codeblock}
+      val c = ref 0
+      fun f () = (c := !c + 1; !c)
+    \end{codeblock}
+
+    The first \code{f ()} evaluates to \code{1} and the second to \code{2}, so
+    the two are not equivalent.
+
+    Being \textit{syntactically identical} is not enough --- equivalence is a
+    claim about behavior. What mutation costs us is \textbf{referential
+    transparency}: the ability to replace an expression by its value, or one
+    occurrence of it by another copy, without changing what the program means.
+  \end{solutionorbox}

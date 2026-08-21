@@ -239,16 +239,13 @@
 
 % ------------------------------------------------------------------------------
 
-\usepackage{fancyhdr}
 \begin{document}
 
-% Set the page style to "fancy"...
-\pagestyle{fancy}
-%... then configure it.
-\fancyhead{} % clear all header fields
-\fancyhead[R]{15-150: Principles of Functional Programming}
-\fancyhead[L]{Midterm 2 (2)}
-\fancyfoot[C]{\thepage} % clear all footer fields
+% Use the exam class's native headers/footers. (fancyhdr 1.11b conflicts
+% with the exam class, which already defines \lhead/\rhead/\chead.)
+\pagestyle{headandfoot}
+\header{Midterm 2 (2)}{}{15-150: Principles of Functional Programming}
+\footer{}{\thepage}{}
 
 % ------------------------------------------------------------------------------
 % Cover Page and ToC
@@ -262,8 +259,8 @@
       \uppercase{Midterm 2 (2)} \\
       15-150 Principles of Functional Programming M23} \\
     \HRule{1.5pt}
-    \date{}
 }
+\date{}
 
 \maketitle
 
@@ -743,6 +740,7 @@ THIS SPACE INTENTIONALLY LEFT BLANK
     (* FILL IN BELOW *)
   \end{codeblock}
   \begin{solutionorbox}[28em]
+    \begin{codeblock}
        | Char c ->
             case cs of
               [] => false

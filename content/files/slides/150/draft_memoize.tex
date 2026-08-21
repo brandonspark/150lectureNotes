@@ -1,0 +1,147 @@
+\newpage
+\titledquestion{Memoize Anything}
+
+\textbf{Memoize Anything}
+
+\textit{Memoization} caches a function's results: the first call on an argument
+computes and stores the answer, and later calls read it back. We will write a
+higher-order \code{memoize} that adds a private cache to \textit{any} function.
+
+\begin{parts}
+  \part[8]\hfill
+
+    Implement \code{memoize}:
+    \spec
+      {memoize}
+      {\code{(int -> 'a) -> (int -> 'a)}}
+      {\code{f} is total}
+      {\code{memoize f} evaluates to a function that, on input \code{n}, returns
+      \code{f n} --- but computes \code{f n} at most once for each \code{n},
+      caching the result for subsequent calls.}
+
+    \textbf{Hint:} return a \code{fn} closing over a
+    \code{(int * 'a) list ref}.
+
+    \begin{solutionorbox}[22em]
+      \begin{codeblock}
+        fun memoize (f : int -> 'a) : int -> 'a =
+          let
+            val cache : (int * 'a) list ref = ref []
+          in
+            fn n =>
+              case List.find (fn (k, _) => k = n) (!cache) of
+                SOME (_, v) => v
+              | NONE =>
+                  let
+                    val v = f n
+                  in
+                    cache := (n, v) :: !cache;
+                    v
+                  end
+          end
+      \end{codeblock}
+
+      The returned function closes over \code{cache}, which is allocated once,
+      when \code{memoize f} is evaluated. On each call it looks \code{n} up; on a
+      hit it returns the stored value, and on a miss it computes \code{f n},
+      stores it, and returns it.
+    \end{solutionorbox}
+
+  \part[5]\hfill
+
+    Is \code{memoize f} always extensionally equivalent to \code{f}, for any
+    function \code{f}? Justify with
+    reference to a condition on \code{f}, and if the answer is ``only sometimes'',
+    give an \code{f} where it fails.
+
+    \begin{solutionorbox}[18em]
+      Only if \code{f} is \textbf{pure} (referentially transparent). For a pure
+      \code{f}, \code{f n} always evaluates to the same value with no side
+      effects, so returning a cached result is indistinguishable from
+      recomputing --- \code{memoize f} $\eeq$ \code{f}.
+
+      But if \code{f} has side effects, memoizing changes observable behavior.
+      For example:
+      \begin{codeblock}
+        fun noisy n = (print "!"; n + 1)
+      \end{codeblock}
+      Calling \code{noisy 5} three times prints \code{"!!!"}, but calling
+      \code{(memoize noisy) 5} three times prints only \code{"!"} --- the cache
+      suppresses the later effects. So \code{memoize noisy} is \textbf{not}
+      equivalent to \code{noisy}.
+
+      Memoization is safe exactly when the wrapped function's only observable
+      output is its return value.
+    \end{solutionorbox}
+
+  \part[3]\hfill
+
+    A student reasons that the recursive calls are what's slow, so those are what
+    should be memoized:
+
+    \begin{codeblock}
+      fun fib n =
+        if n < 2 then n
+        else (memoize fib) (n - 1) + (memoize fib) (n - 2)
+    \end{codeblock}
+
+    This is correct but still exponential. What went wrong?
+
+    \begin{solutionorbox}[16em]
+      \code{memoize fib} is a \textbf{function call} that allocates a
+      \textbf{fresh, empty cache} every time it is evaluated. So each
+      \code{(memoize fib) (n-1)} builds a brand-new memoizer with an empty
+      table, uses it for a single lookup (which always misses), computes
+      \code{fib (n-1)} from scratch, stores the result in that table --- and
+      then \textbf{throws the table away}, since nothing holds onto it. The next
+      recursive call builds yet another fresh empty cache.
+
+      No cache is ever \textbf{shared} across the calls that ought to reuse each
+      other's results, so nothing is ever actually reused, and the work stays
+      exponential.
+
+      For memoization to help, a \textbf{single} cache must be allocated
+      \textbf{once} and consulted by \textbf{all} the recursive calls --- not a
+      new one created at each call site.
+    \end{solutionorbox}
+
+  \newpage
+
+  \begin{EnvUplevel}
+    Now seal memoization in a module, so a memoized function has its own
+    \textbf{abstract} type. A client gets only:
+    \begin{codeblock}
+      type ('a, 'b) memoized                       (* abstract *)
+      val new   : ('a -> 'b) -> ('a, 'b) memoized
+      val apply : ('a, 'b) memoized -> 'a -> 'b
+    \end{codeblock}
+    Internally, a \code{memoized} is the function paired with a mutable cache.
+  \end{EnvUplevel}
+
+  \part[3]\hfill
+
+    Name one thing a client could do if the representation were not hidden, and
+    say what hiding it guarantees.
+
+    \begin{solutionorbox}[12em]
+      A client could build a \code{memoized} by hand (e.g.\ \code{(f, ref [])}),
+      or take one apart to read or clear the cache. Neither typechecks when the
+      type is abstract.
+
+      So the module has sole control of the cache: it cannot be bypassed or
+      corrupted, and every \code{memoized} really was produced by \code{new}.
+    \end{solutionorbox}
+
+  \part[3]\hfill
+
+    The cache is an association list, so \code{apply} searches it in $O(n)$. What
+    would you change to get $O(\log n)$, and what would the module then need?
+
+    \begin{solutionorbox}[12em]
+      Keep the cache as a balanced \textbf{binary search tree} keyed by the
+      argument. Searching one requires \textbf{comparing} keys, which an
+      arbitrary \code{'a} does not support --- so the module must be given an
+      ordering on the key type, i.e.\ be a \textbf{functor} taking a structure
+      that supplies \code{compare : t * t -> order}.
+    \end{solutionorbox}
+\end{parts}

@@ -113,7 +113,7 @@
 
     % This sets the title page to be the pre-generated image!
     % The image needs to be 16:9 resolution, and preferably at high quality.
-    \node at (0, -0.9) {\resizebox{\paperwidth}{!}{\includegraphics{lecture22fake.png}}};
+    \node at (0, -0.9) {\resizebox{\paperwidth}{!}{\includegraphics{lecture23fake.png}}};
 
   \end{tikzpicture}%
   }
@@ -145,11 +145,11 @@
 \end{frame}
 }
 
-\begin{frame}[fragile]
-  \frametitle{Lesson Plan}
+% \begin{frame}[fragile]
+%   \frametitle{Lesson Plan}
 
-  \tableofcontents
-\end{frame}
+%   \tableofcontents
+% \end{frame}
 
 \sectionSlide{1}{Rewind}
 
@@ -170,7 +170,7 @@
   \vspace{\fill}
 
   Now, it's time to review everything that we've learned. In the style of
-  Michael Erdmann, I'm going to do so by going backwards -- by starting at
+  the late Michael Erdmann, I'm going to do so by going backwards -- by starting at
   the end, and going back to the beginning.
 
   \pause
@@ -191,7 +191,7 @@
 \customtitle{lecture21}
 
 \begin{frame}[fragile]
-  \frametitle{Lecture 21: Program Analysis}
+  \frametitle{Lecture 22: Program Analysis}
 
   % TODO
   Programs are inherently recursive.
@@ -230,7 +230,7 @@
 \customtitle{lecture20}
 
 \begin{frame}[fragile]
-  \frametitle{Lecture 20: Compilers}
+  \frametitle{Lecture 21: Compilers}
 
   Functional programming was made for compilers.\footnote{Technically, it was made
   for AI. But that's a different, longer story.}
@@ -259,6 +259,55 @@
 
 \end{frame}
 }
+
+{
+\renewcommand{\auxColor}{08b1d4}     % the color of note boxes and stuff
+\renewcommand{\presentColor}{6D4FE8} % the primary color of the slide borders
+\renewcommand{\bgColor}{ece4f0}      % the color of the background of the slide
+\renewcommand{\darkBg}{8b98ad}
+\renewcommand{\lambdaColor}{\auxColor}
+
+\resetcolor
+
+\definecolor{boxColor}{HTML}{fce1c0}
+\definecolor{highlightColor}{HTML}{faf89d}
+
+\customtitle{async}
+
+\begin{frame}[fragile]
+  \frametitle{Lecture 20: Asynchronous Programming}
+
+  We can model many different kinds of programming problems with
+  functional principles--even ones traditionally understood to be
+  "systems" or "low" level.
+
+  \pause
+  \vspace{\fill}
+
+  We saw that we could expand our set of problem statements from purely
+  mathematical, value-based computations to practical ones involving
+  interaction with the outside world, without compromising our high-level
+  abstractions and mathematical principles.
+
+  \pause
+  \vspace{\fill}
+
+  We saw how to solve the same asynchronous problems in SML that JavaScript
+  developers had to solve a decade ago, which ultimately used the same
+  CPS and thunk machinery that we had already learned about.
+
+  \pause
+  \vspace{\fill}
+
+  \lessonBox{\,
+    Simple mathematical principles belie the real-world complexities that
+    engineers have to work with every day.
+  }
+\end{frame}
+}
+
+
+
 
 {
 \renewcommand{\auxColor}{B66F2D}     % the color of note boxes and stuff
@@ -2415,7 +2464,7 @@ semithick}}
 
   Some people are in the business of writing code. They look for code
   output and productivity measured in terms of silly metrics that have
-  nothing to do with actual impact.
+  nothing to do with actual impact\footnote{Tokens, anyone?}.
 
   \pause
   \vspace{\fill}
@@ -2536,8 +2585,59 @@ semithick}}
   it's not worth wasting the energy compartmentalizing the world into things
   that are in the in-group or not. The world could just stand to be a little
   more functional.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On Fear}
+
+  We live in tumultuous times.
+
+  \pause
+  \vspace{\fill}
+
+  The educational landscape, along with every other landscape, for that matter,
+  has been changing. I've felt that this semester.
+
+  \pause
+  \vspace{\fill}
+
+  There's a very justifiable sense of fear for those of you who are
+  studying, who are being let out into an uncertain world. What is the
+  point of functional programming, when the future of software engineering
+  and the job market are so in question?
+
+  \pause
+  \vspace{\fill}
+
+  My two cents--I do not believe that computer science adjacent fields are
+  inherently doomed. It will be hard, but there have always been things
+  that are hard in your path to get here. We are living in a time where
+  the low bar to enter the field makes your knowledge and understanding
+  even more valuable.
+
+  \pause
+  \vspace{\fill}
+
+  What matters most is that you are genuinely interested in the things
+  you learn, that you are persevering, and that you don't lose track
+  of the higher level lessons of this course.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{On Fear}
+
+  Plus, at the very least, HackerNews thinks functional programming
+  is cooler than AI.
+
+  \vspace{\fill}
+
+  \begin{center}
+  \includegraphics[width=0.9\textwidth]{ceo.JPG}
+  \end{center}
 
 \end{frame}
+
 
 \begin{frame}[fragile]
   \frametitle{On Functional Programming}
@@ -2635,6 +2735,38 @@ semithick}}
 \end{frame}
 
 \begin{frame}[fragile]
+  \frametitle{Dedication}
+
+  This iteration of 15-150 is dedicated to the memory of Michael Erdmann.
+
+  \pause
+  \vspace{\fill}
+
+  I TA'd under Mike for many years, and he has undoubtedly shaped the
+  way that I teach this course. His kindness and willingness to go
+  far for his TAs and students is what I remember the most.
+
+  \pause
+  \vspace{\fill}
+
+  I share this excerpt from his speech from winning the Herbert A. Simon
+  Teaching Award in 2024, "The Enduring Connectedness of Learning":
+
+  \pause
+  \vspace{5pt}
+
+  \begin{quote}
+    The best information is likely online not on one teacher's chalkboard.
+    Still, two themes remain: Education enables and learning connects.
+    Our students are here to improve themselves and their lives.
+    And despite instant electronic connectivity, in the evening our buildings
+    are filled with students, working together, trying to understand each
+    other's thinking, helping each other past difficulties. That too I find
+    inspiring.
+  \end{quote}
+\end{frame}
+
+\begin{frame}[fragile]
   \frametitle{Acknowledgements}
 
   I TA'd this class for many years before getting the privilege to return as
@@ -2649,7 +2781,7 @@ semithick}}
   people know who they are.
 
   \pause
-  \vspace{\fill}
+  \vspace{-2pt}
 
   \begin{center}
     Aditi $\cdot$
@@ -2757,7 +2889,13 @@ semithick}}
     Caroline $\cdot$
     Deya $\cdot$
     Michael Zhou $\cdot$
-    Stephen
+    Stephen $\cdot$
+    Alessandro $\cdot$
+    Andrew $\cdot$
+    Angie $\cdot$
+    Arnim $\cdot$
+    Veer $\cdot$
+    Vincent
   \end{center}
 \end{frame}
 
@@ -2772,24 +2910,27 @@ semithick}}
     \vspace{\fill}
 
     The connections, mentors, and lifelong friends that I have made over
-    the years of teaching this class, some of which I left behind so that I
-    could come here.
+    the years of teaching this class.
 
     \pause
     \vspace{\fill}
 
-    My friends who supported and kept me sane throughout this summer.
+    My friends in Pittsburgh who supported and kept me sane throughout this summer.
 
     \pause
     \vspace{\fill}
 
-    Dilsun Kaynar, for her pivotal support in running this course.
+    My friends back home who I left to be here.
 
     \pause
     \vspace{\fill}
 
-    Semgrep, for not just supporting my decision in coming here to teach, but for
-    going above and beyond in their sponsorship of the course.
+    Dilsun Kaynar, for her pivotal support in the administration of this course.
+
+    \pause
+    \vspace{\fill}
+
+    Semgrep, for supporting my decision in coming here to teach.
   \end{center}
 \end{frame}
 
@@ -2867,8 +3008,7 @@ semithick}}
   premeditate something as important as this? So, you know what? I'm
   not going to premeditate. I'm going to just say what I think. For once I'm
   going to just let myself say something off the cuff and be actually honest with
-  you, no tricks, no jokes. Because my goodbye should be genuine, and unplanned,
-  and... what are you looking at? Fuck.
+  you, no tricks, no jokes, completely unplanned, because... what are you looking at? Fuck.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -2907,17 +3047,27 @@ semithick}}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Endings and Closures}
+  \frametitle{Beginnings and Endings}
 
-  This story begins with my graduation. For me, it was an ending, but not a
-  closure.
+  I started school at Carnegie Mellon in the fall of 2018.
 
   \pause
   \vspace{\fill}
 
-  This story ends with a closure, of my time at CMU, my time with this class,
-  and my time with this thing I gave my all for four years, called 150.
-  This story ends with me.
+  Over four years, I TA'd the course, then returned to teach it as
+  an instructor in the summer of 2023.
+
+  \pause
+  \vspace{\fill}
+
+  Though not all at the same time, my journey with 150 has spanned an
+  eight year period--nearly a decade since I first set foot on this campus.
+
+  \pause
+  \vspace{\fill}
+
+  The last people I really knew on campus, the class that started the year
+  after I graduated, have now just graduated.
 
   \begin{comment}
     See, I had COVID during my graduation. I never walked. I sat at home in
@@ -2958,15 +3108,16 @@ semithick}}
   \vspace{\fill}
 
   But my senior year, I decided not to pursue a Ph.D. I decided that I could
-  instead go to industry, and leave academia behind me. This led me to a lot of
-  great things, don't get me wrong, but something like teaching 150 ever again
-  would be closed to me. I made my peace with that.
+  instead go to industry, and leave academia behind me.
+
 
   \pause
   \vspace{\fill}
 
-  Until one day, I messaged Tom Cortina, and asked him if I could teach, and
-  somehow ended up getting this opportunity.
+  In 2023, I was allowed to teach this course over the summer, and I
+  embraced it wholeheartedly as the last I would see of 150. I made my
+  peace with that.
+
 
   \pause
   \vspace{\fill}
@@ -2990,14 +3141,7 @@ semithick}}
   \pause
   \vspace{\fill}
 
-  But no, that doesn't quite make sense.
-
-  \pause
-  \vspace{\fill}
-
-  \begin{center}
-    \large Something Worth Teaching
-  \end{center}
+  But actually, no. That doesn't make sense. The story is inconsistent.
 
   \begin{comment}
     I usually accompany every slide by a simple, short sentence, sort of summarizing
@@ -3047,9 +3191,18 @@ semithick}}
 \end{comment}
 
 \begin{frame}[fragile]
-  \frametitle{Something Worth Teaching}
+  \frametitle{Themes, take two}
 
-  But actually, no. That doesn't make sense. The story is inconsistent.
+  Let's try again.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \large Something Worth Teaching
+  \end{center}
+
+
 
   \pause
   \vspace{\fill}
@@ -3215,12 +3368,11 @@ semithick}}
   \vspace{\fill}
 
   This is goodbye to my time as an instructor, goodbye to CMU, and goodbye to 150.
-  Time to hang the jacket up.
 
   \pause
   \vspace{\fill}
 
-  I will probably never teach again. But that's OK. Teaching all of you has been
+  I will probably never teach again\footnote{I mean it this time.}. But that's OK. Teaching all of you has been
   the most important thing I could do, because these ideas are worth teaching.
   Someone will continue after me.
 
@@ -3254,8 +3406,6 @@ semithick}}
     {\color{blue}\href{mailto://wu.brandonj@gmail.com}{wu.brandonj@gmail.com}}
 
     {\color{blue}\href{https://brandonspark.github.io/}{https://brandonspark.github.io/}}
-
-    {\color{blue}\href{https://twitter.com/onefiftyman}{@onefiftyman}}
 
     {\color{blue}\href{https://www.linkedin.com/in/brandon-wu-79935116b/}{LinkedIn}}
 

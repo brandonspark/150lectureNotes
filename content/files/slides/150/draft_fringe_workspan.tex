@@ -1,0 +1,90 @@
+\newpage
+\titledquestion{Flattening a Tree}
+
+\textbf{Flattening a Tree}
+
+Here are two versions of \code{fringe}, which flattens a shrub to the list of its
+leaves:
+\begin{codeblock}
+  datatype 'a shrub = Leaf of 'a | Branch of 'a shrub * 'a shrub
+
+  (* A *)
+  fun fringe (Leaf x)      = [x]
+    | fringe (Branch (l, r)) = fringe l @ fringe r
+
+  (* B *)
+  fun fringeAcc (Leaf x) acc      = x :: acc
+    | fringeAcc (Branch (l, r)) acc = fringeAcc l (fringeAcc r acc)
+  fun fringe' t = fringeAcc t []
+\end{codeblock}
+
+Both produce the same list. Assume the shrub is \textbf{complete} of depth
+\code{d}, so it has $n = 2^d$ leaves. You may use that \code{A @ B} has work and
+span $O(length A)$.
+
+\begin{parts}
+  \part[4]\hfill
+
+    Write and solve the \textbf{work} recurrence for version A, in terms of the
+    number of leaves \code{n}.
+
+    \begin{solutionorbox}[20em]
+      Each recursive call handles $n/2$ leaves, and the append copies the left
+      result, which has $n/2$ elements:
+      $$W(n) = 2W(n/2) + O(n).$$
+      By the recursion tree each of the $\log n$ levels does $O(n)$ work, so
+      $$W(n) = O(n \log n).$$
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[4]\hfill
+
+    Now give the same cost \textbf{in terms of the depth} \code{d}, both as a
+    recurrence and solved.
+
+    \begin{solutionorbox}[25em]
+      A shrub of depth \code{d} has two subtrees of depth $d-1$, and the append
+      copies $2^{d-1}$ elements:
+      $$W(d) = 2W(d-1) + O(2^d) = O(d \cdot 2^d).$$
+
+      This is the same bound: substituting $n = 2^d$ (so $d = \log n$) into
+      $O(d \cdot 2^d)$ gives $O(n \log n)$.
+    \end{solutionorbox}
+
+  \part[2]\hfill
+
+    Write the \textbf{work} recurrence for version B, in terms of the number of
+    leaves \code{n}. You do not need to solve it.
+
+    \begin{solutionorbox}[15em]
+      Each leaf is consed on exactly once and no list is copied, so the only
+      cost outside the recursive calls is constant:
+      $$W(n) = 2W(n/2) + O(1)$$
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[3]\hfill
+
+    Write the \textbf{span} recurrence for each version, in terms of the number of
+    leaves \code{n}. You do not need to solve it.
+
+    \begin{solutionorbox}[20em]
+      \textbf{A:} the two recursive calls do not use each other's results, so
+      they run in parallel and only the deeper one counts; the append combining
+      them is sequential and costs $O(n)$:
+      $$S(n) = S(n/2) + O(n)$$
+
+      \textbf{B:} in \code{fringeAcc l (fringeAcc r acc)} the outer call takes
+      the inner call's result as an argument, so the two calls are
+      \textbf{dependent} and both appear in the recurrence:
+      $$S(n) = 2S(n/2) + O(1)$$
+
+      The contrast to notice is the coefficient: A's recursive calls are
+      independent (one $S(n/2)$), while B's accumulator threading serialises
+      them (two).
+    \end{solutionorbox}
+\end{parts}
+
+\newpage

@@ -1,0 +1,89 @@
+\titledquestion{Types and Values}
+\textbf{Types and Values}
+
+For each of the expressions below, write its \textbf{most general type} and value.
+
+\textbf{If the expression is not well-typed then say so and explain your answer briefly.}
+
+\textbf{If the expression does not evaluate to a value then say so and explain your answer briefly.}
+
+\textbf{For brevity, if the expression is already a value, you may write out "same" for its value}.
+
+\begin{parts}
+
+  \part[2]\hfill
+
+  In the context of the declaration
+  \begin{codeblock}
+    datatype ('a, 'b) pair = P of 'a * 'b
+  \end{codeblock}
+  consider:
+  \begin{codeblock}
+    fn x => P (x, [x])
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[2em] \code{'a -> ('a, 'a list) pair} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] same \end{solutionorlines}
+
+  \vspace{10pt}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    fn f => filter (map f)
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[2em] NWT \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] No value \end{solutionorlines}
+
+  \vspace{10pt}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    let
+      val r1 = ref 0
+      val r2 = ref r1
+      val () = r2 := ref (!r1)
+      val () = r1 := 1
+      val () = (!r2) := !!r2 + !!r2
+    in
+      !!r2 + !r1
+    end
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[2em] \code{int} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] \code{1} \end{solutionorlines}
+
+  \vspace{10pt}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    val x = 2
+    fun foo y z = x + y + z
+    val x = 3
+    val res = x + foo x x
+  \end{codeblock}
+
+  What is the type and value of \code{res}?
+
+  \textbf{Type:} \begin{solutionorlines}[2em] \code{int} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] \code{11} \end{solutionorlines}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    fn f => fn g => fn x => g (f x, x)
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[3em] \code{('a -> 'b) -> ('b * 'a -> 'c) -> 'a -> 'c} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] same \end{solutionorlines}
+\end{parts}
+
+\newpage

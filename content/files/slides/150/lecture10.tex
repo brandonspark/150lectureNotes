@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -35,7 +35,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Combinators and Staging} % TODO
     \subtitle{Taking higher-order to the next level} % TODO
-    \date{15 June 2023} % TODO
+    \date{11 June 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -407,6 +407,37 @@
 
   We can't avoid the cost of computing \code{mystery2} twice, but 6 years isn't so long.
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Staging: A Realistic Study}
+
+  This isn't an academic idea at all. What kind of real-world use case
+  has the behavior of a long period of initial computation, followed
+  by numerous shorter calls afterwards dependent on the initial
+  computation?
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun chatgpt (all_the_data_in_the_world) : string -> string =
+      let
+        val trained_model = train_model all_the_data_in_the_world
+      in
+        fn prompt => run trained_model prompt
+      end
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  So it's eminently important to know your staging, for the future
+  of our AI overlords\footnote{And the shareholders. Don't forget about
+  the shareholders.}.
+
+\end{frame}
+
+
 
 \begin{frame}[fragile]
   \frametitle{Benefits of Staging}
@@ -1105,6 +1136,8 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{HOFBYONE}
 
 
 \end{document}

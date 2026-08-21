@@ -1,0 +1,94 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=54]{beamer}
+
+% Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+\newif\ifcolorlambda
+\colorlambdafalse % DEFAULT: false
+
+% Use auxcolor for syntax highlighting
+\newif\ifuseaux
+\useauxfalse % DEFAULT: false
+
+% Load color settings
+\usepackage{SETTINGS}
+
+\usepackage{lectureSlides}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{Test Slides} % TODO
+\subtitle{Awesome slides with an awesome subtitle} % TODO
+\date{01 January 2020} % TODO
+\author{Author's Name} % TODO
+
+\graphicspath{ {./img/} }
+% DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+    %\begin{frame}[fragile]
+    %\begin{codeblock}
+    %fun fact 0 = 1
+    %  | fact n = n * fact(n-1)
+    %\end{codeblock}
+    %\end{frame}
+
+% INCLUDING codefile:
+    % 1. In some file under code/NN (where NN is the lecture id num), include:
+%       (* FRAGMENT KK *)
+%           <CONTENT>
+%       (* END KK *)
+
+%    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+    %  2. On the slide where you want code fragment K
+            % \smlFrag[color]{KK}
+    %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+%  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+            % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+   \renewcommand{\pause}{}
+\fi
+
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\setbeamercolor{background canvas}{bg=white}
+\begin{frame}[plain]
+\colorlambdatrue
+\titlepage
+\end{frame}
+}
+{
+\setbeamercolor{background canvas}{bg=white}
+\begin{frame}[plain]
+\colorlambdafalse
+\pictureTitle{stars}
+\end{frame}
+}
+
+\begin{frame}
+\frametitle{\texttt{\textbackslash smlFrag\{N\}} example}
+The following is produced with \texttt{\textbackslash smlFrag\{0\}}. See \texttt{content/code/template/code.sml}. \pause
+
+\smlFrag{0}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{\texttt{codeblock} example}
+Note the \texttt{[fragile]} on this frame.\pause
+
+\begin{codeblock}
+   fun pseudocode (m : inputType) : out =
+             ...
+         pseudocode(m-1)
+             ...
+\end{codeblock}
+\end{frame}
+
+\begin{frame}
+\begin{center} Thank you! \end{center}
+\end{frame}
+
+
+\end{document}

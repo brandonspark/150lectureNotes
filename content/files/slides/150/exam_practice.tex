@@ -1,0 +1,75 @@
+%% =============================================================================
+%% PRACTICE FINAL — assembled from the question bank.
+%% Each question is a fragment; reorder / swap by editing the \input list.
+%%
+%% Assignment rationale is in final_status.md.
+%% Deliberately covers the same topics as the real final with DIFFERENT problems.
+%% =============================================================================
+
+%% Retitles the cover page and running header to "Practice Final".
+\def\practiceversion{}
+\input{q/preamble.tex}
+
+%% --- openers -----------------------------------------------------------------
+%% (drawn from the pools, so the items differ from the real final's)
+\titledquestion{Types and Values}
+\textbf{Types and Values}
+
+For each expression below, give its \textbf{most general type} and value.
+If the expression is not well-typed, say so and explain briefly. If it does not
+evaluate to a value, say so. If it is already a value, you may write ``same''.
+
+If the function has a recursive body that cannot be written, write "<body>" for
+the function body. You should write out lambda expressions for all of the function's
+arguments.
+
+\begin{parts}
+\input{draft_types_pool.tex}
+\end{parts}
+
+\newpage
+\titledquestion{Conceptual Questions}
+\textbf{Conceptual Questions}
+
+For each of the following, answer and \textbf{justify your answer briefly}.
+
+\begin{parts}
+%% five items, drawn from the pools (q/items/ holds them split out individually;
+%% draft_*_pool.tex hold the full banks to draw from)
+\input{q/items/cp3.tex}              %% equivalence is not runtime cost
+\input{q/items/cp4.tex}              %% mutation breaks referential transparency
+\input{q/items/ex1.tex}              %% exceptions break equational reasoning
+\input{draft_modules_conceptual.tex} %% the representation-independence obligation
+\input{q/items/seq1.tex}             %% reduce's grouping freedom => O(log n) span
+%% mod2 (two queue impls, "can a client tell?") was cut from this slot: it landed
+%% on the same punchline as the modules item above it, which now asks for the
+%% representation-independence proof obligation instead.
+%% NOTE: draft_span_conceptual.tex (two rec calls in W => one in S?) is cut --
+%% it duplicates Flattening a Tree part 4 on this same exam, and also the
+%% "For any recurrence" item on the real final.
+\end{parts}
+
+%% --- proof -------------------------------------------------------------------
+\input{draft_treeall_inorder.tex}
+
+%% --- CPS ---------------------------------------------------------------------
+\input{draft_fill.tex}
+
+%% --- streams -----------------------------------------------------------------
+\input{draft_samefringe.tex}
+
+%% --- folding -----------------------------------------------------------------
+\input{draft_fold2.tex}
+
+%% --- work/span ---------------------------------------------------------------
+\input{draft_fringe_workspan.tex}
+
+%% --- imperative --------------------------------------------------------------
+\input{q/arrays.tex}
+
+%% --- appendices --------------------------------------------------------------
+\input{q/appendix.tex}
+
+\end{questions}
+
+\end{document}

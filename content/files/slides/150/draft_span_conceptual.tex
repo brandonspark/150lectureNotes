@@ -1,0 +1,51 @@
+% =============================================================================
+% CONCEPTUAL ITEM: two recursive calls in W does NOT imply span drops to one.
+% Targets the over-generalization of "the 2 becomes a 1" (see "Balanced?" part e).
+% Counterexample verified in SML/NJ: sumTree (independent) vs sumAcc (dependent)
+% compute the same value, same work-recurrence shape, different span.
+% =============================================================================
+
+\part[4]\hfill
+
+  A student notices that for many tree functions, a work recurrence of
+  $$W(n) = 2W(n/2) + O(1)$$
+  goes with a span recurrence of
+  $$S(n) = S(n/2) + O(1).$$
+  They conclude: ``whenever the work recurrence has \textbf{two} recursive calls,
+  the span recurrence has \textbf{one}.''
+
+  Is this conclusion correct in general? If not, give a brief explanation and a
+  concrete example of a function for which it fails.
+
+  \begin{solutionorbox}[20em]
+    No. Dropping from two recursive calls to one is only valid when the two
+    recursive calls are \textbf{independent} --- neither one needs the other's
+    result --- so that they may be evaluated in parallel. If the second call
+    \textit{depends} on the first, they must run \textbf{sequentially}, and the
+    span counts both.
+
+    For example, compare these two (equivalent) ways to sum a tree:
+    \begin{codeblock}
+      fun sumTree Empty = 0
+        | sumTree (Node (l, x, r)) =
+            x + sumTree l + sumTree r
+
+      fun sumAcc Empty acc = acc
+        | sumAcc (Node (l, x, r)) acc =
+            let
+              val accL = sumAcc l acc
+            in
+              sumAcc r (accL + x)
+            end
+    \end{codeblock}
+
+    Both have work $W(n) = 2W(n/2) + O(1) = O(n)$. But in \code{sumAcc}, the call
+    \code{sumAcc r} takes \code{accL} as an argument, so it cannot begin until
+    \code{sumAcc l} has finished. There is no parallelism to exploit, and
+    $$S(n) = 2S(n/2) + O(1) = O(n),$$
+    whereas \code{sumTree}'s independent calls do give
+    $S(n) = S(n/2) + O(1) = O(\log n)$.
+
+    So the shape of the \textbf{work} recurrence alone does not determine the
+    span --- you must look at whether the recursive calls depend on one another.
+  \end{solutionorbox}

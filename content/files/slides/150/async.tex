@@ -1,0 +1,2554 @@
+% Brandon Wu
+% DRAFT — "everything" deck for the async lecture. Deliberately over-complete:
+% every beat from async_plan.md is here as a frame, in act order, plus a large
+% Backup section. Intended for manual reordering and cutting.
+% Companion code: ~/exp/async_sml (all transcripts machine-checked there).
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=169]{beamer}
+
+\newif\ifcolorlambda
+\colorlambdafalse
+
+\newif\ifuseaux
+\useauxfalse
+\useauxtrue
+
+\newcommand{\auxColor}{08b1d4}     % the color of note boxes and stuff
+\newcommand{\presentColor}{6D4FE8} % the primary color of the slide borders
+\newcommand{\bgColor}{ece4f0}      % the color of the background of the slide
+\newcommand{\darkBg}{8b98ad}
+\newcommand{\lambdaColor}{\auxColor}
+
+\colorlambdatrue
+
+\usepackage{comment}
+\usepackage{soul}
+\usepackage{listings}
+\usepackage{makecell}
+
+\setbeamertemplate{itemize items}[circle]
+
+\usepackage{lectureSlides}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{Asynchronous Programming} % TODO
+\subtitle{Waiting without stopping the world} % TODO
+\date{16 July 2026} % TODO
+\author{Brandon Wu} % TODO
+
+\graphicspath{ {./img/}, {../../../img/} }
+
+\definecolor{boxColor}{HTML}{fce1c0}
+\definecolor{highlightColor}{HTML}{faf89d}
+
+\usetikzlibrary {shapes.symbols}
+\usetikzlibrary {calc}
+\tikzset{
+  every path/.style={line width=0.25mm},
+  box/.style={
+    rectangle, draw=black, inner sep=0.4cm, thick,
+    minimum height=1cm,
+    fill=boxColor,
+    font=\large,
+  },
+  hlbox/.style={
+    rectangle, draw=black, inner sep=0.4cm, thick,
+    minimum height=1cm,
+    fill=highlightColor,
+  }
+}
+
+\newcommand{\topthing}[2]{
+  \begin{minipage}[t][#1][t]{\textwidth}
+    \vspace{\fill}
+    #2
+    \vspace{\fill}
+  \end{minipage}
+}
+
+% \ifweb is provided by the mkWeb build; define it (false) for direct pdflatex.
+% csname trick: a literal \ifweb inside the branch would confuse TeX's skipper.
+\ifdefined\ifweb\else\expandafter\newif\csname ifweb\endcsname\fi
+
+\begin{document}
+
+\ifweb
+    \renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+{
+\begin{frame}[plain]
+    \colorlambdatrue
+    \titlepage
+\end{frame}
+}
+
+% \menti{TODO}
+
+\begin{frame}[fragile]
+  \frametitle{Lesson Plan}
+
+  \tableofcontents
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\sectionSlide{1}{The Wall}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]
+  \frametitle{Programs So Far}
+
+  Generally, in 150, we have been interested in writing functions which
+  run to completion and compute some value along the way.
+
+  \pause
+  \vspace{\fill}
+
+  Such programs are often mathematical in nature--they only interface
+  with the outside world insofar as they are asked to compute some value,
+  but the program execution otherwise does not really care about
+  anything having to do with the outside world\footnote{Not too dissimilar
+  from some computer scientists.}.
+
+  \pause
+  \vspace{\fill}
+
+  These are nice, but only form a subset of interesting programs. There
+  are many programs which are tailor-made to deal with humans!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Interactive Programs}
+
+  Such programs are often \textit{interactive}--they entail taking in some
+  input, computing some results by talking to other programs or servers,
+  and require interactivity to be preserved while potentially doing
+  long computations in the background.
+
+  \pause
+  \vspace{\fill}
+
+  Writing such interactive programs requires the ability to do
+  \term{asynchronous programming}---programs which can run multiple
+  things over a period of time.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{A \term{concurrent} program is one which can run multiple
+  different operations in an interleaved fashion over a period of time.}
+\end{frame}
+
+
+
+% DEMO CUE: cd ~/exp/async_sml && sml pingpong-callbacks.sml
+% ping 3 / ping 1 (pongs return out of order!) / prompt stays alive / quit
+% (this artifact IS the lecture's REPL, verified; best shown after the fix acts)
+\begin{frame}[fragile]
+  \frametitle{A Program You Cannot Write (Yet)}
+
+
+  We want to write a REPL which only has one command, \code{ping}, which
+  causes the REPL to return \code{pong}.
+
+  \pause
+  \vspace{\fill}
+
+  This command will also take in an optional argument, which is how many
+  seconds to wait before returning \code{pong}!
+
+  \begin{codeblock}[language={}]
+repl> help
+commands: ping [seconds] | help | quit
+repl> ping
+pong! (waited 0 seconds)
+repl> ping 3
+pong! (waited 3 seconds)
+repl> quit
+\end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Obvious Implementation}
+
+  {\small
+  \begin{codeblock}
+    datatype command = Help | Ping of int
+
+    fun ping n =
+      ( `wait` n;
+        print ("pong! (waited " ^ Int.toString n ^ " seconds)")
+      )
+
+    fun repl () =
+      ( print "repl> ";
+        case `parse` (`input_line` ()) of
+          Help => (print helpText; repl ())
+        | Ping n => (ping n; repl ())
+      )
+\end{codeblock}
+  }
+
+  For highlighted code, let's assume that these functions exist
+  for the moment and not worry too much about how they work.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What Just Happened?}
+
+  Makes sense. We notice something interesting, though:
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    repl> ping 3
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  The \code{repl>} prompt isn't shown until 3 seconds later,
+  when the \code{ping 3} command finishes!
+
+  \pause
+  \vspace{\fill}
+
+  This means we can't possibly run \code{help} or even another
+  \code{ping} command until the first one finishes. In other words,
+  commands in our REPL are \term{blocking}--they prevent us from
+  doing anything else until they finish.
+\end{frame}
+
+
+
+  % \begin{center}
+  % \emph{Nonblocking host operations create independently progressing work.
+  % Promises represent their eventual results. Functional combinators describe
+  % dependencies among those results. Async/await is direct-style notation
+  % for this composition.}
+  % \end{center}
+
+\begin{frame}[fragile]
+  \frametitle{Where the Blocking Lives}
+
+  {\small
+  \begin{codeblock}
+    datatype command = Help | Ping of int
+
+    fun ping n =
+      ( &wait n&;
+        print ("pong! (waited " ^ Int.toString n ^ " seconds)")
+      )
+
+    fun repl () =
+      ( print "repl> ";
+        case parse (&input_line ()&) of
+          Help => (print helpText; repl ())
+        | Ping n => (ping n; repl ())
+      )
+\end{codeblock}
+  }
+
+  In particular, both of the above highlighted expressions are
+  blocking---they will stall the entire program until the world answers.
+\end{frame}
+
+
+
+
+% \begin{frame}[fragile]
+%   \frametitle{Wall \#2: Blocking Compute}
+
+%   \begin{codeblock}
+% fun fib n = if n < 2 then n else fib (n-1) + fib (n-2)
+%   \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   \code{fib 43} takes about 3 seconds. During those 3 seconds, nothing else
+%   happens --- not because the world is slow, but because \emph{we} are.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Two different walls: waiting on the world (I/O), and being busy ourselves
+%   (compute). Keep them separate --- they will get separate solutions.
+% \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Real Problem Is Logical, Not Mechanical}
+
+  Ultimately, the problem originates from the fact that SML is
+  \term{run-to-completion}. It is only allowed to run one thing
+  (function) at a time, and it cannot start progressing on another
+  until the first one finishes.
+
+  \pause
+  \vspace{\fill}
+
+  In other words, our call to \code{ping : int -> unit} is a monolith
+  --- it returns a unit after a certain amount of time, and nothing is allowed
+  to happen until it finishes.
+
+  \begin{codeblock}
+    | Ping n => (ping n; repl ())
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  In this case, our \code{ping} call is the problem. It blocks the entire loop,
+  when in reality we want to be able to proceed to the \code{repl ()} call,
+  and then in \code{n} seconds somehow come back and do the work
+  we need.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Key Revelation: To-Do Lists}
+
+  Our key revelation is this:
+
+  \pause
+  \vspace{10pt}
+
+  \keyBox{}{\textbf{Asynchronous programs are synchronous programs which
+  have to-do lists.}}
+
+  \pause
+  \vspace{\fill}
+
+  This means we can solve the problem by simply adding a to-do list to
+  the program. Our idea will be to make it so that \code{ping} can
+  yield \textit{immediately}, but also write down somewhere what to
+  do later, and fulfill it at a later time.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A First Attempt: Total Cooperation}
+
+  Let's build the dumbest thing that could possibly work. The rule:
+  \term{never commit to waiting for anything}\footnote{This is not necessarily
+  dating advice.}. Instead: check for work, nap briefly, check again, forever\footnote{This is what a job is like.}.
+
+  \pause
+  \vspace{\fill}
+
+  First, \code{ping} stops performing and starts \textit{scheduling}:
+
+  \begin{codeblock}
+    val pending : (Time.time * int) list ref = ref []
+
+    fun ping n =
+      pending := (`now` () + n, n) :: !pending
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  \code{ping} is now instant --- it does nothing except write a deadline
+  on the to-do list. The actual pong-printing must happen somewhere
+  else, later.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A First Attempt: Total Cooperation}
+
+  Somebody has to read the list:
+
+  {\small
+  \begin{codeblock}
+    fun do_pongs () =
+      let
+        (* split into the ones past due and not *)
+        val (due, rest) =
+          List.partition (fn (t, _) => t <= `now` ()) (!pending)
+      in
+        pending := rest;
+        List.app (fn (_, n) =>
+          print ("pong! (waited " ^ Int.toString n ^ " seconds)")
+        ) due
+      end
+\end{codeblock}}
+  \pause
+  \vspace{\fill}
+
+  Nothing clever: split off everything whose deadline has passed, and
+  do it. Note nobody ``fires'' a timer --- \term{time never calls us;
+  we check the time.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A First Attempt: Total Cooperation}
+
+  \begin{codeblock}
+    fun tick () =
+      ( do_pongs ();
+        if `input_ready` ()
+        then case `parse` (`input_line` ()) of
+               Help   => print helpText
+             | Ping n => ping n
+        else ();
+        `wait` 1;
+        tick () )
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  One new assumed ability: \code{input_ready} asks whether a line is
+  ready \textit{without committing to read it}. Input is never awaited ---
+  only checked.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A First Attempt: It Works!}
+
+  \begin{codeblock}[language={}]
+repl> ping 3
+repl> ping 1
+pong! (waited 1 seconds)
+pong! (waited 3 seconds)
+repl> quit
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This actually totally \textit{works}. We can overlap \code{ping}s,
+  our prompt never dies, and pongs arrive in the proper order. This is
+  a concurrent program in plain, sequential SML.
+
+  \pause
+  \vspace{\fill}
+
+  However, everything happens on the \textit{second} scale. If we type
+  \code{help} at $t = 0.4$, we get answered at $t = 1.0$. Not to mention,
+  the program keeps spinning forever.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A First Attempt: The Bill}
+
+  \begin{itemize}
+    \item \term{Lag is quantized to the tick.} Everything is answered up
+      to a second late. A smaller tick means that the CPU spins, and
+      a larger tick makes lag grow.
+    \pause
+    \item \term{\code{tick} is a god-function.} It must enumerate every
+      concern in the program; each new feature means editing it.
+    \pause
+    \item 86{,}400 wakeups a day\footnote{Not to mention 525,600 * 60 in a year!}, mostly to do nothing.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  And one deeper limit: our list can only remember \textit{pongs}. We
+  have no way of deferring arbitrary work, like printing something
+  different or printing two things in sequence.
+
+  \pause
+  \vspace{\fill}
+
+  Here's an idea: what if we were able to defer arbitrary work to
+  be done later? What does this sound like?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Rediscovering CPS}
+
+  We have rediscovered the need for continuation-passing style. Before,
+  we used them only to write code in a different light--now, we use them
+  to write code which is fundamentally "pausable" at certain points.
+
+  \pause
+  \vspace{\fill}
+
+  Before, we assumed only the existence of \code{wait : int -> unit}. Now,
+  we assume the existence of its CPS cousin, \code{waitThen: int -> (unit -> unit) -> unit},
+  which accepts a continuation to run sometime after the wait is complete.
+
+  \pause
+  \vspace{\fill}
+
+  Importantly, \code{waitThen} \textbf{yields immediately,} but we will require
+  some other entity to run the continuation for us, sometime after ---
+  an entity much like our \code{tick} loop, just with a smarter nap.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{ping, with waitThen}
+
+  {\small
+  \begin{codeblock}
+    datatype command = Help | Ping of int
+
+    fun ping n =
+      `waitThen` n `(fn () =>`
+        print ("pong! (waited " ^ Int.toString n ^ " seconds)")
+      `)`
+
+    fun repl () =
+      ( print "repl> ";
+        case parse (input_line ()) of
+          Help => (print helpText; repl ())
+        | Ping n => (ping n; repl ())
+      )
+\end{codeblock}
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{One More Bug}
+
+  We have one more problem, which is that there is still one more
+  bug left to squash!
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}[language={}]
+    repl> ping 3
+    repl>
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  After we type \code{ping 3}, the prompt returns instantly, but we
+  still do not see the pong!
+
+  \pause
+  \vspace{\fill}
+
+  The problem is that the call to \code{input_line} is still blocking,
+  meaning that our continuation that prints the \code{pong} can't go
+  while our \code{repl} is waiting. We need a second ability: the
+  ability to do some other stuff while waiting for someone to type
+  something.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Same Move for Input}
+
+  We will apply a similar technique--instead of blocking on the result of
+  \code{input_line}, we will hand it a function to call once that line
+  arrives, and then immediately return.
+
+  \pause
+  \vspace{\fill}
+
+  We assume the existence of \code{inputLineThen : (string -> unit) -> unit}, which accepts a continuation
+  to run when the line (optionally) is available.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Subtle Issue}
+
+  {\small
+  \begin{codeblock}
+    fun repl () =
+      ( print "repl> ";
+        `inputLineThen (fn line =>`
+          case parse `line` of
+            Help => print helpText
+          | Ping n => ping n
+        `);`
+        `repl ()`
+      )
+\end{codeblock}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  Only, be careful here. There's a subtle issue.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Spot the Difference}
+
+  \begin{minipage}{0.49\textwidth}
+  {\small
+  \begin{codeblock}
+    fun repl () =
+      ( print "repl> ";
+        inputLineThen (fn line =>
+        case parse line of
+          Help => print helpText
+        | Ping n => ping n
+        );
+        repl ()
+      )
+\end{codeblock}
+  }
+  \end{minipage}
+  \begin{minipage}{0.49\textwidth}
+  {\small
+  \begin{codeblock}
+    fun repl () =
+      ( print "repl> ";
+        inputLineThen (fn line =>
+          (case parse line of
+            Help => print helpText
+          | Ping n => ping n);
+          repl ()
+        )
+      )
+\end{codeblock}
+  }
+  \end{minipage}
+
+  \pause
+  \vspace{\fill}
+
+  What is the difference between these two implementations?
+
+  \pause
+  \vspace{\fill}
+
+  In a world where we assume \code{inputLineThen} to return immediately,
+  the first actually loops forever and spam prints \code{"repl>"} forever.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{The Fix}
+
+  The lesson, which we just learned the hard way: \term{after a
+  registration, the only ``later'' is inside the callback}. So the
+  recursive call must move \textit{inside}:
+
+  \begin{codeblock}
+    fun repl () =
+      ( print "repl> ";
+        inputLineThen (fn line =>
+          ( case parse line of
+              Help => print helpText
+            | Ping n => ping n
+          ; `repl ()` ))
+      )
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Each arrival of a line handles one command and \textit{re-arms} the
+  next read. The REPL's ``loop'' is no longer a loop we run --- it's a
+  chain of registrations, each planting the next.
+\end{frame}
+
+
+
+% \begin{frame}[fragile]
+%   \frametitle{One Future, No Arrivals}
+
+%   A sharper way to say it:
+
+%   \pause
+%   \vspace{\fill}
+
+%   A sequential SML program has exactly \term{one future}: the rest of the
+%   expression being evaluated. Nothing happens that the program didn't just
+%   do itself. Nothing ever \emph{arrives}.
+
+%   \pause
+%   \vspace{\fill}
+
+%   What we need is a program with \term{several pending futures} --- and some
+%   way for the world to wake the right one.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Twist}
+
+%   You might think: SML is just an academic language; real languages can do
+%   this.
+
+%   \pause
+%   \vspace{\fill}
+
+%   No. \term{JavaScript stands behind the same wall.} One thread.
+%   Run-to-completion. No way to pause a running function. A pure-JS busy loop
+%   freezes every browser tab it runs in.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Everything the JavaScript world calls ``async programming'' is fallout
+%   from this exact wall. We are about to re-derive all of it. Remember this
+%   slide when the TypeScript appears at the end.
+% \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\sectionSlide{2}{Callbacks and Promises}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]
+  \frametitle{Two Suppositions}
+
+  Everything we've developed so far is based on two suppositions:
+
+  \pause
+  \vspace{\fill}
+
+  First, we assume that we have the ability to wait and accept input
+  "in the background", in a way that will not block our REPL. This is
+  exhibited by the following functions:
+  \begin{codeblock}
+    val waitThen : int -> (unit -> unit) -> unit
+    val inputLineThen : (string -> unit) -> unit
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  We also assume the ability of some master process which decides when
+  to run our continuations.
+
+  \pause
+  \vspace{\fill}
+
+  The former is the ability to run \term{non-blocking operations}, and
+  the latter is known as the \term{event loop}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Two Registries}
+
+  \begin{codeblock}
+    (* two registries: our timers, and one pending read *)
+    val timers : (Time.time * (unit -> unit)) list ref = ref []
+    val read_job : (string -> unit) option ref = ref NONE
+
+    fun waitThen time f = timers := (`now` () + time, f) :: !timers
+    fun inputLineThen k = read_job := SOME k
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Our two ``magic'' primitives are one line each: they perform nothing,
+  they file paperwork. All the actual running happens in one place:
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Event Loop}
+
+  {\small
+  \begin{codeblock}
+    fun loop () =
+      case (`try_input` (), !read_job, !timers) of
+          (SOME line, SOME k, _) =>
+            (read_job := NONE; k line; loop ())
+        | (_, _, (t, f) :: rest) =>
+            if `now` () >= t
+            then (timers := rest; f (); loop ())
+            else (`nap` (); loop ())
+        | (_, NONE, []) => ()
+        | _ => (`nap` (); loop ())
+\end{codeblock}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  Crucially, \code{nap} is \textit{not} the tick loop's blind
+  one-second snooze: it \term{blocks until input is ready or the
+  earliest deadline passes, whichever first}. This is the promised
+  smarter nap --- we wake exactly when there is something to do. No
+  quantized lag, no wakeups for nothing.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The REPL, Shattered}
+
+  {\small
+  \begin{codeblock}
+    fun ping n =
+      waitThen n (fn () =>
+        print ("pong! (waited " ^ Int.toString n ^ " seconds)")
+      )
+
+    fun repl_step line =
+      ( case parse line of
+          Help => (print helpText)
+        | Ping n => (ping n);
+        ask ()
+      )
+
+    and ask () =
+      ( print "repl> ";
+        inputLineThen (fn line => repl_step line)
+      )
+\end{codeblock}
+  }
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{One Registry per Operation?}
+
+  This works, we need one piece of mutable state for every kind of operation
+  we anticipate needing to fulfill later (a list of timers
+  for each \code{waitThen}, and a single read job for every pending
+  \code{inputLineThen}).
+
+  \pause
+  \vspace{\fill}
+
+  If we wanted to add more (HTTP requests, DB reads, etc) we would need to
+  add more state and more kinds of callbacks, and more cases into our
+  event loop.
+
+  \pause
+  \vspace{\fill}
+
+  Is there a generic way we can handle this?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A New Program: Page Similarity}
+
+  Let's dispense with the REPL for a moment. Suppose we're interested in
+  a very simple sequence of operations: we want to read two names, fetch
+  their Wikipedia pages, and then compute a similarity score between the two.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    val name1 = read_line ()
+    val name2 = read_line ()
+    val page1 = fetch_page name1
+    val page2 = fetch_page name2
+    val score = compute_similarity page1 page2
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This is a totally blocking program, as it currently stands. Let's
+  shatter it into its constituent parts, in the hopes of letting other
+  parts run between steps.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Callback Hell}
+
+  The easy way to do this is to just arm each operation with a
+  continuation, per usual. We'll talk about what to do with the
+  continuation later.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    read_line (fn name1 =>
+      read_line (fn name2 =>
+        fetch_page name1 (fn page1 =>
+          fetch_page name2 (fn page2 =>
+            compute_similarity page1 page2 score
+          )
+        )
+      )
+    )
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This is commonly what is known in JavaScript as
+  \term{callback hell}.
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Two Problems}
+
+  The code is gross. The problem is similar to what we saw in the
+  CPS lecture--we induce one level of indentation per continuation.
+
+  \pause
+  \vspace{\fill}
+
+  Additionally, we have to prescribe the order in which the continuations
+  run. In reality, it's not so important that we literally fetch the
+  first name's page before the second name's page--we should actually
+  be able to do them at the same time.
+
+  \pause
+  \vspace{\fill}
+
+  We want a more general mechanism for this idea of having pending
+  work to do with a value that we don't yet have. This is the idea of
+  a \term{promise}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Promises}
+
+  \defBox{}{A \term{promise} is a value which represents the result of
+  an asynchronous operation that we do not yet have.}
+
+  \pause
+  \vspace{\fill}
+
+  In other words, a \code{t Promise.t} is a promise which will
+  \textit{eventually} contain a value of type \code{t}.
+
+  \pause
+  \vspace{\fill}
+
+  This is the general mechanism we were looking for. We previously
+  changed our functions from blocking ones to ones that returned immediately,
+  but accepted continuations telling us what to do once we had the value.
+  This is encoded via:
+
+  \begin{codeblock}
+    (* a direct function *)
+    'a -> 'b
+
+    (* an asynchronous function *)
+    'a -> 'b Promise.t
+\end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{thenDo}
+
+  The point is that once we have a promise, we are allowed to
+  \term{register} a continuation on it, which is automatically
+  queued to run once the promise is fulfilled.
+
+  \pause
+  \vspace{\fill}
+
+  So, instead of the callback hell we had before, we can now define
+  an infix operator \code{thenDo}:
+  \begin{codeblock}
+    thenDo : 'a Promise.t * ('a -> 'b Promise.t) -> 'b Promise.t
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    (read_line ()) thenDo (fn name1 =>
+    (read_line ()) thenDo (fn name2 =>
+    (fetch_page name1) thenDo (fn page1 =>
+    (fetch_page name2) thenDo (fn page2 =>
+    compute_similarity page1 page2
+    ))))
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This isn't much better, actually. But, we can improve things:
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{both}
+
+  \begin{codeblock}
+    read_line () thenDo (fn name1 =>
+    read_line () thenDo (fn name2 =>
+      both (fetch_page name1, fetch_page name2)
+        thenDo (fn (page1, page2) =>
+          compute_similarity page1 page2)))
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  We can use a primitive called
+  \code{both : 'a Promise.t * 'b Promise.t -> ('a * 'b) Promise.t} to
+  combine two promises into one. Essentially, it becomes one promise which
+  is fulfilled only when both of the original promises are fulfilled.
+
+  \pause
+  \vspace{\fill}
+
+  Importantly, this does not specify which fetch finishes first! Both
+  are \textit{started} together, and we only compute the score once both
+  pages have arrived. (The two reads stay sequential on purpose ---
+  there's only one keyboard.)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Signature}
+
+  \begin{codeblock}
+signature PROMISE =
+sig
+  type 'a t
+  type 'a promise = 'a t
+
+  val new     : unit -> 'a promise
+  val resolve : 'a promise * 'a -> unit
+  val upon    : 'a promise * ('a -> unit) -> unit
+
+  val thenDo  : 'a promise * ('a -> 'b promise) -> 'b promise
+  val both    : 'a promise * 'b promise -> ('a * 'b) promise
+end
+\end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Promise REPL}
+
+  Let's first see what we're building toward. Assume our two primitives
+  now return promises instead of taking callbacks:
+
+  \begin{codeblock}
+    val sleep     : int -> unit promise
+    val read_line : unit -> string promise
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  And one more operation: \code{upon (p, k)} registers a plain
+  observer --- run \code{k} on the value once it exists. (Like
+  \code{thenDo}, except \code{k} returns nothing, and no new promise
+  is created.)
+
+  \pause
+  \vspace{\fill}
+
+  The contract underneath: \term{when a promise resolves, everything
+  waiting on it drops into the loop's inbox of ready work}.
+
+  \pause
+  \vspace{\fill}
+
+  Before we see how to build this, let's see how it would be used.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The REPL, Rewritten}
+
+  {\small
+  \begin{codeblock}
+    fun ping n =
+      upon (sleep n, fn () =>
+        print ("pong! (waited " ^ Int.toString n ^ " seconds)"))
+
+    fun repl () =
+      ( print "repl> ";
+        upon (read_line (), fn line =>
+          case parse line of
+            Help   => (print helpText; repl ())
+          | Ping n => (ping n; repl ()))
+      )
+\end{codeblock}
+  }
+
+  \pause
+
+  This is a similar shape to the first \code{repl} we wrote, but every wait
+  is now a registration, the recursion lives \textit{inside} the continuation,
+  and nothing blocks.\footnote{From here on, the runtime owns the event
+  loop: every program implicitly ends by entering it --- just as in
+  JavaScript, where the host runs your script to completion, then loops.}
+\end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{One Last Convenience}
+
+%   Having to say the magic words at the end of every program is annoying:
+
+%   \begin{codeblock}
+%     val () = (repl (); loop ())
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   So we fold the engine into the runtime, and give programs one entry
+%   point:
+
+%   \begin{codeblock}
+%     fun run main = (main (); loop ())
+
+%     val () = run repl
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   This is exactly what JavaScript does for you: your script \textit{is}
+%   the prelude, and the host quietly appends the loop call --- which is
+%   why you've never seen it. We end where JS begins: the engine
+%   disappears into the runtime, and a program is once again just code
+%   that registers things.
+% \end{frame}
+
+\sectionSlide{3}{A Promise Trace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Animated trace of the promise REPL: one frame per step, stamped from
+% async-trace-body.tex.  \tracestep{line}{notif}{waiting}{inbox}{terminal}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% code-line marker: highlights the current line when its number equals
+% \TraceLine, using the SAME visual as the backtick highlight in
+% codeblocks (toolbox's bt@HL@box): a rounded hlYellow node, strut
+% height, base-anchored.  Zero footprint; drawn before the line's text
+% so the code prints on top.
+\newcommand{\M}[1]{\ifnum#1=\TraceLine\relax
+  \rlap{\raisebox{0pt}[0pt][0pt]{\tikz[baseline=0pt]{%
+    \node[anchor=base west, fill=hlYellow, outer sep=0pt, inner xsep=1pt,
+          inner ysep=0pt, rounded corners=3pt,
+          minimum height=\ht\strutbox+1pt,
+          minimum width=\dimexpr\linewidth-1.5em\relax]
+         {\raisebox{1pt}{\strut}\strut};}}}%
+\fi}
+
+% a promise, drawn as a chip: rounded light-blue box in the waiting panel
+\newcommand{\PBox}[1]{\tikz[baseline=(p.base)]{%
+  \node[fill=hlBlue, rounded corners=2pt, inner xsep=3pt,
+        inner ysep=1.5pt] (p) {\ttfamily\scriptsize #1};}}
+
+% a ready task in the inbox: same chip, green (blue = waiting, green = ready)
+\newcommand{\TBox}[1]{\tikz[baseline=(p.base)]{%
+  \node[fill=hlGreen, rounded corners=2pt, inner xsep=3pt,
+        inner ysep=1.5pt] (p) {\ttfamily\scriptsize #1};}}
+
+\newcommand{\tracestep}[5]{%
+  \def\TraceLine{#1}%
+  \def\TraceNotif{#2}%
+  \def\TraceWaiting{#3}%
+  \def\TraceInbox{#4}%
+  \def\TraceTerm{#5}%
+  \input{slides/150/async-trace-body}%
+}
+
+\tracestep{14}
+  {repl () runs to completion; the runtime then (implicitly) enters
+   its event loop.}
+  {(nothing)}
+  {(empty)}
+  {~}
+
+\tracestep{6}
+  {repl runs, start to finish, uninterrupted.}
+  {(nothing)}
+  {(empty)}
+  {repl> }
+
+\tracestep{7}
+  {read\_line parks ``resolve P1'' with the reader; upon parks the
+   handler on P1. repl RETURNS.}
+  {reader $\to$ \PBox{P1 [line handler]}}
+  {(empty)}
+  {repl> }
+
+\tracestep{0}
+  {loop: inbox empty, no timers due --- sleep until input arrives.
+   (Nothing of ours is running.)}
+  {reader $\to$ \PBox{P1 [line handler]}}
+  {(empty)}
+  {repl> }
+
+\tracestep{0}
+  {WORLD: user types ``ping 2''. Loop wakes; reader fires resolve P1;
+   P1's waiters move to the inbox.}
+  {(nothing)}
+  {\TBox{handler (``ping 2'')}}
+  {repl> ping 2}
+
+\tracestep{8}
+  {loop runs the handler: parse the line...}
+  {(nothing)}
+  {(empty)}
+  {repl> ping 2}
+
+\tracestep{11}
+  {...it's Ping 2, so call ping 2.}
+  {(nothing)}
+  {(empty)}
+  {repl> ping 2}
+
+\tracestep{2}
+  {sleep 2 files a timer that will resolve P2; upon parks the pong
+   printer on P2.}
+  {timer +2s $\to$ \PBox{P2 [print pong]}}
+  {(empty)}
+  {repl> ping 2}
+
+\tracestep{12}
+  {...then repl () re-arms: new prompt, new read (P3). The handler
+   RETURNS; the step is over.}
+  {timer +2s $\to$ \PBox{P2 [print pong]}\\
+   reader\hspace{2.1em} $\to$ \PBox{P3 [line handler]}}
+  {(empty)}
+  {repl> ping 2\\ repl> }
+
+\tracestep{0}
+  {loop: sleep until input OR the +2s deadline, whichever first.
+   (Nothing of ours is running.)}
+  {timer +2s $\to$ \PBox{P2 [print pong]}\\
+   reader\hspace{2.1em} $\to$ \PBox{P3 [line handler]}}
+  {(empty)}
+  {repl> ping 2\\ repl> }
+
+\tracestep{0}
+  {WORLD: 2 seconds pass. Timer due; resolve P2 fires; P2's waiter
+   moves to the inbox.}
+  {reader $\to$ \PBox{P3 [line handler]}}
+  {\TBox{print pong}}
+  {repl> ping 2\\ repl> }
+
+\tracestep{3}
+  {loop runs the pong printer. Then: inbox empty, one reader parked
+   --- sleep until input. The REPL lives on.}
+  {reader $\to$ \PBox{P3 [line handler]}}
+  {(empty)}
+  {repl> ping 2\\ repl> pong! (waited 2 seconds)}
+
+\sectionSlide{4}{Building Promises}
+
+\begin{frame}[fragile]
+  \frametitle{Three Drafts of a Cache, Three Diseases}
+
+  Before we build promises, let's see what can go wrong. Raw callbacks come with
+  \term{no guarantees}: nothing checks how a function treats the
+  continuation it was handed.
+
+  \pause
+  \vspace{\fill}
+
+  Here's an innocent task: fetching a page is slow, so cache it ---
+  call \code{k} straight from the cache when we can.
+
+  \pause
+  \vspace{\fill}
+
+  We'll write it three times, and each time see that it breaks a
+  different unwritten rule.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Draft 1: The Dropped Continuation}
+
+  \begin{codeblock}
+    fun fetch_cached name k =
+      if `valid` name
+      then fetch_page name (fn page =>
+             (`insert` (name, page);   (* stash for next time *)
+              k page))
+      else print "bad name!"
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  On a bad name, \code{k} is never called. The caller doesn't crash ---
+  it \term{waits forever, silently}. Everything that was going to
+  happen next was inside \code{k}, and nobody ran it.
+
+  \pause
+  \vspace{\fill}
+
+  Why it's so nasty: the failure is an \textit{absence}. No error, no
+  stack trace, no line to point at --- the program didn't die, it just
+  stopped having a future.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Draft 2: The Double Call}
+
+  \begin{codeblock}
+    fun fetch_cached name k =
+      ( case `lookup` name of
+          SOME page => k page    (* meant to stop here! *)
+        | NONE => ()
+      ; fetch_page name (fn page =>
+          (`insert` (name, page); k page)) )
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  On a cache hit, \code{k} runs now --- \textit{and again} when the
+  fetch lands. But \code{k} is the rest of the program: two pongs, two
+  prompts, two of everything downstream.
+
+  \pause
+  \vspace{\fill}
+
+  Nothing errors at the call site; the wreckage appears later,
+  elsewhere. (In JavaScript this is the famous ``forgot the
+  \code{return} before the callback'' --- arguably the most-committed
+  callback bug in history.)
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Draft 3: Sometimes Now, Sometimes Later}
+
+  Third try --- and this one \textit{looks} correct:
+
+  \begin{codeblock}
+    fun fetch_cached name k =
+      case `lookup` name of
+        SOME page => k page               (* HIT: k runs NOW   *)
+      | NONE => fetch_page name (fn page =>
+          (`insert` (name, page); k page)) (* MISS: k runs LATER *)
+\end{codeblock}
+
+  \pause
+
+  Now look at it from a \textit{caller's} seat:
+
+  \begin{codeblock}
+    ( fetch_cached name (fn page => print page)
+    ; print "done!" )
+\end{codeblock}
+
+  Which prints first, the page or the done? On a \term{hit},
+  \code{print page} runs first, but on a miss, it runs second.
+  It's all dependent on the cache's mood.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{...and One Disease of Our Own}
+
+  The library isn't the only one who can sin --- callers can too.
+  Remember our spam-printing repl? Its bug was the code placed
+  \textit{after} the registration --- the \code{repl ()} call ran
+  immediately. Here is that same disease, minimized:
+
+  \begin{codeblock}
+    ( inputLineThen (fn line => print line)
+    ; print "done!" )
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  \code{done!} prints \textit{first}. Registration returns instantly;
+  the code after it runs \textit{now}, not after the line arrives.
+
+  \pause
+  \vspace{\fill}
+
+  \keyBox{}{After a registration, the only ``later'' is inside the
+  callback.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Tally}
+
+  \begin{itemize}
+    \item \term{Dropped}: some branch never calls \code{k} --- the
+      workflow waits forever, silently.
+    \item \term{Doubled}: some branch calls \code{k} twice --- the rest
+      of the program happens twice.
+    \item \term{Sometimes-now}: \code{k} runs before the call returns
+      on some inputs --- order at the call site depends on hidden
+      state.
+    \item \term{Premature after}: code placed after a registration runs
+      before the result exists.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  None of these require carelessness --- every \textit{branch} of every
+  callback-taking function must maintain ``\term{exactly once, always
+  later}'' by hand, forever, in every library you depend on.
+
+  \pause
+  \vspace{\fill}
+
+  Hold that phrase. We're about to make it a \textit{datatype}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Two Kinds of Queue}
+
+  Our conceptual view of our computational model is that we have
+  two kinds of queues:
+
+  \pause
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item The \term{run queue} (one, owned by the event loop):
+      contains jobs, which are ready to run anytime.
+    \item The \term{wait queues} (one inside every pending promise):
+      continuations linked to each promise, which are ready to receive
+      the promise's future value. These cannot run yet, as we do not yet have the value
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Essentially, a promise contains potential run queue functions,
+  which are only promoted once the promise is fulfilled.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Implementing the Run Queue}
+
+  Here is how we implement the run queue:
+
+  \begin{codeblock}
+    val todo : (unit -> unit) list ref = ref []
+
+    fun defer f = todo := !todo @ [f]
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This is the generality we've been chasing since the tick loop,
+  finally delivered: \term{deferred computation with no strings
+  attached}. A \code{todo} entry is simply code to run, later, no
+  qualifications.
+
+  \pause
+  \vspace{\fill}
+
+  The loop drains it first, before anything else:
+
+  \begin{codeblock}
+    fun loop () =
+      case !todo of
+          f :: fs => (todo := fs; f (); loop ())
+        | [] => (* input, timers, nap: as before *) ...
+\end{codeblock}
+
+  This is the first and \term{last} change the loop will ever need.
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Implementing Promises}
+
+  Promises sound like magic, but we've essentially already built them.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    val read_job : (string -> unit) option ref = ref NONE
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  A slot where a continuation waits for a string is essentially a promise
+  with two limitations: it forgets the value once delivered, and it holds
+  only one waiter.
+
+  \pause
+
+  \begin{codeblock}
+    datatype 'a state =
+        Pending of ('a -> unit) list
+      | Resolved of 'a
+
+    type 'a promise = 'a state ref
+\end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{upon and resolve}
+
+  {\small
+  \begin{codeblock}
+    fun upon (p, k) =
+      case !p of
+          Resolved v => defer (fn () => k v) (* 1 *)
+        | Pending ks => p := Pending (k :: ks)
+
+    fun resolve (p, v) =
+      case !p of
+          Resolved _ => raise Fail "resolved twice!" (* 2 *)
+        | Pending ks =>
+            ( p := Resolved v
+            ; List.app (fn k => defer (fn () => k v)) ks )
+\end{codeblock}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  This construction carefully avoids the bugs we previously
+  outlined. \code{1} ensures we always defer our continuation,
+  even if the answer is present, and \code{2} ensures resolving twice
+  raises so we do not double-call.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Wrapping the Primitives}
+
+  Where do promises come from? We wrap the primitives we already have:
+
+  \begin{codeblock}
+    (* an empty promise is an empty queue of continuations *)
+    fun new () = ref (Pending [])
+
+    fun sleep n =
+      let val p = new ()
+      in waitThen n (fn () => resolve (p, ())); p end
+
+    fun read_line () =
+      let val p = new ()
+      in inputLineThen (fn line => resolve (p, line)); p end
+\end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  Notice what did \textit{not} change: \code{waitThen},
+  \code{inputLineThen}, the timers list, the read job. Promises
+  replaced nothing --- they \term{organize} what we had. A promise is a
+  parking spot; \code{resolve} is a courier to the same old loop.
+\end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Cache, Finally}
+
+%   Remember the cache we couldn't write? The trick: cache the
+%   \term{promise}, not the page.
+
+%   \begin{codeblock}
+%     val cache : (string * page promise) list ref = ref []
+
+%     fun fetch_cached name =
+%       case `lookup` name of
+%           SOME p => p          (* a hit -- even mid-flight! *)
+%         | NONE =>
+%             let val p = fetch_page name
+%             in `insert` (name, p); p end
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Every disease is now \textit{structurally impossible}: there is no
+%   \code{k} to drop or double-call (callers attach their own), and
+%   \code{upon} always defers. And something genuinely new: a second
+%   request for a page \term{still in flight} just shares the same
+%   promise --- one fetch, many askers, late arrivals served from memory.
+%   With raw callbacks, that means hand-rolling a waiter list...
+%   which is reinventing promises.
+% \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What Changed in the Event Loop?}
+
+  We saw earlier that we changed the inbox to make it more general.
+
+  \pause
+  \vspace{\fill}
+
+  The real advantage we have gained here is that promises both
+  compose nicely and also prevent us from committing a class of
+  bugs (the ones we saw earlier).
+
+  \pause
+  \vspace{\fill}
+
+  And nothing about \textit{waiting} changed: the loop still sleeps
+  until input or the next deadline --- promises are a library
+  \textit{above} the loop, not machinery inside it. Any future kind of
+  operation (HTTP requests, database reads, ...) is one
+  \code{sleep}-style wrapper away; the loop gains no new cases, ever.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \sectionSlide{5}{Promises}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \begin{frame}[fragile]
+%   \frametitle{What a Promise Is (and Is Not)}
+
+%   A promise represents:
+%   \begin{itemize}
+%     \item \term{one execution}, already started --- not a reusable recipe;
+%     \item one eventual result, \term{shared} by all observers;
+%     \item a result \term{remembered} after resolution.
+%   \end{itemize}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Contrast with two things you know:
+%   \begin{itemize}
+%     \item \code{unit -> 'a} --- a \emph{recipe}: run it again, it computes
+%       again;
+%     \item \code{'a susp} (lazy lecture) --- \emph{you} pull, when you choose;
+%       a promise is \emph{pushed} by the world, and you cannot force it.
+%   \end{itemize}
+
+%   \pause
+%   \vspace{\fill}
+
+%   % TS shadow, verbal: `const p = fetch(url)` has ALREADY started; awaiting
+%   % p twice does not refetch. async is a return-TYPE statement.
+% \end{frame}
+
+% % OPTIONAL aside, if a student asks "can't anyone resolve anyone's promise?":
+% % real APIs split the read and write ends into two types (same ref, sealed
+% % behind a signature) so only the producer may fulfill --- the modules
+% % lecture applied to time. jQuery's Deferred had .resolve() on the object
+% % and it was abused; standard JS promises moved resolve into a closure
+% % (the executor), and ES2024's Promise.withResolvers() returns the pair.
+
+% \begin{frame}[fragile]
+%   \frametitle{The Split Is Forced, Not Chosen}
+
+%   Why not one queue?
+
+%   \pause
+%   \vspace{\fill}
+
+%   \begin{itemize}
+%     \item \term{Types}: \code{defer} runs \code{unit -> unit} thunks. A
+%       parked continuation is \code{'a -> unit} --- and only the promise will
+%       ever have the \code{'a}. You literally cannot put it on the run queue
+%       yet.
+%     \pause
+%     \item \term{The alternative is busy-polling}: ``resolved yet? re-enqueue
+%       me.'' Burns CPU, and the loop never empties --- so you can no longer
+%       tell a waiting program from a running one, or detect that the program
+%       is finished, or detect deadlock.
+%   \end{itemize}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Waiting must be a \term{state}, not an activity.
+% \end{frame}
+
+% % \begin{frame}[fragile]
+% %   \frametitle{You Have Seen This Graph Before}
+
+% %   Scatter the wait queues across all promises and look at what you have:
+% %   nodes (promises), edges (parked continuations: ``needs that value'').
+
+% %   \pause
+% %   \vspace{\fill}
+
+% %   It is a \term{dependency DAG} --- the work/span graph from the sequences
+% %   unit, except now it is a \emph{runtime data structure} you could walk in
+% %   the heap.
+
+% %   \pause
+% %   \vspace{\fill}
+
+% %   \begin{itemize}
+% %     \item The run queue is the DAG's \term{ready frontier}.
+% %     \item \code{resolve} advances the frontier.
+% %     \item Multi-source: every host op mints a world-fired source. No single
+% %       root --- that plurality \emph{is} the concurrency.
+% %     \item Not a forest of trees: \term{joins} (\code{both}) give nodes two
+% %       parents. Join-free programs are chains --- the case callbacks survive.
+% %       Tree-ness fails exactly at the joins, and the joins are why promises
+% %       had to exist.
+% %   \end{itemize}
+% % \end{frame}
+
+% % \begin{frame}[fragile]
+% %   \frametitle{Combinators Are Dependency Edges}
+
+% %   \begin{codeblock}
+% % infix 1 thenDo thenMap
+% % fun p thenDo next = Promise.bind p next
+% % fun p thenMap f   = Promise.map f p
+% % \end{codeblock}
+
+% %   \pause
+% %   \vspace{\fill}
+
+% %   \begin{itemize}
+% %     \item \code{p thenDo f} --- the next \emph{async} step needs p's value.
+% %     \item \code{p thenMap f} --- only \emph{pure} computation remains after p.
+% %     \item \code{both (p, q)} --- joins two \emph{already-started} operations.
+% %     \item \code{upon p k} --- observe, without making your workflow depend
+% %       on p.
+% %   \end{itemize}
+
+% %   \pause
+% %   \vspace{\fill}
+
+% %   One warning, now and twice more before the end: \term{combinators create
+% %   no concurrency.} The calls that made p and q did. These only describe
+% %   dependencies among results.
+% % \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Counter Dance, Retired}
+
+%   \begin{codeblock}
+% fun both (p, q) =
+%   bind p (fn x => map (fn y => (x, y)) q)
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Every hand-rolled join in every 2010 Node codebase --- the two slots, the
+%   \code{arrive} check, the off-by-one bugs --- replaced by two lines,
+%   written once, in the library.
+
+%   \pause
+%   \vspace{\fill}
+
+%   This is the single biggest thing promises bought. Not prettiness:
+%   \term{fan-in as a value}.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Honest Accounting}
+
+%   Fixed, permanently:
+%   \begin{itemize}
+%     \item joins (\code{both}), exactly-once, sharing, memoization;
+%     \item the result is a \term{value} again --- \code{main} returns
+%       \code{unit Promise.t}; callers can compose it.
+%   \end{itemize}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Not fixed:
+%   \begin{itemize}
+%     \item the nesting is still CPS --- ``flat'' promise chains are a
+%       formatting idiom, not a structural change;
+%     \item \code{NONE} handled per step --- exactly the tax JS's
+%       \emph{rejection channel} exists to remove (backup slide).
+%   \end{itemize}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Fixing the nesting for real is the last act of this lecture.
+% \end{frame}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \sectionSlide{6}{The Jobs REPL}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \begin{frame}[fragile]
+%   \frametitle{The Public Runtime}
+
+%   Application code sees only this:
+
+%   \begin{codeblock}
+% signature ASYNC_RUNTIME =
+% sig
+%   structure Promise : PROMISE
+
+%   val inputLine : unit -> string option Promise.t
+%   val spawn     : (unit -> 'a) -> 'a Promise.t
+%   val print     : string -> unit
+
+%   (* drive to quiescence; warn if main never finished *)
+%   val run : unit Promise.t -> unit
+% end
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   No threads. No sockets. No scheduler. Two async operations, an output,
+%   and a way to start the world turning.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Launching a Job}
+
+%   \begin{codeblock}
+% fun launch n =
+%   let
+%     val id = freshJob ()
+%     val () = print ("[" ^ Int.toString id ^ "] started\n")
+%     val result = spawn (fn () => compute n)
+%   in
+%     Promise.upon result (report id)
+%   end
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Read the dependency structure: \code{spawn} starts the work and returns
+%   the handle \emph{immediately}. \code{upon} attaches the report ---
+%   \term{without making anything wait for it}. Then \code{launch} returns.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Input Loop}
+
+%   \begin{codeblock}
+% fun loop () =
+%   let
+%     val () = print "jobs> "
+%   in
+%     inputLine () thenDo
+%       (fn NONE => Promise.pure ()
+%         | SOME line => dispatch (parse line))
+%   end
+
+% and dispatch (Run n) = (launch n; loop ())
+%   | dispatch Help    = (print helpText; loop ())
+%   | dispatch Quit    = Promise.pure ()
+%   | dispatch Invalid = (print "invalid command\n"; loop ())
+% \end{codeblock}
+
+%   \pause
+
+%   One real dependency (\code{thenDo}); one deliberate non-dependency
+%   (\code{launch n}).
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Bug That Survives All Abstraction}
+
+%   Now the variant. Same promises, same spawn, same everything --- one line
+%   differs:
+
+%   \begin{codeblock}
+%   (* responsive *)
+% | dispatch (Run n) = (launch n; loop ())
+
+%   (* serial *)
+% | dispatchSerial (Run n) =
+%     launchAwaited n thenDo (fn () => loopSerial ())
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   % DEMO CUE: sml live-run-serial.sml -- run 43, then type help, watch it hang
+%   The serial version awaits each job before prompting again.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Same Script, Two Fates}
+
+%   Script: \code{run 40} / \code{help} / job 0 completes / \code{quit}
+
+%   \begin{columns}[T]
+%   \begin{column}{0.48\textwidth}
+%   \begin{codeblock}[language={}]
+% jobs> run 40
+% [0] started
+% jobs> help
+% commands: run n | ...
+% jobs> [0] finished: 80
+% quit
+% \end{codeblock}
+%   \end{column}
+%   \begin{column}{0.48\textwidth}
+%   \begin{codeblock}[language={}]
+% jobs> run 40
+% [0] started
+% help
+% [0] finished: 80
+% jobs> commands: run n | ...
+% jobs> quit
+% \end{codeblock}
+%   \end{column}
+%   \end{columns}
+
+%   \pause
+%   \vspace{\fill}
+
+%   On the right, \code{help} was typed --- and \emph{ignored} until the job
+%   finished. Both transcripts are machine-checked by the same test script.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Exam Question}
+
+%   \begin{center}
+%   \emph{Both versions use promises and independently progressing
+%   computation. Why does only one remain responsive?}
+%   \end{center}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Because the serial version adds an \term{unnecessary dependency edge}:
+%   ``read the next command'' now depends on ``current job finishes.''
+%   Nothing blocked. The event loop was free the whole time. The
+%   \emph{dependency structure} was wrong.
+
+%   \pause
+%   \vspace{\fill}
+
+%   \begin{center}
+%   \term{await expresses a local data dependency, not global blocking.}
+%   \end{center}
+
+%   % TS shadow: this is `for (const u of urls) await fetch(u)` --- the most
+%   % common async performance bug in industry. Same structure, same fix.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Complete State of an Async Program}
+
+%   Freeze the program at any instant. Everything lives in exactly three
+%   places:
+
+%   \begin{enumerate}
+%     \item the \term{run queue} --- ready thunks (usually empty!);
+%     \item the \term{promise wait queues} --- parked continuations, read side;
+%     \item the \term{host's registration slots} --- held resolve-callbacks for
+%       in-flight operations, write side. Node calls these \emph{handles}.
+%   \end{enumerate}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Mid-session snapshot of our REPL, two jobs running:
+
+%   \begin{codeblock}[language={}]
+% run queue:       []              (idle)
+% input promise:   Pending [rest-of-the-REPL]
+% job 0 promise:   Pending [report 0]
+% job 1 promise:   Pending [report 1]
+% host:            reader armed; 2 jobs in flight
+% \end{codeblock}
+
+%   ``Doing nothing'' --- yet three futures fully described.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Where Is the REPL Loop Right Now?}
+
+%   Serious question. Point to it. Which data structure holds ``the REPL
+%   workflow''?
+
+%   \pause
+%   \vspace{\fill}
+
+%   \term{Nowhere. Workflows have no runtime identity.} A workflow exists
+%   only as, at most, one parked continuation in some promise's wait queue
+%   --- a chain of continuations threaded through the queues over time.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Contrast threads: a thread has a stack, an identity, an entry in a
+%   scheduler table; you can list threads and kill one.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Real-world fallout: Node cannot show you ``all in-flight operations''
+%   (only \emph{count} handles); async stack traces are famously bad (the
+%   stack dies at every await); ``structured concurrency'' is the movement
+%   to give workflows their identity back.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Every Fulfillment Happens On the Loop}
+
+%   Promises never resolve ``in the background.'' Two flavors, both ordinary
+%   run-queue steps:
+
+%   \begin{itemize}
+%     \item \term{root resolutions} --- the host queues a task whose body
+%       \emph{is} the resolve call it has held since \code{fromCallback}. The only
+%       doorway for outside values.
+%     \item \term{derived resolutions} --- the cascade: \code{map}/\code{bind}
+%       adapters resolving downstream promises as their steps run.
+%   \end{itemize}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Corollary, worth saying aloud: \term{no promise ever changes state
+%   underneath a running callback.} The world advances only \emph{between}
+%   steps. This is why nothing in today's code needed a lock.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The UI Principle}
+
+%   \begin{codeblock}
+% val result = spawn (fn () => compute n)
+% val () = Promise.upon result
+%            (fn answer => updateUI answer)
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Jobs produce \term{values}. Only event-loop callbacks touch the UI /
+%   shared state --- and those run one at a time.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Invariant you get for free: job \emph{completion order} is
+%   nondeterministic, but \emph{UI state transitions} are sequential.
+%   Concurrency where it helps, sequentiality where you reason.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{An Await Nobody Will Satisfy}
+
+%   What if you await a promise that never resolves? Serial REPL, a job that
+%   never completes:
+
+%   \begin{codeblock}[language={}]
+% jobs> run 5
+% [0] started
+% quit
+% [runtime] event loop quiescent but main
+%           workflow never finished (deadlock?)
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   The loop goes \term{quiescent}: run queue empty, nothing in flight that
+%   could fill it. The parked continuation isn't lost, and it isn't spinning
+%   --- it is parked on a condition that can never fire. Because waiting is a
+%   \emph{state}, deadlock is \emph{detectable}.
+% \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\sectionSlide{5}{Asynchronous Code and TypeScript}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]
+  \frametitle{Asynchronous TypeScript}
+
+  Today's lecture involved trying to phrase asynchronous code in
+  a run-to-completion single-threaded program, with access to
+  higher-order functions.
+
+  \pause
+  \vspace{\fill}
+
+  We're lucky that we weren't the first to have to do this--JavaScript
+  was one of the first languages to tread this path, long ago!
+
+  \pause
+  \vspace{\fill}
+
+  Everything we implemented today has a direct analogue somewhere in
+  the history of JavaScript.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{async/await, Compiled}
+
+
+  It turns out that frontend development just ends up being
+  functional programming all along.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+  \begin{tabular}{lll}
+    2009 & callbacks (Node.js) & = CPS \hfill (L11) \\
+    2011 & async.js combinators & = HOFs \hfill (L10) \\
+    2015 & promises (ES6) & = CPS + single-assignment ref \hfill (L19) \\
+    2017 & async/await (ES2017) & = the CPS transform, by compiler \hfill (L11) \\
+  \end{tabular}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  The very themes you have been learning in this course are the same
+  as powered the entire JavaScript and TypeScript ecosystems,
+  essentially.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Asynchronous TypeScript}
+
+  TypeScript has a lot of nice abstractions for dealing with
+  asynchronous code. You can write:
+
+  \begin{codeblock}
+    const result = await fetch("https://example.com");
+    const data = await result.json();
+    console.log(data);
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This code just compiles down to our promise-based equivalent!
+  \begin{codeblock}
+    fetch "https://example.com" thenDo (fn result =>
+      jsonify result thenDo (fn data =>
+        print data
+      )
+    )
+  \end{codeblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Reveal}
+
+  All the niceties of asynchronous programming in Typescript, we saw
+  today.
+
+  \begin{center}
+  \begin{tabular}{ll}
+    \textbf{TypeScript} & \textbf{Today} \\
+    \texttt{Promise<A>} & \texttt{A Promise.t} \\
+    \texttt{p.then(f)} & \texttt{thenMap} or \texttt{thenDo} \\
+    \texttt{await p} & \texttt{p thenDo (fn x => ...)} \emph{(compiled!)} \\
+    \texttt{Promise.all([p, q])} & \texttt{both (p, q)} \\
+    \texttt{async (a: A) => B} & \texttt{A -> B Promise.t} \\
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Epilogue: You Were Here First}
+
+%   From Node.js (2009) to async/await (2017), the mainstream spent
+%   \term{eight years} climbing out of callback hell, one rung at a time.
+
+%   \pause
+%   \vspace{\fill}
+
+%   None of the rungs were new. \term{Promises}: 1988 --- Liskov \&
+%   Shrira, for distributed RPC. \term{Direct-style await}: 1994 ---
+%   Filinski built it in \textit{SML/NJ}, using first-class
+%   continuations. And async/await reached industry through the
+%   \term{ML family}: F\# (2007) $\to$ C\# (2012) $\to$ JavaScript,
+%   Python, Rust, Swift.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Everything you built today was known to this language family before
+%   most of you were born. The industry just had to rediscover it ---
+%   the hard way.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Desugaring Rule}
+
+%   \begin{codeblock}[language={}]
+% val x = await p            p thenDo (fn x =>
+% rest              ==>        rest)
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   The code after \code{await} \emph{is} the continuation, waiting on the
+%   promise.
+
+%   \pause
+%   \vspace{\fill}
+
+%   \begin{center}
+%   You already knew async/await. It's \code{bind}, wearing syntax.
+%   \end{center}
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The REPL, in TypeScript}
+
+%   % language=java is close enough for draft highlighting of TS
+%   \begin{codeblock}[language=java]
+% async function repl(): Promise<void> {
+%   while (true) {
+%     const line = await inputLine();
+%     if (line === null || line === "quit") return;
+
+%     if (isRunCommand(line)) {
+%       const job = spawn(() => compute(line));
+%       job.then(result => updateUI(result));
+%       // deliberately NOT awaited
+%     }
+%   }
+% }
+% \end{codeblock}
+
+%   \pause
+
+%   Both moves are here: the genuine dependency (\code{await}), and the
+%   deliberate non-dependency (\code{job}). Same structure, new clothes.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{But How Does await WORK? Ask the Compiler}
+
+%   JS cannot pause a function. So \code{tsc}, targeting old JavaScript,
+%   \emph{rewrites yours}. Real output (typescript@5.5, \code{--target ES5}),
+%   outer layer first:
+
+%   \begin{codeblock}[language=java]
+% function main() {
+%   return __awaiter(this, void 0, void 0, function () {
+%     var x, y, _a, a, b;        // locals, hoisted
+%     return __generator(this, function (_b) {
+%       ...                      // next slide
+%     });
+%   });
+% }
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   \code{__awaiter} wraps everything in a promise and pumps the machine:
+%   run until it yields a promise, \code{.then} the resumption onto it,
+%   repeat. Sound familiar? It's \code{fromCallback} plus our driver.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Machine Itself}
+
+%   \begin{codeblock}[language=java]
+% switch (_b.label) {
+%   case 0: return [4, inputLine()];
+%   case 1:
+%     x = _b.sent();
+%     return [4, inputLine()];
+%   case 2:
+%     y = _b.sent();
+%     return [4, Promise.all([...])];
+%   case 3:
+%     _a = _b.sent(); a = _a[0]; b = _a[1];
+%     console.log("sum: " + (a + b));
+%     return [2];
+% }
+% \end{codeblock}
+
+%   \code{[4, p]} = ``I yield promise p; resume me at the next label.''
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Reading the Machine}
+
+%   \begin{itemize}
+%     \item Your body became a \term{switch over numbered states} --- each
+%       case is exactly the code between two awaits. The compiler wrote your
+%       continuations, then \emph{numbered} them instead of allocating
+%       closures.
+%     \pause
+%     \item \code{await} compiled to \term{return}. Suspension \emph{is}
+%       returning --- the only kind of stop JS allows. \code{label} was bumped
+%       first, so the machine knows where to resume.
+%     \pause
+%     \item Locals are \term{hoisted} (\code{var x, y}) so they survive
+%       between calls: the stack frame, made manual.
+%     \pause
+%     \item \code{label} is \term{the function's program counter, evicted to a
+%       variable} --- because the function must keep giving the CPU away.
+%   \end{itemize}
+
+%   \pause
+%   \vspace{\fill}
+
+%   \begin{center}
+%   \emph{The TypeScript compiler does to your code what Lecture 11 taught
+%   you to do by hand.}
+%   \end{center}
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Same Machine, in SML, by Hand (1/2)}
+
+%   \begin{codeblock}
+% val x = ref ""  val y = ref ""     (* var x, y  *)
+% val label = ref 0                  (* _b.label  *)
+
+% fun step sent =
+%   case (!label, sent) of
+%       (0, _) =>
+%         ( label := 1 ; print "x? "
+%         ; upon (map Line (inputLine ())) step )
+%     | (1, Line (SOME line)) =>
+%         ( x := line ; label := 2 ; print "y? "
+%         ; upon (map Line (inputLine ())) step )
+%     | ...
+% \end{codeblock}
+
+%   \pause
+
+%   Hoisted refs, a label, a case dispatch. Each arm registers
+%   \emph{step itself} on the next promise, then falls out of the function.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{The Same Machine, in SML, by Hand (2/2)}
+
+%   \begin{codeblock}
+%     | (2, Line (SOME line)) =>
+%         ( y := line ; label := 3
+%         ; upon (map Pair (both ( spawnFib (!x)
+%                                , spawnFib (!y) )))
+%                step )
+%     | (3, Pair (a, b)) =>
+%         print ("sum: " ^ Int.toString (a + b) ^ "\n")
+%     | _ => raise Fail "impossible state"
+% \end{codeblock}
+
+%   \pause
+
+%   This is not an analogy. It is the same machine. (Transcript-identical
+%   with all the other stagings --- machine-checked.)
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{What the Types Expose}
+
+%   One divergence from the JS output, and it's telling:
+
+%   \begin{codeblock}
+% datatype sent =            (* _b.sent() : any *)
+%     Line of string option
+%   | Pair of int * int
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   JS's \code{sent()} is untyped, so the machine quietly awaits a string
+%   here and a pair there. SML makes you declare \term{the union of
+%   everything this function will ever await}.
+
+%   \pause
+%   \vspace{\fill}
+
+%   That's the classic hidden cost of defunctionalization, surfacing in the
+%   types. The compiler knew this union all along --- dynamic typing just let
+%   it go unspoken.
+% \end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{What We Hid (On Purpose)}
+
+  The actual system layer underneath consists of threads, processes,
+  sockets, syscalls, none of which we needed to get into to reason
+  about the application layer correctly. However, there are a few things
+  we glossed over that could improve the design:
+
+  \pause
+
+  \begin{itemize}
+    \item \term{Errors}: our promises only succeed. Real ones carry a
+      rejection channel (\code{Rejected of exn}), so failures flow down
+      chains to one handler --- JS's \code{.catch}.
+    \item \term{Type safety}: a proper promise library would separate the
+      type of the promise from its resolver, so readers can't resolve.
+    \item \term{Compute-heavy jobs}: all our work \textit{waits}. A job
+      that \textit{computes} for 3s freezes the loop; fixing that needs
+      actual concurrency --- threads, processes, workers.
+    \item \term{Cancellation}: nothing can un-register a pending
+      workflow. Done right, suspensions become values a runner can
+      decline to continue.
+    \item \term{Bytes, not lines}: input arrives in chunks, and
+      ``readable'' doesn't mean a whole line is there --- real hosts
+      keep buffers.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Whole Lecture, in Five Lines}
+
+  \begin{itemize}
+    \item Asynchronous programs are synchronous programs with
+      \term{to-do lists}. A main loop, some registries, and
+      some well-informed naps.
+    \pause
+    \item After a registration, the only ``later'' is \term{inside the
+      callback} --- code placed after it runs \textit{now}.
+    \pause
+    \item A \term{promise} is the answer as a first-class value: a list of
+      parties waiting, or the answer itself, which is delivered exactly
+      once by construction.
+    \pause
+    \item \code{await} is a \term{compiled promise chain}. It's not
+      magic, it's just CPS where you don't have to write the
+      continuations.
+    \pause
+    \item Asynchronous programming boils down to functional programming:
+      first-class functions to write the future down, CPS to shatter it,
+      and a ref to remember the details.
+  \end{itemize}
+\end{frame}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \sectionSlide{11}{Backup}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \begin{frame}[fragile]
+%   \frametitle{Backup: What If the Computation Raises?}
+
+%   Our promises are success-only. The real model adds a second channel:
+
+%   \begin{codeblock}
+% datatype 'a state =
+%     Pending of ('a -> unit) list * (exn -> unit) list
+%   | Resolved of 'a
+%   | Rejected of exn
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   Rejection is what removes the per-step \code{NONE}/error handling tax you
+%   saw in every stage: failures propagate down the chain to one handler ---
+%   \code{.catch} --- the way exceptions propagate up a stack. Out of scope
+%   today; the design falls out of everything you already know.
+% \end{frame}
+
+% % \begin{frame}[fragile]
+% %   \frametitle{Backup: Concurrency Is Not Parallelism}
+
+% %   Measured, on the lecture machine: \code{fib 43} alone $\approx$ 2.8s.
+% %   Two overlapped \code{fib 43}s: both finish $\approx$ 11s. \term{No
+% %   speedup.}
+
+% %   \pause
+% %   \vspace{\fill}
+
+% %   Our host interleaves everything on one core. What you saw today is
+% %   \term{responsiveness}, never throughput.
+
+% %   \pause
+% %   \vspace{\fill}
+
+% %   You already have the parallelism story --- work/span, sequences: the
+% %   \emph{deterministic cost} of a known DAG. Today was the concurrency
+% %   story: the \emph{nondeterministic unfolding} of one. Keep the axes
+% %   separate. (Node is the same: parallel JS does not exist on the main
+% %   thread; workers live in the host --- exactly where our parallel host
+% %   would go.)
+% % \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Backup: The Purity Rule Has Teeth}
+
+%   Because spawned thunks are preemptively interleaved, a thunk that
+%   mutates shared refs is \term{observably racy}. Event-loop callbacks keep
+%   run-to-completion atomicity; spawned thunks do not.
+
+%   \pause
+%   \vspace{\fill}
+
+%   So ``jobs are pure functions that produce values; only loop callbacks
+%   touch shared state'' is not a style preference. It is the safety
+%   condition under which today's abstraction never leaks.
+
+%   \pause
+%   \vspace{\fill}
+
+%   JS enforces the same rule by construction: workers share nothing ---
+%   values cross by structured clone. We state it as a contract instead.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Backup: A Genuinely Parallel Host}
+
+%   The host contract never mentions cores --- so a parallel host is a
+%   drop-in: fork a process per job, return the result over a pipe. Real
+%   multicore speedup; zero changes to any code you saw today.
+
+%   \pause
+%   \vspace{\fill}
+
+%   The teachable wrinkle is in the type: a polymorphic \code{'a} cannot
+%   cross an address space, so a forking host operation must be monomorphic
+%   or take encode/decode functions.
+
+%   \pause
+%   \vspace{\fill}
+
+%   Serialization surfacing in the type --- which is exactly what JS's
+%   structured-clone requirement for workers is.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Backup: Timers}
+
+%   One host operation we didn't build --- JS's most famous one:
+
+%   \begin{codeblock}
+% val startTimer : int * (unit -> unit) -> unit
+% val sleep : int -> unit Promise.t
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   With \code{sleep} and \code{spawn} you can fake \code{fetch}, and then
+%   \code{Promise.race}, timeout wrappers, and debounce all port one-to-one
+%   from every JS tutorial ever written. (Trivial in the live host; the
+%   scripted host would need a logical clock.)
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Backup: The Tail-Position Trap}
+
+%   What does this print, and when?
+
+%   \begin{codeblock}
+% ( Promise.upon p step
+% ; print "done!\n" )
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   \code{"done!"} prints \emph{immediately} --- while \code{p} is still
+%   pending. Registration must be the activation's \term{final act};
+%   everything ``after the await'' must live \emph{inside} the handed-off
+%   continuation.
+
+%   \pause
+%   \vspace{\fill}
+
+%   The compiled form enforces this structurally: \code{return [4, p]}
+%   registers and returns in one statement. Hand-written CPS makes it a
+%   discipline --- and JS programmers break it weekly with code after
+%   \code{.then(...)}.
+% \end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Backup: A Reified Suspension (the Generator Protocol)}
+
+%   Between promise chains and the state machine sits one more
+%   representation --- suspension as an \emph{inspectable value}:
+
+%   \begin{codeblock}
+% datatype 'r paused =
+%     Val of 'r
+%   | Paused of 'r paused Promise.t
+
+% fun drive (Val r)     = deliver r
+%   | drive (Paused pp) = Promise.upon pp drive
+% \end{codeblock}
+
+%   \pause
+%   \vspace{\fill}
+
+%   This is the \term{generator protocol}: \code{Val} = \code{done: true},
+%   \code{Paused} = a yielded promise, \code{drive} = the pump. It computes
+%   nothing new (the driver's only move is \code{upon} --- it \emph{is}
+%   \code{bind}), but a paused workflow is an \emph{inert value}: a driver
+%   can log, time-out, interleave, or \emph{decline to continue} ---
+%   which is cancellation. And held in your hand, doing nothing, it is the
+%   cleanest proof that shattering manufactures no asynchrony.
+% \end{frame}
+
+\end{document}

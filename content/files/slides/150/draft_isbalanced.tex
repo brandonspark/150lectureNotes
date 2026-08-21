@@ -1,0 +1,113 @@
+\newpage
+\titledquestion{Balanced?}
+
+\textbf{Balanced?}
+
+A tree is \textbf{balanced} if at every node its two subtrees' heights differ by
+at most one, and both subtrees are balanced.
+\begin{codeblock}
+  datatype tree = Empty | Node of tree * int * tree
+\end{codeblock}
+
+Here is the natural first implementation, using a helper \code{height}:
+\begin{codeblock}
+  fun height Empty = 0
+    | height (Node (l, _, r)) = 1 + Int.max (height l, height r)
+
+  fun isBalanced Empty = true
+    | isBalanced (Node (l, _, r)) =
+        abs (height l - height r) <= 1
+        andalso isBalanced l
+        andalso isBalanced r
+\end{codeblock}
+
+Throughout, assume the balance check passes (so the function fully recurses),
+the tree is balanced with \code{n} nodes, and \code{height T} has work $O(m)$
+for \code{m} nodes.
+
+\begin{parts}
+  \part[4]\hfill
+
+    Write and solve the \textbf{work} recurrence for the naive \code{isBalanced}.
+
+    \begin{solutionorbox}[14em]
+      At each node the two \code{height} calls walk the whole subtree, costing
+      $O(n)$, and we recur on both halves:
+      $$W(n) = 2W(n/2) + O(n).$$
+      By the recursion tree each of the $\log n$ levels does $O(n)$ work, so
+      $$W(n) = O(n \log n).$$
+    \end{solutionorbox}
+
+  \part[4]\hfill
+
+    Now take a \textbf{left spine}: every node has only a left child. (Pretend the
+    balance check still passes, so the function recurses all the way down.) Write
+    and solve the \textbf{work} recurrence for the naive \code{isBalanced} on a
+    spine of \code{n} nodes, and say in one sentence why it is so much worse.
+
+    \begin{solutionorbox}[14em]
+      There is one recursive call per node, and \code{height} at the top walks all
+      \code{n} nodes, then $n-1$, and so on:
+      $$W(n) = W(n-1) + O(n) = O(n) + O(n-1) + \cdots = O(n^2).$$
+
+      On a spine \code{height} rescans the entire remaining chain at every level,
+      so the naive version is \textbf{quadratic} --- not merely a $\log n$ factor
+      worse than the balanced case.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[8]\hfill
+
+    Implement \code{isBalanced} so that it visits each node only once, computing
+    each subtree's height and balancedness in a single pass.
+
+    \textbf{Hint:} a helper \code{check : tree -> bool * int} returning both,
+    so no height is recomputed.
+
+    \begin{solutionorbox}[20em]
+      \begin{codeblock}
+        fun check Empty = (true, 0)
+          | check (Node (l, _, r)) =
+              let
+                val (bl, hl) = check l
+                val (br, hr) = check r
+              in
+                ( bl andalso br
+                    andalso abs (hl - hr) <= 1,
+                  1 + Int.max (hl, hr) )
+              end
+
+        fun isBalanced T = #1 (check T)
+      \end{codeblock}
+
+      Each node is visited once and does $O(1)$ work: it recurses into each child
+      \textit{once}, getting back both the child's balancedness and its height,
+      and combines them. No separate \code{height} traversal is ever needed.
+    \end{solutionorbox}
+
+  \part[4]\hfill
+
+    Write and solve the \textbf{work} recurrence for your single-pass version, and
+    compare it to the naive version on both shapes.
+
+    \begin{solutionorbox}[12em]
+      Each node does $O(1)$ work and we recur on both halves:
+      $$W(n) = 2W(n/2) + O(1) = O(n).$$
+      Every node is visited exactly once --- so this holds on \textbf{any} shape,
+      including the spine, beating the naive $O(n \log n)$ and $O(n^2)$.
+    \end{solutionorbox}
+
+  \part[4]\hfill
+
+    Write and solve the \textbf{span} recurrence for your single-pass version.
+    Why does it differ from the work?
+
+    \begin{solutionorbox}[13em]
+      $$S(n) = S(n/2) + O(1) = O(\log n).$$
+
+      The $2$ becomes a $1$: the recursive calls \code{check l} and \code{check r}
+      are \textbf{independent}, so they run \textbf{in parallel} and the span
+      follows only the deeper subtree, rather than summing both as the work does.
+    \end{solutionorbox}
+\end{parts}

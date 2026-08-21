@@ -1,0 +1,32 @@
+\part[3]\hfill
+
+  Consider the following sequence of declarations, evaluated in order:
+
+  \begin{codeblock}
+    val a = 1
+    val f = fn () => 1 div 0
+    val g = fn x => raise Fail "boom"
+    val res = a + a
+  \end{codeblock}
+
+  Does evaluating these declarations raise an exception? Answer yes or no, and
+  justify your answer in one sentence. If it does not raise, state the value of
+  \code{res}.
+
+  \begin{solutionorbox}[9em]
+    No. Binding \code{f} and \code{g} does \textbf{not} run their bodies --- a
+    function's body is only evaluated when the function is \textit{applied},
+    and neither \code{f} nor \code{g} is ever applied. So no division by zero
+    and no \code{raise} occurs, and \code{res} $\eeq$ \code{2}.
+
+    (Contrast \code{val c = 1 div 0}, which is not a function and \textit{would}
+    raise immediately, because its right-hand side is evaluated at binding
+    time.)
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 2. Static scope: a closure captures the binding in effect at its definition,
+%    not at its call. Misunderstanding: students think name lookup happens at
+%    call time against the "current" binding.
+% -----------------------------------------------------------------------------

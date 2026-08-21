@@ -1,0 +1,1067 @@
+\documentclass[addpoints,12pt]{exam}
+
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\usepackage{thmtools}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{framed}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\usepackage{tabto}
+\usepackage{titling}
+\usepackage{tikz}
+
+\usepackage{changepage} % for the adjustwidth environment
+
+
+\colorlet{LightGray}{White!90!Periwinkle}
+\colorlet{LightOrange}{Orange!15}
+\colorlet{LightGreen}{Green!15}
+
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}}
+
+\declaretheoremstyle[name=Theorem,]{thmsty}
+\declaretheorem[style=thmsty,numberwithin=section]{theorem}
+\tcolorboxenvironment{theorem}{colback=LightGray}
+
+\declaretheoremstyle[name=Proposition,]{prosty}
+\declaretheorem[style=prosty,numberlike=theorem]{proposition}
+\tcolorboxenvironment{proposition}{colback=LightOrange}
+
+\declaretheoremstyle[name=Principle,]{prcpsty}
+\declaretheorem[style=prcpsty,numberlike=theorem]{principle}
+\tcolorboxenvironment{principle}{colback=LightGreen}
+
+%% This latex package provides all the utilities for
+%% 15150 assignments development.
+%% This package is intended to be included in writeup.tex at
+%% problem level.
+%% For a full list of custom commands, check 15150toolbox.md
+%%
+%% @author: Jolin Zhou
+%% @email: jiulingz@andrew.cmu.edu
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{toolbox-reduced}[2020/05/15 Latex toolbox for M20 Lecture Notes]
+
+%%%%%%%%%%%%%%%%%%%%%
+%% Robust Commands %%
+%%%%%%%%%%%%%%%%%%%%%
+% used throughout this package
+\RequirePackage{etoolbox}
+\RequirePackage{xparse}
+
+% hyperlink/reference
+\RequirePackage{xcolor}
+
+% graphics
+\RequirePackage{graphicx}
+
+% emphasize
+\usepackage{bm}
+\DeclareTextFontCommand{\emph}{\bfseries\em}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Task related environments %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% environment colors
+\RequirePackage{xcolor}
+\definecolor{task_color}      {RGB}{ 64, 100, 255}
+\definecolor{solution_color}  {RGB}{  0,   0, 128}
+\definecolor{constraint_color}{RGB}{175,   0,   0}
+
+% task environment
+\RequirePackage{framed}
+\providerobustcmd{\attribute}[1]{}
+\newcounter{taskcounter}
+\NewDocumentEnvironment{task}{m}
+{
+  \stepcounter{taskcounter}
+  \textbf{Task \arabic{taskcounter}.}\attribute{#1}
+  \phantomsection
+  \addcontentsline{toc}{subsubsection}{\textcolor{task_color}{\textbf{Task \arabic{taskcounter}.}\texorpdfstring{\attribute{#1}}{}}}
+  \par
+}
+{
+  \ifdef{\loadsolution}
+    {{
+      \color{solution_color}
+      \begin{framed}
+        \textbf{Solution \arabic{taskcounter}.}\par
+        \loadsolution{#1}
+      \end{framed}
+    }}
+    {}
+  \vspace{1em}
+}
+
+% constraint environment
+\newenvironment{constraint}{\color{constraint_color}\textbf{Constraint:}}{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+%% Code Specification %%
+%%%%%%%%%%%%%%%%%%%%%%%%
+% spec
+\RequirePackage{framed}
+\usepackage{mdframed}
+\newrobustcmd{\spec}[4]{
+\begin{mdframed}
+\code{#1 :}\par
+{\small\hspace{0.5em}\code{#2}}\par
+\ifstrempty{#3}{}{\par REQUIRES: #3}
+\ifstrempty{#4}{}{\par ENSURES: #4}
+\end{mdframed}
+}
+
+%%%%%%%%%%%%%%%%%%%%%
+%% Text Formatting %%
+%%%%%%%%%%%%%%%%%%%%%
+% symbols
+\RequirePackage{amssymb, amsmath, amsthm, amsfonts}
+
+\newrobustcmd{\stepsTo}{\Longrightarrow}
+\newrobustcmd{\stepsToStar}{\Longrightarrow}
+\newrobustcmd{\stepsToIn}[1]{\Longrightarrow^{#1}}
+
+\newrobustcmd{\eeq}{\cong}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Code Environment %%
+%%%%%%%%%%%%%%%%%%%%%%
+% code style
+\RequirePackage{listings}
+\RequirePackage{lstautogobble}
+\RequirePackage{xcolor}
+
+\newlength{\MaxSizeOfLineNumbers}%
+\settowidth{\MaxSizeOfLineNumbers}{99}% Adjust to maximum number of lines
+\addtolength{\MaxSizeOfLineNumbers}{.5ex}%
+
+\newcommand{\darkBg}{8b98ad}
+\definecolor{background_color}{RGB}{225, 225, 225}
+\definecolor{string_color}    {RGB}{180, 156,   0}
+\definecolor{keyword_color}   {RGB}{ 64, 100, 255}
+\definecolor{comment_color}   {RGB}{  140, 140, 140}
+\definecolor{number_color}    {RGB}{ 84,  84,  84}
+\lstdefinestyle{15150code}{
+    basicstyle=\ttfamily,
+    numberstyle=\tiny\ttfamily\color{number_color},
+    stringstyle=\color{string_color},
+    keywordstyle=\color{blue!90!black},
+    commentstyle=\color{comment_color},
+    numbers=left,
+    rulesepcolor=\color{black!20!white},
+    linewidth=\textwidth,
+    columns=fixed,
+    tabsize=2,
+    xleftmargin=\MaxSizeOfLineNumbers,
+    breaklines=true,
+    keepspaces=true,
+    showstringspaces=false,
+    captionpos=b,
+    autogobble=true,
+    mathescape=true,
+    literate={~}{{$\thicksim$}}1
+             {~=}{{$\eeq$}}1
+}
+\lstdefinelanguage{sml}{
+    language=ML,
+    morestring=[b]",
+    morecomment=[s]{(*}{*)},
+    morekeywords={
+        bool, char, exn, int, real, string, unit, list, option,
+        EQUAL, GREATER, LESS, NONE, SOME, nil,
+        andalso, orelse, true, false, not,
+        if, then, else, case, of, as,
+        let, in, end, local, val, rec,
+        datatype, type, exception, handle,
+        fun, fn, op, raise, ref,
+        structure, struct, signature, sig, functor,
+        include, open, use, infix, infixr, o, print
+    }
+}
+
+\usepackage[T1]{fontenc}
+
+\makeatletter
+\newenvironment{btHighlight}[1][]
+{\begingroup\tikzset{bt@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\bt@HL@box[bt@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\btHL[1][]{%
+  \begin{btHighlight}[#1]\bgroup\aftergroup\bt@HL@endenv%
+}
+\def\bt@HL@endenv{%
+  \end{btHighlight}%
+  \egroup
+}
+\newcommand{\bt@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=yellow!45,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+
+\newenvironment{atHighlight}[1][]
+{\begingroup\tikzset{at@Highlight@par/.style={#1}}\begin{lrbox}{\@tempboxa}}
+{\end{lrbox}\at@HL@box[at@Highlight@par]{\@tempboxa}\endgroup}
+
+\newcommand\atHL[1][]{%
+  \begin{atHighlight}[#1]\bgroup\aftergroup\at@HL@endenv%
+}
+\def\at@HL@endenv{%
+  \end{atHighlight}%
+  \egroup
+}
+\newcommand{\at@HL@box}[2][]{%
+  \tikz[#1]{%
+    \pgfpathrectangle{\pgfpoint{1pt}{0pt}}{\pgfpoint{\wd #2}{\ht #2}}%
+    \pgfusepath{use as bounding box}%
+    \node[anchor=base west, fill=red!45,outer sep=0pt,inner xsep=1pt, inner ysep=0pt, rounded corners=3pt, minimum height=\ht\strutbox+1pt,#1]{\raisebox{1pt}{\strut}\strut\usebox{#2}};
+  }%
+}
+\makeatother
+
+% code inline
+\newrobustcmd{\code}[2][]{{\sloppy
+\ifmmode
+    \text{\lstinline[language=sml,style=15150code,#1]`#2`}
+\else
+    {\lstinline[language=sml,style=15150code,#1]`#2`}%
+\fi}}
+
+% code block
+\lstnewenvironment{codeblock}[1][]{\lstset{
+  language=sml,
+  style=15150code,numbers=none,#1,moredelim=**[is][\btHL]{`}{`},moredelim=**[is][\atHL]{&}{&}}}{}
+
+% ------------------------------------------------------------------------------
+
+\begin{document}
+
+% Use the exam class's native headers/footers. (fancyhdr 1.11b conflicts
+% with the exam class, which already defines \lhead/\rhead/\chead.)
+\pagestyle{headandfoot}
+\header{Midterm 2}{}{15-150: Principles of Functional Programming}
+\footer{}{\thepage}{}
+
+% ------------------------------------------------------------------------------
+% Cover Page and ToC
+% ------------------------------------------------------------------------------
+
+\setlength{\droptitle}{-8em}   % This is your set screw
+
+\title{ \normalsize \textsc{}
+		\HRule{1.5pt} \\
+		\large \textbf{
+      \uppercase{Midterm 2} \\
+      15-150 Principles of Functional Programming M26} \\
+    \HRule{1.5pt}
+}
+\date{}
+
+\maketitle
+
+\vspace{-3cm}
+
+\hspace{-1cm} Name \rule{6cm}{0.4pt} \, Andrew ID \rule{6cm}{0.4pt}
+
+\vspace{5pt}
+
+\begin{itemize}
+  \item Write your name and Andrew ID on this page.
+  \item This is an 80 minute examination of 6 parts.
+  \item Answers should be short and to the point. Obey question constraints, wherever
+  they appear, and write syntactically legal SML programs!
+  \item At any point on this examination, you are allowed to use the \code{map},
+  \code{filter}, \code{foldl}, \code{foldr}, \code{length}, and \code{|>} functions,
+  as seen in lecture. You may also use the identity function as \code{id}.
+\end{itemize}
+\vspace{\fill}
+
+{\small
+\vqword{}
+\vpword{Max}
+\begin{center}
+\gradetable[v][questions]
+\end{center}
+}
+
+\vspace{\fill}
+
+\begin{center}
+  Feel free to use this space to draw something! (jokes or memes encouraged)
+
+  \vspace{10pt}
+
+  \fbox{\rule{6in}{0pt}\rule[-0.5ex]{0pt}{2.5in}}
+\end{center}
+
+
+\newpage
+
+% ------------------------------------------------------------------------------
+
+\section*{Questions}
+
+\begin{questions}
+
+\titledquestion{Types and Values}
+\textbf{Types and Values}
+
+For each of the expressions below, write its \textbf{most general type} and value.
+
+\textbf{If the expression is not well-typed then say so and explain your answer briefly.}
+
+\textbf{If the expression does not evaluate to a value then say so and explain your answer briefly.}
+
+\textbf{For brevity, if the expression is already a value, you may write out "same" for its value}.
+
+\begin{parts}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    fn x => fn y => fn z =>
+      if x then
+        z (y, y)
+      else
+        z x
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[4em] NWT \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[4em] no value, not well typed \end{solutionorlines}
+
+  \vspace{10pt}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    (fn x => fn y => fn z => (x ^ y, z y)) "here" "kitty"
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[4em] \code{(string -> 'a) -> (string * 'a)} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[4em] \code{fn z => ("here" ^ "kitty", z "kitty")} \end{solutionorlines}
+
+  \newpage
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    foldr filter
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[4em] NWT \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[4em] no value \end{solutionorlines}
+
+  \part[2]\hfill
+
+  \begin{codeblock}
+    let
+      fun f (x, y) = if x then y else y + 2
+    in
+      fn z => fn L => foldr f z L
+    end
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[4em]
+    \code{f} has type \code{(bool * int) -> int}, therefore
+    \code{int -> bool list -> int} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[4em] \code{fn z => fn L => foldr f z L} \end{solutionorlines}
+\end{parts}
+
+% \newpage
+
+% \titledquestion{Evaluation and Equivalence}
+
+% \textbf{Evaluation and Equivalence}
+
+% For each of the questions below, please mark whether they are "true" or
+% "false". If your answer is false, please briefly justify why.
+
+% \begin{parts}
+%   \part[2]\hfill
+
+%   Given \code{g : (t1 -> t2) -> t3}, if \code{f : t1 -> t2} is total, then
+%   \code{g f} is valuable.
+
+%   \begin{solutionorlines}[4em] False. Consider \code{fn _ => 1 div 0}. \end{solutionorlines}
+
+%   \part[2]\hfill
+
+%   For any \code{f : t1 -> t2 -> t3}, \code{f} is total.
+
+%   \begin{solutionorlines}[4em] False, consider \code{fn _ => raise Div} \end{solutionorlines}
+
+%   \part[2]\hfill
+
+%   \code{foldr (fn (x, acc) => f x :: acc) [] L} $\eeq$ \code{map f L}, for an \\
+%   arbitrary \code{f : t1 -> t2} and \code{L : t1 list}.
+
+%   \begin{solutionorlines}[4em] False, in the presence of exceptions. \code{foldr}
+%   goes from the right, so this may cause exceptions to be raised in a different
+%   order. \end{solutionorlines}
+
+%   \part[5]\hfill
+
+%   Consider the following code:
+
+%   \begin{codeblock}
+%     exception Fact of int
+
+%     fun factCPS 0 k = k (raise Fact 1)
+%       | factCPS n k =
+%           factCPS (n - 1) (fn res =>
+%             res handle Fact res' => k (n * res')
+%           )
+
+%     fun fact n = factCPS n (fn x => x handle Fact res => res)
+%   \end{codeblock}
+
+%   True or false, this is a correct implementation of \code{fact}.
+
+%   \begin{solutionorlines}[4em] False, the exception \code{Fact} is never
+%   actually handled. \end{solutionorlines}
+
+%   \part[2]\hfill
+
+%   For any expression \code{e : t1 -> t2}, (\code{fn x => e x}) $\eeq$ \code{e}.
+
+%   \begin{solutionorlines}[6em] False. See when \code{e} is \code{raise Div}. \end{solutionorlines}
+% \end{parts}
+
+\newpage
+\titledquestion{Binary Search Trees, Again}
+
+\textbf{Binary Search Trees, Again}
+
+Recall the type of integer \code{tree}s, from lecture:
+\begin{codeblock}
+  datatype tree = Empty | Node of tree * int * tree
+\end{codeblock}
+
+A \textit{binary search tree} is a value of type \code{tree}, that satisfies the
+following definition:
+
+\textbf{Definition.} A value \code{v : t} is called a \textit{binary search tree} if:
+\begin{enumerate}
+  \item It is \code{Empty}.
+  \item It is \code{Node (L, x, R)}, where both \code{L} and \code{R} are binary
+  search trees, and \code{x} is greater than or equal to every
+  element in \code{L}, and less than or equal to every element in \code{R}.
+\end{enumerate}
+
+\begin{parts}
+  \part[10]\hfill
+
+  First, we will define a helper function:
+
+  Implement a function \code{isBST'} which adheres to the following specification:
+
+  \spec
+    {isBST'}
+    {(int -> bool) -> tree -> (bool -> 'a) -> 'a}
+    {\code{p} is total}
+    {\code{isBST' p T k} evaluates to \code{k true} if \code{T} is a binary
+    search tree, and every element in \code{T} satisfies \code{p}. Otherwise,
+    it evaluates to \code{k false}.}
+
+  \begin{constraint}
+    You must write this function in CPS, and with no helper functions.
+  \end{constraint}
+
+  \begin{codeblock}
+    fun isBST' p Empty k =
+  \end{codeblock}
+  \begin{solutionorbox}[4em]
+    \begin{codeblock}
+      k true
+    \end{codeblock}
+  \end{solutionorbox}
+
+  \begin{codeblock}
+      | isBST' p (Node (L, x, R)) k =
+  \end{codeblock}
+  \begin{solutionorbox}[12em]
+    \begin{codeblock}
+      isBST' (fn y => y <= x andalso p y) L (fn is_bst_l =>
+      isBST' (fn y => x <= y andalso p y) R (fn is_bst_r =>
+      k (is_bst_l andalso is_bst_r andalso p x)))
+    \end{codeblock}
+  \end{solutionorbox}
+
+  \newpage
+
+  \part[2]\hfill
+
+  Implement a function \code{isBST''}, using \code{isBST'}, with the following
+  specification:
+
+  \spec
+    {isBST''}
+    {tree -> (bool -> 'a) -> 'a}
+    {\code{true}}
+    {\code{isBST'' T k} evaluates to \code{k true} if \code{T} is a binary
+    search tree. Otherwise, it evaluates to \code{k false}.}
+
+  \begin{constraint}
+    For full points, do not use a \code{fun} declaration.
+    You may use precisely one lambda expression.
+  \end{constraint}
+
+  \begin{solutionorbox}[20em]
+    \begin{codeblock}
+      val isBST'' = isBST' (fn x => true)
+    \end{codeblock}
+  \end{solutionorbox}
+\end{parts}
+
+\newpage
+\titledquestion{Fusing Transformations}
+
+\textbf{Fusing Transformations}
+
+We would like to apply geometric transformations to scalar values.
+Each transformation is one of the following:
+
+\begin{codeblock}
+  datatype transform = Scale of int | Shift of int | Flip
+\end{codeblock}
+
+where \code{Scale k} multiplies a value by \code{k}, \code{Shift k} adds
+\code{k} to it, and \code{Flip} negates it. A \code{transform list} is thus a
+\textit{pipeline}: we apply its transformations in order.
+
+Each transformation is really just an \textbf{affine map} --- a function of the
+form \code{fn x => a * x + b} --- which we represent as the pair of its
+coefficients \code{(a, b)}:
+
+\begin{codeblock}
+  type affine = int * int
+
+  fun toAffine (Scale k) = (k, 0)
+    | toAffine (Shift k) = (1, k)
+    | toAffine Flip      = (~1, 0)
+\end{codeblock}
+
+A first attempt at applying a series of affine maps to a value is to map each transformation to a normal
+function, and then apply them serially:
+
+\begin{codeblock}
+  fun toFn (tf : transform) : int -> int =
+    let
+      val (a, b) = toAffine tf
+    in
+      fn x => a * x + b
+    end
+
+  fun run (ts : transform list) : int -> int =
+    let
+      val fns = map toFn ts
+    in
+      fn input => foldl (fn (f, acc) => f acc) input fns
+    end
+\end{codeblock}
+
+This works, but it's inefficient: the returned function does $n$
+applications of the affine maps. We can do better---we can
+exploit the property that any sequence of affine maps is itself a single
+affine map.
+
+\newpage
+
+\begin{parts}
+  \part[2]\hfill
+
+    First, implement \code{combine}, which fuses two affine maps into one.
+    \code{combine (g, f)} is the affine map equivalent to applying \code{f} first,
+    then \code{g}.
+
+    \textbf{Hint:} This is math-based. What is the result of applying
+    $x \mapsto a_1 x + b_1$ and then $y \mapsto a_2 y + b_2$?
+
+    \spec
+      {combine}
+      {affine * affine -> affine}
+      {\code{true}}
+      {\code{combine ((a2, b2), (a1, b1))} is the affine map equivalent to
+      applying \code{(a1, b1)} and then \code{(a2, b2)}.}
+
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        fun combine ((a2, b2), (a1, b1)) = (a2 * a1, a2 * b1 + b2)
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \part[4]\hfill
+
+    Now implement \code{fuseAll}, which collapses a list of affine maps into the
+    single affine map that applies all of them in order, head first.
+
+    \spec
+      {fuseAll}
+      {affine list -> affine}
+      {\code{true}}
+      {\code{fuseAll ms} is the affine map equivalent to applying every map in
+      \code{ms} to a coordinate, in order, head first.}
+
+    \begin{constraint}
+      Your solution must be \textit{point-free}: you may not use any
+      \code{fun} declarations or \code{fn} expressions.
+    \end{constraint}
+
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        val fuseAll = foldl combine (1, 0)
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[4]\hfill
+
+    Finally, implement \code{compile}, which stages a pipeline: it fuses the
+    whole pipeline into one affine map \textit{once}, and returns a function that
+    applies that single map to an input value.
+
+    \spec
+      {compile}
+      {transform list -> (int -> int)}
+      {\code{true}}
+      {\code{compile ts} evaluates to a function that, given a coordinate
+      \code{x}, applies the pipeline \code{ts} to \code{x} in order.}
+
+    \begin{constraint}
+      Your function must be properly staged: it should do the minimal number
+      of actual multiplication and addition operations.
+    \end{constraint}
+
+    \begin{solutionorbox}[16em]
+      \begin{codeblock}
+        fun compile ts =
+          let
+            val (a, b) = fuseAll (map toAffine ts)
+          in
+            fn x => a * x + b
+          end
+      \end{codeblock}
+    \end{solutionorbox}
+
+\end{parts}
+
+\newpage
+\titledquestion{Cursed Predicates}
+
+\textbf{Cursed Predicates}
+
+An important idea is that the specific form of data
+in a program does not matter, it only matters that producers and
+consumers agree on a common \textit{contract}.
+
+Standard predicate functions return a \code{bool}, which can be cased or
+conditioned on later. Here, we discuss a cursed setup instead---instead of
+returning a \code{bool}, a
+\textbf{cursed predicate} signals its answer through \textit{control flow}: it
+calls a continuation when it is satisfied, and raises an exception when it is
+not. Assume the following have been declared:
+
+\begin{codeblock}
+  exception Drop
+  type ('a, 'b) cursed_pred = 'a -> (unit -> 'b) -> 'b
+\end{codeblock}
+
+The contract for a value \code{cp : ('a, 'b) cursed\_pred}\footnote{We
+need two type parameters because the type of the output is independent
+of the type of the element being scrutinized.} is: for all values
+\code{x} and \code{k : unit -> 'b}, evaluating \code{cp x k} calls \code{k ()} if
+\code{x} satisfies the predicate, and raises \code{Drop} otherwise.
+
+\noindent
+\begin{minipage}[t]{0.49\textwidth}
+  \centering
+  \textbf{Regular predicate}
+  \[
+    \code{p x} \eeq
+    \begin{cases}
+      \code{true} & \text{if } \code{x} \text{ satisfies } \code{p}  \\
+      \code{false} & \text{else}
+    \end{cases}
+  \]
+\end{minipage}%
+\hfill%
+\begin{minipage}[t]{0.49\textwidth}
+  \centering
+  \textbf{Cursed predicate}
+  \[
+    \code{cp x k} \eeq
+    \begin{cases}
+      \code{k ()} & \text{if } \code{x} \text{ satisfies } \code{p} \\
+      \code{raise Drop} & \text{else}
+    \end{cases}
+  \]
+\end{minipage}
+
+\begin{parts}
+  \part[2]\hfill
+
+    First, show that a cursed predicate carries no more information than an
+    ordinary one, by implementing a function \code{curse} that converts a real
+    predicate into a cursed one.
+
+    \spec
+      {curse}
+      {('a -> bool) -> ('a, 'b) cursed_pred}
+      {\code{p} is a total predicate}
+      {\code{curse p} is a cursed predicate that fulfills its contract analogously
+      to the regular predicate \code{p}.}
+
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        fun curse p = fn x => fn k => if p x then k () else raise Drop
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[6]\hfill
+
+    Now show that we can still consume the library, by reimplementing
+    \code{List.filter} using a cursed predicate.
+
+    Here, our cursed predicate is of type \code{('a, 'a list) cursed_pred}
+    because \code{cursed_filter} has to return an \code{'a list}.
+
+    \spec
+      {cursed_filter}
+      {('a, 'a list) cursed_pred -> 'a list -> 'a list}
+      {\code{cp} is a cursed predicate}
+      {\code{cursed_filter cp l} evaluates to the list of all elements of \code{l}
+      which satisfy \code{cp}, in order.}
+
+    \begin{constraint}
+      You may not use \code{List.filter}, \code{List.foldr}, or \code{List.foldl}.
+    \end{constraint}
+
+    \begin{codeblock}
+      fun cursed_filter cp [] =
+    \end{codeblock}
+    \begin{solutionorbox}[4em]
+      \begin{codeblock}
+        []
+      \end{codeblock}
+    \end{solutionorbox}
+
+    \begin{codeblock}
+        | cursed_filter cp (x::xs) =
+    \end{codeblock}
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        cp x (fn () => x :: cursed_filter cp xs)
+        handle Drop => cursed_filter cp xs
+      \end{codeblock}
+    \end{solutionorbox}
+
+\end{parts}
+
+\newpage
+\titledquestion{Robust Folding}
+
+\textbf{Robust Folding}
+
+We've seen the folding function, which lets us accumulate a result over
+a list by applying a custom folding function.
+
+Up until now we've assumed the folding function is total, but let's suppose
+it is unreliable --- on some elements, it might \code{raise} an exception rather
+than produce a result. Rather than let a single failure abort the entire fold, we
+would like to \textit{skip} the offending element, continue folding, and
+collect every exception that was raised along the way.
+
+\spec
+  {robust_foldl}
+  {('a * 'b -> 'b) -> 'b -> 'a list -> 'b * exn list}
+  {\code{true}}
+  {\code{robust_foldl f acc l} folds \code{f} over \code{l} from left to right.
+  For each element, if \code{f} raises an exception, the exception is recorded
+  in a list of errors, and the element is skipped; otherwise, it is folded
+  normally. It evaluates to a pair of the final accumulator and the list of all
+  raised exceptions.}
+
+For instance, if we have
+\begin{codeblock}
+    exception Stop
+    fun f (122, y) = raise Stop
+      | f (x, y) = x + y
+\end{codeblock}
+then \code{robust_foldl f 0 [4, 122, 5, 122]} $\eeq$ \code{(9, [Stop, Stop])}: the
+successful elements \code{4} and \code{5} contribute to the accumulator, and
+each failure is recorded in order.
+
+\begin{constraint}
+  You must use \code{foldl}. The folding function \code{f} may raise
+  \textit{any} exception.
+\end{constraint}
+
+\begin{parts}
+  \part[8]\hfill
+
+\begin{solutionorbox}[14em]
+  \begin{codeblock}
+    fun robust_foldl f acc l =
+      foldl
+        (fn (x, (a, errs)) =>
+          (f (x, a), errs)
+          handle e => (a, e :: errs))
+        (acc, [])
+        l
+  \end{codeblock}
+\end{solutionorbox}
+\end{parts}
+
+\newpage
+
+\titledquestion{Matching with Prefixes}
+
+\textbf{Matching with Prefixes}
+
+Consider the \code{regexp} datatype, as shown in lecture:
+
+\begin{codeblock}
+  datatype regexp =
+      Zero
+    | One
+    | Char of char
+    | Times of regexp * regexp
+    | Plus of regexp * regexp
+    | Star of regexp
+\end{codeblock}
+
+Regular expressions are cool and all, but one weakness of the \code{match}
+function is that we don't know what the \code{char list} that was actually
+matched \textit{was} -- we only know what comes after it!
+
+Consider the following refinement of the \code{match} function:
+
+\spec
+  {matchWithPrefix}
+  {regexp -> char list -> (char list * char list -> bool) -> bool}
+  {\code{k} total}
+  {\code{matchWithPrefix r cs k} evaluates to \code{true} iff
+  \code{cs} $\eeq$ \code{p @ s}, where \code{p} $\in L(\code{r})$ and
+  \code{k (p, s)} $\eeq$ \code{true}. Otherwise, it evaluates to \code{false}.
+  }
+
+Note the different specification! The key is simply that \code{k} takes in
+\textit{both} \code{p} and \code{s}.
+
+On the next page, we will implement some cases of \code{matchWithPrefix}:
+
+\vspace{130pt}
+
+THIS SPACE INTENTIONALLY LEFT BLANK
+
+\newpage
+
+\begin{parts}
+  \part[12]\hfill
+
+  Implement the \code{Char} and \code{Times} cases for the function
+  \code{matchWithPrefix} here. The other cases have been provided for you.
+
+  For your convenience, the \code{match} function has been provided on the next page.
+
+  Hint: Draw a picture. For brevity, you can abbreviate \code{matchWithPrefix}.
+
+  \begin{codeblock}
+    fun matchWithPrefix
+          (r : regexp)
+          (cs : char list)
+          (k : char list * char list -> bool) : bool =
+      case r of
+        Zero => false
+      | One => k ([], cs)
+  \end{codeblock}
+  \vspace{-12pt}
+  \begin{codeblock}[autogobble=false]
+  | Char c =>
+  \end{codeblock}
+  \vspace{-24pt}
+  \begin{solutionorbox}[13em]
+    \begin{codeblock}
+            case cs of
+              [] => false
+            | c'::cs' =>
+                c = c' andalso k ([c], cs')
+    \end{codeblock}
+  \end{solutionorbox}
+  \begin{codeblock}[autogobble=false]
+  | Times (r1, r2) =>
+  \end{codeblock}
+  \vspace{-24pt}
+  \begin{solutionorbox}[13em]
+    \begin{codeblock}
+            matchWithPrefix r1 cs (fn (pre, suff) =>
+              matchWithPrefix r2 suff (fn (pre2, suff2) =>
+                k (pre @ pre2, suff2)
+              )
+            )
+    \end{codeblock}
+  \end{solutionorbox}
+  \begin{codeblock}
+    (* FILL IN ABOVE *)
+      | Plus (r1, r2) =>
+          matchWithPrefix r1 cs k orelse matchWithPrefix r2 cs k
+      | Star r =>
+          (* this case is long. don't worry about it. *)
+  \end{codeblock}
+\end{parts}
+
+\newpage
+
+\textbf{Appendix: The \code{match} function}
+
+\vspace{10pt}
+
+\begin{codeblock}
+  fun match (r : regexp)
+            (cs : char list)
+            (k : char list -> bool) : bool =
+    case r of
+      Zero => false
+    | One => k cs
+    | Char c => (case cs of
+        [] => false
+      | c' :: cs' => c = c' andalso k cs')
+    | Plus (r1,r2) => match r1 cs k orelse match r2 cs k
+    | Times (r1, r2) => match r1 cs (fn cs' => match r2 cs' k)
+    | Star r =>
+        k cs orelse
+        match r cs (fn cs' =>
+          cs' <> cs andalso match (Star r) cs' k
+        )
+\end{codeblock}
+
+
+
+
+\end{questions}
+
+
+
+
+\begin{comment}
+\section{Types and Values}
+
+Please write the type and value of each given expression,
+if applicable. If the expression does not have a type, please give a brief
+justification as to why.
+If the expression is not valuable, please give a brief justification as to
+why.
+
+\vspace{5pt}
+
+\task{1}
+\begin{codeblock}
+  fn x => x + 2
+\end{codeblock}
+
+\vspace{10pt}
+
+Type \rule{12cm}{0.4pt}
+
+\vspace{10pt}
+
+Value \rule{12cm}{0.4pt}
+
+\vspace{15pt}
+
+\task{2}
+\begin{codeblock}
+  fn x => x + 2
+\end{codeblock}
+
+\vspace{10pt}
+
+Type \rule{12cm}{0.4pt}
+
+\vspace{10pt}
+
+Value \rule{12cm}{0.4pt}
+
+\vspace{15pt}
+
+\task{3}
+\begin{codeblock}
+  fn x => x + 2
+\end{codeblock}
+
+\vspace{10pt}
+
+Type \rule{12cm}{0.4pt}
+
+\vspace{10pt}
+
+Value \rule{12cm}{0.4pt}
+
+\vspace{15pt}
+
+\task{4}
+\begin{codeblock}
+  fn x => x + 2
+\end{codeblock}
+
+\vspace{10pt}
+
+Type \rule{12cm}{0.4pt}
+
+\vspace{10pt}
+
+Value \rule{12cm}{0.4pt}
+
+\vspace{15pt}
+
+\task{5}
+\begin{codeblock}
+  fn x => x + 2
+\end{codeblock}
+
+\vspace{10pt}
+
+Type \rule{12cm}{0.4pt}
+
+\vspace{10pt}
+
+Value \rule{12cm}{0.4pt}
+
+\vspace{15pt}
+
+\newpage
+
+\begin{theorem}
+    This is a theorem.
+\end{theorem}
+
+\begin{proposition}
+    This is a proposition.
+\end{proposition}
+
+\begin{principle}
+    This is a principle.
+\end{principle}
+
+% Maybe I need to add one more part: Examples.
+% Set style and colour later.
+
+\subsection{Pictures}
+\end{comment}
+
+% ------------------------------------------------------------------------------
+
+\end{document}

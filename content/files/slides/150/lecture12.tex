@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Exceptions} % TODO
     \subtitle{Breaking the rules of evaluation} % TODO
-    \date{22 June 2023} % TODO
+    \date{18 June 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -307,7 +307,7 @@
     {int * int -> int option}
     {\code{true}}
     {\code{safeDiv (n, d)} evaluates to \code{NONE} if \code{d} is \code{0},
-    and \code{SOME (n div 0)} otherwise}
+    and \code{SOME (n div d)} otherwise}
 
   \pause
   They look rather similar! The difference is that \code{safeDiv} has
@@ -511,7 +511,7 @@
 
   \pause
   \begin{codeblock}
-    fun reportGrades (grades : (string * int) list) =
+    fun reportGrades (records : (string * int) list) =
       (let
         val grades = List.map snd records
       in
@@ -576,7 +576,7 @@
     \item \code{(raise Div) handle Div => 2} $\hookrightarrow$ \code{2}
     \item \code{(raise Div) handle Bind => 2} raises exception \code{Div}
     \item \code{(raise Div) handle Bind => 1 | Div => 2} $\hookrightarrow$ \code{2}
-    \item \code{2 handle Div => 3} $\hookrightarrow$ \code{3}
+    \item \code{2 handle Div => 3} $\hookrightarrow$ \code{2}
   \end{itemize}
 
 \end{frame}
@@ -686,7 +686,7 @@
   \frametitle{Exceptions and Options}
 
   Using \code{handle}, we can quickly go between these functions. Given
-  \code{f}, as previously described, we define \code{f_opt : t1 -> t2} as:
+  \code{f}, as previously described, we define \code{f_opt : t1 -> t2 option} as:
   \begin{codeblock}
     fun f_opt x = (SOME (f x)) handle _ => NONE
   \end{codeblock}
@@ -1136,5 +1136,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{PARAMORE}
 
 \end{document}

@@ -1,0 +1,678 @@
+\documentclass[crop=false]{standalone}
+\usepackage{15150toolbox}
+\usepackage{comment}
+\usepackage{needspace}
+
+% Toggle: set \soltrue to render solutions inline (blue boxes).
+\newif\ifsol
+\soltrue   % comment this line for the student version
+
+\ifsol
+  \newenvironment{solution}
+    {\par\color{solution_color}\begin{framed}\textbf{Solution.}\par}
+    {\end{framed}}
+\else
+  \excludecomment{solution}
+\fi
+
+% Lecture-slide macros that aren't defined in 15150toolbox.
+\newcommand{\term}[1]{\textbf{\textit{#1}}}
+\newcommand{\thmBox}[2]{\par\noindent\begin{mdframed}[backgroundcolor=blue!8,hidealllines=true]\textbf{Theorem#1.} #2\end{mdframed}}
+\newcommand{\bcBox}[1]{\par\noindent\textbf{Base case.} #1\par}
+\newcommand{\ihBox}[2]{\par\noindent\textbf{Inductive hypothesis#1.} #2\par}
+\newcommand{\isBox}[2]{\par\noindent\textbf{Inductive step#1.} #2\par}
+
+% The title sits in a top-aligned parbox so long titles wrap within the
+% left column instead of colliding with the right-aligned time/points.
+\newcommand{\quizproblem}[3]{%
+  \needspace{5\baselineskip}%
+  \stepcounter{problem}%
+  \ifsol
+    \subsection*{\parbox[t]{0.70\linewidth}{\raggedright Problem \arabic{problem}. #1}\hfill \timing{#2} \quad (#3 pts)}%
+  \else
+    \subsection*{\parbox[t]{0.82\linewidth}{\raggedright Problem \arabic{problem}. #1}\hfill (#3 pts)}%
+  \fi
+}
+
+\newcommand{\subpts}[1]{\textbf{(#1 pts)}}
+
+\newcommand{\answerspace}[1]{\ifsol\else\vspace{#1}\par\fi}
+
+\printout{Quiz 3}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textbf{15-150 --- Quiz 3}} \\
+  \vspace{4pt}
+  Topics: \textit{Polymorphism}; \textit{Higher-Order Functions}; \textit{Combinators and Staging} \\
+  \vspace{4pt}
+  \textit{60 minutes.}
+\end{center}
+
+\vspace{1em}
+
+\noindent\textbf{Name:} \hrulefill \hspace{2em} \textbf{Andrew ID:} \hrulefill
+
+\vspace{1em}
+
+\noindent For reference, throughout this quiz:
+
+\begin{codeblock}
+  map    : ('a -> 'b) -> 'a list -> 'b list
+  filter : ('a -> bool) -> 'a list -> 'a list
+  foldl  : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+  foldr  : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+
+  Int.toString : int -> string
+  String.size  : string -> int
+\end{codeblock}
+
+% =============================================================================
+% PROBLEM 1 --- Manual type inference
+% =============================================================================
+
+\quizproblem{Polymorphic Playtime}{5}{4}
+
+For each declaration below, determine the \textbf{most general type} of
+the function being declared.
+Showing your work is optional.
+
+\vspace{0.5em}
+
+\textbf{(a)} \subpts{1}
+
+\begin{codeblock}
+  fun swap (x, y) = (y, x)
+\end{codeblock}
+
+\answerspace{2cm}
+
+\begin{solution}
+\code{swap : 'a * 'b -> 'b * 'a}
+
+\textbf{Rubric:} all-or-nothing, renaming OK. \code{'a * 'a -> 'a * 'a}
+(over-unified): 0.
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(b)} \subpts{3}
+
+\begin{codeblock}
+  fun applyAll [] x = x
+    | applyAll (f :: fs) x = applyAll fs (f x)
+\end{codeblock}
+
+\answerspace{3cm}
+
+\begin{solution}
+\code{applyAll : ('a -> 'a) list -> 'a -> 'a}
+
+The base clause returns \code{x}, so the result type equals the type of
+\code{x} --- call it \code{'a}. In the recursive clause, \code{f x} is
+passed back into the \code{x} position, so \code{f x : 'a} as well,
+forcing \code{f : 'a -> 'a}.
+
+\textbf{Rubric:} 2 pts \code{('a -> 'a) list} domain (the unification
+is the point --- \code{('a -> 'b) list}: 0 here); 1 pt the
+\code{-> 'a -> 'a} remainder, curried.
+\end{solution}
+
+% \vspace{0.5em}
+
+% \needspace{12\baselineskip}
+% \textbf{(c)} \subpts{6} This one computes nothing of value, but it does
+% have a type:
+
+% \begin{codeblock}
+%   fun quux (f, x, y, k) =
+%     case f x of
+%       [] => (x, k ())
+%     | z :: _ => (y, z)
+% \end{codeblock}
+
+% \answerspace{4cm}
+
+% \begin{solution}
+% \code{quux : ('a -> 'b list) * 'a * 'a * (unit -> 'b) -> 'a * 'b}
+
+% Step by step: \code{f x} is cased against list patterns, so
+% \code{f : 'a -> 'b list} (with \code{x : 'a}, \code{z : 'b}). The two
+% branches must agree: \code{(x, k ())} $\sim$ \code{(y, z)} forces
+% \code{y : 'a} and \code{k : unit -> 'b}. Result type \code{'a * 'b}.
+
+% \textbf{Rubric:} 2 pts \code{f : 'a -> 'b list}; 2 pts the cross-branch
+% unifications (\code{y} with \code{x}, \code{k : unit -> 'b}); 2 pts
+% assembling the 4-tuple domain and \code{'a * 'b} result. Renaming OK.
+% \end{solution}
+
+% =============================================================================
+% PROBLEM 2 --- Types of partial applications
+% =============================================================================
+
+\clearpage
+\quizproblem{Curry On}{13}{20}
+
+\textbf{(a)} \subpts{8} Write the type of each expression below. (All
+of them are well-typed.)
+
+\vspace{0.5em}
+
+\begin{center}
+\begin{tabular}{|l|p{6.5cm}|}
+  \hline
+  \textbf{Expression} & \textbf{Type} \\
+  \hline
+  \code{map Int.toString}                          & \\[2em] \hline
+  \code{foldl (fn (x, acc) => acc + String.size x) 0} & \\[2em] \hline
+  \code{foldr (fn (x, acc) => acc)} & \\[2em] \hline
+  \code{Int.toString o (fn (x, y) => y)} & \\[2em] \hline
+\end{tabular}
+\end{center}
+
+\begin{solution}
+\begin{itemize}
+  \item \code{map Int.toString} : \code{int list -> string list}
+  \item \code{foldl (fn (x, acc) => acc + String.size x) 0} : \code{string list -> int}
+  \item \code{foldr (fn (x, acc) => acc)} : \code{'a -> 'b list -> 'a}
+  \item \code{Int.toString o (fn (x, y) => y)} : \code{'a * int -> string}
+\end{itemize}
+
+\textbf{Rubric:} 2/row, all-or-nothing. Renamed type variables OK;
+extra or missing arrows: 0.
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(b)} \subpts{4} For each declaration below, write the
+\textbf{most general type} of the function being declared.
+
+\vspace{0.5em}
+
+\begin{center}
+\begin{tabular}{|l|p{6.5cm}|}
+  \hline
+  \textbf{Declaration} & \textbf{Type} \\
+  \hline
+  \code{fun cons x xs = x :: xs}                       & \\[2em] \hline
+  \code{fun mystery (x, y) = fn z => if z then x else y} & \\[2em] \hline
+\end{tabular}
+\end{center}
+
+\begin{solution}
+\begin{itemize}
+  \item \code{cons} : \code{'a -> 'a list -> 'a list}
+  \item \code{mystery} : \code{'a * 'a -> bool -> 'a}
+\end{itemize}
+
+For \code{mystery}: the argument is a \emph{tuple}, the result is a
+curried function of \code{z : bool}, and both branches of the
+\code{if} force \code{x} and \code{y} to share a type.
+
+\textbf{Rubric:} 2/row, all-or-nothing, renaming OK. Common misses:
+\code{cons} as \code{'a * 'a list -> 'a list} (tupled --- it's
+curried): 0; \code{mystery} as \code{'a * 'b -> bool -> 'a}
+(missed the unification): 0.
+\end{solution}
+
+\vspace{0.5em}
+
+\needspace{14\baselineskip}
+\textbf{(c)} \subpts{6} Consider the following specification:
+
+\spec
+  {pair}
+  {'a -> 'b -> 'a * 'b}
+  {\code{true}}
+  {\code{pair x y} $\eeq$ \code{(x, y)}}
+
+Write \textbf{three different declarations} of \code{pair} --- two
+using \code{fun} and one using \code{val}. (All three should be
+equal up to syntactic sugar.)
+
+\answerspace{10cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun pair x y = (x, y)
+
+  fun pair x = fn y => (x, y)
+
+  val pair = fn x => fn y => (x, y)
+\end{codeblock}
+
+The first is syntactic sugar for the second, which is what the third
+binds directly.
+
+\textbf{Rubric:} 2/form. The three must be genuinely different shapes
+(sugared \code{fun}, \code{fun} returning a lambda, \code{val} bound to
+nested lambdas) --- the same shape twice with renamed variables earns
+credit once.
+\end{solution}
+
+\vspace{0.5em}
+
+\needspace{14\baselineskip}
+\textbf{(d)} \subpts{2} True or false: all functions of
+type \code{t1 -> t2 -> t3} for some types \code{t1}, \code{t2}, and \code{t3} are
+total, since they are curried.
+
+\answerspace{2cm}
+
+\begin{solution}
+\textbf{False.} Syntactically-sugared curried functions
+(\code{fun f x y = ...}) are trivially total, but not every value of a
+curried \emph{type} is --- e.g.\ from lecture:
+
+\begin{codeblock}
+  fun f x = let val _ = loop () in fn y => 0 end
+\end{codeblock}
+
+which loops forever before returning the inner lambda.
+
+\textbf{Rubric:} 1 pt ``false''; 1 pt a witness or the
+sugar-vs-arbitrary-value distinction. Bare ``false'': 1 of 2.
+\end{solution}
+
+
+% =============================================================================
+% PROBLEM 2 --- Fold value questions
+% =============================================================================
+
+\clearpage
+\quizproblem{Fold, Right There}{3}{4}
+
+Recall the two folds from lecture:
+
+\begin{codeblock}
+  fun foldl f z [] = z
+    | foldl f z (x::xs) = foldl f (f (x, z)) xs
+
+  fun foldr f z [] = z
+    | foldr f z (x::xs) = f (x, foldr f z xs)
+\end{codeblock}
+
+\textbf{(a)} \subpts{2} What does \code{foldl (op^) "" ["1", "5", "0"]}
+evaluate to? (Recall \code{^} concatenates strings.)
+
+\answerspace{2cm}
+
+\begin{solution}
+\code{"051"} --- \code{foldl} combines with the first element first, so
+the accumulator builds up in reverse:
+\code{"0" ^ ("5" ^ ("1" ^ ""))}.
+
+\textbf{Rubric:} all-or-nothing. \code{"150"}: 0.
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(b)} \subpts{2} What does \code{foldr (op^) "" ["1", "5", "0"]}
+evaluate to?
+
+\answerspace{2cm}
+
+\begin{solution}
+\code{"150"} --- \code{foldr} is the ``natural'' fold: the elements stay
+in order, joined by the combining function:
+\code{"1" ^ ("5" ^ ("0" ^ ""))}.
+
+\textbf{Rubric:} all-or-nothing.
+\end{solution}
+
+\vspace{0.5em}
+
+% \textbf{(c)} \subpts{4} Write a function \code{stutter} satisfying:
+
+% \spec
+%   {stutter}
+%   {'a list -> 'a list}
+%   {\code{true}}
+%   {\code{stutter [x1, x2, ..., xn]} $\eeq$
+%    \code{[x1, x1, x2, x2, ..., xn, xn]}}
+
+% \begin{constraint}
+%   Your function \textbf{must not} be recursive --- use a fold.
+% \end{constraint}
+
+% \answerspace{5cm}
+
+% \begin{solution}
+% \begin{codeblock}
+%   fun stutter L = foldr (fn (x, acc) => x :: x :: acc) [] L
+% \end{codeblock}
+
+% (\code{foldr} keeps the elements in order; \code{foldl} would produce
+% the \emph{reversed} stutter --- exactly the (a)/(b) distinction.)
+
+% \textbf{Rubric:} 2 pts combine fn (\code{x :: x :: acc}); 1 pt base
+% \code{[]}; 1 pt picked \code{foldr}. Used \code{foldl} (reversed):
+% cap 2. Recursive: cap 1.
+% \end{solution}
+
+\newpage
+
+% =============================================================================
+% PROBLEM 3 --- HOF production: count
+% =============================================================================
+
+\vspace{1em}
+\quizproblem{The One Where I Have You Implement A Bunch Of Functions Using HOFs}{12}{20}
+
+\textbf{(a)} \subpts{4} Write a function \code{count} satisfying:
+
+\spec
+  {count}
+  {('a -> bool) -> 'a list -> int}
+  {\code{p} is total}
+  {\code{count p L} evaluates to the number of elements \code{x} in
+   \code{L} such that \code{p x} $\eeq$ \code{true}}
+
+\begin{constraint}
+Your function \textbf{must not} be recursive.
+\end{constraint}
+
+Fun fact, there's at least three different ways to write this function
+using HOFs. I wonder if you can find all of them?
+
+\answerspace{5cm}
+
+\begin{solution}
+Any of:
+
+\begin{codeblock}
+  fun count p = foldr (fn (x, acc) => if p x then 1 + acc else acc) 0
+  fun count p = foldl (fn (x, acc) => if p x then acc + 1 else acc) 0
+  fun count p = length o filter p
+\end{codeblock}
+
+Only one solution is required; the ``fun fact'' is flavor, not a task.
+
+\textbf{Rubric:} 3 pts counting logic (tests \code{p}, counts exactly
+the hits); 1 pt HOF machinery (base value, argument order, currying).
+Recursive: cap 1.
+\end{solution}
+
+\textbf{(b)} \subpts{4} Write a function \code{double} satisfying:
+
+\spec
+  {double}
+  {int list -> int list}
+  {\code{true}}
+  {\code{double L} evaluates to a list where each element is doubled}
+
+\begin{constraint}
+Your function \textbf{must not} be recursive.
+\end{constraint}
+
+\answerspace{4cm}
+
+\begin{solution}
+\begin{codeblock}
+  val double = map (fn x => 2 * x)
+\end{codeblock}
+
+Eta-expanded forms (\code{fun double L = map (fn x => 2 * x) L}) and
+\code{fn x => x + x} are equally good.
+
+\textbf{Rubric:} 3 pts correct doubling via \code{map} (or any
+equivalent HOF); 1 pt honors the constraint (non-recursive). Reversed
+result: cap 1.
+\end{solution}
+
+\newpage
+
+\textbf{(c)} \subpts{6} Write a function \code{hasNegativeBalance} satisfying:
+
+\spec
+  {hasNegativeBalance}
+  {int -> int list -> bool}
+  {\code{true}}
+  {Given a starting balance and a list of positive-or-negative
+  transactions \code{L} (applied in order), \code{hasNegativeBalance
+  balance L} evaluates to \code{true} iff at some point the running
+  balance becomes negative}
+
+\begin{constraint}
+  Your function \textbf{must not} be recursive.
+\end{constraint}
+
+\answerspace{5cm}
+
+\begin{solution}
+The accumulator must carry the \emph{running balance}, not just a
+boolean. Two clean ways:
+
+\begin{codeblock}
+  (* freeze the balance once it goes negative *)
+  fun hasNegativeBalance balance L =
+    foldl (fn (x, b) => if b < 0 then b else b + x) balance L < 0
+
+  (* or carry both the balance and the flag *)
+  fun hasNegativeBalance balance L =
+    let
+      val (_, neg) =
+        foldl (fn (x, (b, neg)) => (b + x, neg orelse b + x < 0))
+              (balance, balance < 0) L
+    in
+      neg
+    end
+\end{codeblock}
+
+\textbf{Rubric:} 3 pts accumulator tracks the running balance
+(\code{bool}-only accumulator: cap 2); 2 pts detects \emph{any}
+intermediate negative (final balance only: cap 3); 1 pt fold
+args/initial value right. Either reading of the starting balance OK.
+\end{solution}
+
+\textbf{(d)} \subpts{6} Write a function \code{tlistmax} satisfying:
+
+\spec
+  {tlistmax}
+  {int list -> int option}
+  {\code{true}}
+  {Given a list of integers \code{L}, \code{tlistmax L} either evaluates to
+  \code{NONE} if the list is empty, or \code{SOME x} where \code{x} is the maximum element of \code{L}}
+
+\begin{constraint}
+  Your function \textbf{must not} be recursive.
+\end{constraint}
+
+\answerspace{5cm}
+
+\begin{solution}
+Fold with an \code{option} accumulator:
+
+\begin{codeblock}
+  fun tlistmax L =
+    foldl (fn (x, NONE) => SOME x
+            | (x, SOME m) => SOME (if x > m then x else m))
+          NONE L
+\end{codeblock}
+
+Also fine: pattern-match the empty case first (two clauses, still
+non-recursive), seeding the fold with the head:
+
+\begin{codeblock}
+  fun tlistmax [] = NONE
+    | tlistmax (x :: xs) =
+        SOME (foldl (fn (y, m) => if y > m then y else m) x xs)
+\end{codeblock}
+
+\textbf{Rubric:} 4 pts max via fold (combine function compares and
+keeps the larger); 2 pts empty $\to$ \code{NONE}. Seed of \code{0}
+(wrong on all-negative lists): 0 on the max piece.
+\end{solution}
+
+
+
+% =============================================================================
+% PROBLEM 3 --- Staging fill-in
+% =============================================================================
+
+\clearpage
+\quizproblem{Stage Directions}{9}{10}
+
+Recall \code{msort} from lecture, which sorts a list ascending
+according to a comparison function, with $O(n \log n)$ work:
+
+\begin{codeblock}
+  msort : ('a * 'a -> order) -> 'a list -> 'a list
+\end{codeblock}
+
+Also consider \code{nth}, which retrieves the element at index \code{i}
+(zero-indexed), with $O(\code{i})$ work:
+
+\begin{codeblock}
+  fun nth ([] : 'a list, i : int) : 'a option = NONE
+    | nth (x :: xs, 0) = SOME x
+    | nth (_ :: xs, i) = nth (xs, i - 1)
+\end{codeblock}
+
+A student combines them to answer \emph{``what is the \code{k}-th
+smallest element?''} queries:
+
+\begin{codeblock}
+  fun kthSmallest (L : int list) (k : int) : int option =
+    let
+      val sorted = msort Int.compare L
+    in
+      nth (sorted, k)
+    end
+\end{codeblock}
+
+\textbf{(a)} \subpts{3} The student runs:
+
+\begin{codeblock}
+  val kth = kthSmallest scores
+  val a = kth 0
+  val b = kth 1
+  val c = kth 2
+\end{codeblock}
+
+How many times is \code{msort} fully evaluated (i.e., how many times is
+\code{scores} sorted) by these four declarations, in total? Explain in
+\textbf{one sentence}.
+
+\answerspace{2cm}
+
+\begin{solution}
+\textbf{3 times.} \code{kthSmallest scores} immediately evaluates to a
+lambda expression without entering the \code{let}, so the sort re-runs
+every time \code{kth} is applied to an index.
+
+\textbf{Rubric:} 1 pt ``3''; 2 pts reason (\code{let} body runs only
+once both curried args are supplied). ``1'': 0 --- that's the
+misconception under test.
+\end{solution}
+
+\vspace{0.5em}
+
+\needspace{14\baselineskip}
+\textbf{(b)} \subpts{5} Write the \emph{staged} version of \code{kthSmallest},
+in which the list is sorted as soon as \code{L} is supplied:
+
+\answerspace{10cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun kthSmallest (L : int list) : int -> int option =
+    let
+      val sorted = msort Int.compare L
+    in
+      fn k => nth (sorted, k)
+    end
+\end{codeblock}
+
+\textbf{Rubric:} 2 pts \code{msort Int.compare L} bound in a \code{let}
+\emph{before} the lambda; 2 pts returns \code{fn k => nth (sorted, k)}
+(must be a lambda --- a second curried argument on the \code{fun} line
+puts the sort back inside and defeats the staging: cap 1 overall, since
+that's the unstaged original); 1 pt structure/types correct.
+\end{solution}
+
+\vspace{0.5em}
+
+\textbf{(c)} \subpts{2} Using the staged version from part (b): how
+many times is \code{scores} sorted by the same four declarations from
+part (a)?
+
+\answerspace{2cm}
+
+\begin{solution}
+\textbf{Once} --- when \code{kthSmallest scores} is evaluated to define
+\code{kth}, the list is sorted once.
+
+\textbf{Rubric:} all-or-nothing.
+\end{solution}
+
+% =============================================================================
+% PROBLEM 4 --- Spot the bug: trivial totality
+% =============================================================================
+
+% \vspace{1em}
+% \quizproblem{A Total Misunderstanding}{5}{6}
+
+% Recall the definition of \code{map}:
+
+% \begin{codeblock}
+%   fun map f [] = []
+%     | map f (x::xs) = f x :: map f xs
+% \end{codeblock}
+
+% A student writes the following argument:
+
+% \begin{quote}
+%   \textbf{Claim:} \code{map (fn x => x div 0) [1, 2, 3]} evaluates to a
+%   value.
+%   \begin{enumerate}
+%     \item \code{map} is total: for every function value
+%       \code{f : t1 -> t2}, the application \code{map f} immediately
+%       evaluates to a lambda expression, which is a value.
+%     \item In particular, \code{map (fn x => x div 0)} evaluates to a
+%       value of type \code{int list -> int list}.
+%     \item Since \code{map} is total and \code{[1, 2, 3]} is a value,
+%       \code{map (fn x => x div 0) [1, 2, 3]} evaluates to a value.
+%   \end{enumerate}
+% \end{quote}
+
+% \textbf{(a)} \subpts{2} Exactly one numbered step makes an invalid
+% inference. Which one?
+
+% \answerspace{1cm}
+
+% \textbf{(b)} \subpts{2} In \textbf{one sentence}, explain why that step
+% is wrong.
+
+% \answerspace{2cm}
+
+% \textbf{(c)} \subpts{2} What actually happens when
+% \code{map (fn x => x div 0) [1, 2, 3]} is evaluated?
+
+% \answerspace{1.5cm}
+
+% \begin{solution}
+% \textbf{(a)} Step 3.
+
+% \textbf{(b)} The totality of \code{map} only says \code{map f} is a
+% value for every \code{f}; it says nothing about the totality of
+% \code{map f}, which is a \emph{different function} --- and here
+% \code{map f} is not total, because \code{f} itself is not.
+
+% \textbf{(c)} It raises the exception \code{Div}: \code{map} applies
+% \code{fn x => x div 0} to the element \code{1}, and \code{1 div 0}
+% raises \code{Div}.
+
+% \textbf{Rubric:}
+% \begin{itemize}
+%   \item 2 pts: identifies step 3 (all-or-nothing)
+%   \item 2 pts: explanation distinguishes totality of \code{map} from
+%     totality of \code{map f}. Merely restating ``\code{f} isn't total''
+%     without connecting it to why step 3's inference fails: 1 of 2.
+%   \item 2 pts: raises \code{Div} (1 of 2 for ``it raises an exception''
+%     or ``it loops/fails'' without naming \code{Div})
+% \end{itemize}
+% \end{solution}
+
+\end{document}

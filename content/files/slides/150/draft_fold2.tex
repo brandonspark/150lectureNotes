@@ -1,0 +1,100 @@
+\newpage
+\titledquestion{Two Accumulators}
+
+\textbf{Two Accumulators}
+
+\code{foldl} threads one accumulator through a list. Some computations want
+\textbf{two}, each able to depend on the other. We will build \code{fold2},
+which threads two, and then use it.
+
+\begin{parts}
+  \part[8]\hfill
+
+    Implement \code{fold2}:
+
+    \spec
+      {fold2}
+      {\code{('a * 'b * 'c -> 'b * 'c) -> 'b * 'c -> 'a list -> 'b * 'c}}
+      {\code{g} is total}
+      {\code{fold2 g (b0, c0) [x1, ..., xn]} threads the two accumulators
+      left-to-right: starting from \code{(b0, c0)}, each element \code{xi}
+      updates the accumulators by \code{g (xi, b, c)}. It evaluates to the
+      final pair of accumulators.}
+
+    That is: like \code{foldl}, except \code{g} receives both accumulators and
+    produces both, so either may depend on the other.
+
+    \begin{solutionorbox}[16em]
+      \begin{codeblock}
+        fun fold2 g (b, c) [] = (b, c)
+          | fold2 g (b, c) (x::xs) =
+              let
+                val (b', c') = g (x, b, c)
+              in
+                fold2 g (b', c') xs
+              end
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[8]\hfill
+
+    The \textit{best prefix sum} is the largest running prefix sum, counting the
+    empty prefix as \code{0}. For \code{[3, ~2, ~2, 5]} the prefix sums are
+    \code{3, 1, ~1, 4}, so the answer is \code{4}. Implement \code{bestPrefix}:
+
+    \spec
+      {bestPrefix}
+      {\code{int list -> int}}
+      {\code{true}}
+      {\code{bestPrefix xs} evaluates to the largest running prefix sum of
+      \code{xs}, or \code{0} if every prefix sum is negative.}
+
+    \begin{constraint}
+      You must use \code{fold2}, and traverse the list only once. You may not
+      use explicit recursion.
+    \end{constraint}
+
+    \begin{solutionorbox}[18em]
+      The two accumulators are the running \textbf{sum} of the prefix so far,
+      and the \textbf{best} prefix sum seen so far. The best cannot be updated
+      without the running sum --- that is the interaction.
+
+      \begin{codeblock}
+        fun bestPrefix xs =
+          #2 (fold2
+                (fn (x, sum, best) =>
+                   let
+                     val sum' = sum + x
+                   in
+                     (sum', Int.max (best, sum'))
+                   end)
+                (0, 0)
+                xs)
+      \end{codeblock}
+
+      We start both accumulators at \code{0} (the empty prefix has sum \code{0},
+      and it is a candidate for the best). At each element we advance the sum,
+      then take the max of the old best and the \textit{new} sum. The answer is
+      the second accumulator.
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[4]\hfill
+
+    A student claims \code{fold2} is strictly more powerful than \code{foldl}.
+    Settle it by implementing \code{foldl} in terms of \code{fold2}, to show \code{fold2}
+    is at least as powerful.
+
+    \begin{solutionorbox}[20em]
+      \code{foldl} is the special case of \code{fold2} that ignores the second
+      accumulator (we thread \code{unit} through it):
+
+      \begin{codeblock}
+        fun foldl' f z xs =
+          #1 (fold2 (fn (x, acc, u) => (f (x, acc), u)) (z, ()) xs)
+      \end{codeblock}
+    \end{solutionorbox}
+\end{parts}

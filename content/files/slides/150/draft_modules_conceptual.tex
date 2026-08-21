@@ -1,0 +1,78 @@
+% =============================================================================
+% CONCEPTUAL ITEM: what representation independence actually OBLIGES you to
+% prove. Students can usually recite "the client can't tell" -- this asks for
+% the shape of the argument instead: a relation, preserved by the builder, under
+% which observations agree.
+%
+% Deliberately NOT the same punchline as mod2.tex (which asserts that two queue
+% implementations are indistinguishable). Here the answer is the proof
+% obligation, not the conclusion.
+%
+% Three operations only -- one seed, one builder, one observation -- which is
+% the minimum that still forces all three clauses. Using ACC rather than SET
+% also makes the two representations genuinely different TYPES (int vs
+% int list), so "relation, not bijection" is immediate: every list summing to 7
+% relates to the single accumulator 7.
+%
+% NOTE the asymmetry that students get wrong: clauses (1) and (2) are about
+% R-relatedness, but clause (3) is about EQUALITY. `total` returns int, not the
+% abstract t, so R does not even typecheck there.
+%
+% Both implementations verified to agree in SML/NJ (probe: add 10, ~7, 4).
+% =============================================================================
+
+\part[4]\hfill
+
+  Two structures \code{A1} and \code{A2} implement the same signature
+  \code{ACC}.
+
+  \begin{codeblock}
+    signature ACC =
+      sig
+        type t
+        val init  : t
+        val add   : int -> t -> t
+        val total : t -> int
+      end
+  \end{codeblock}
+
+  We want to show no client written against \code{ACC} can distinguish
+  \code{A1} from \code{A2} --- in other words, they are equivalent through
+  representation independence.
+
+  Given a relation $R(\code{a1}, \code{a2})$ relating values \code{a1 : A1.t}
+  and \code{a2 : A2.t}, write down the facts you would need to prove. Be
+  careful to state each one as either an $R$-relatedness or an equivalence,
+  whichever is appropriate.
+
+  \begin{solutionorbox}[22em]
+    Checking example clients cannot work --- there are infinitely many. Instead
+    we show $R$ holds initially and is preserved, and that observations agree:
+
+    \begin{enumerate}
+      \item \textbf{The seeds are related:} $R(\code{A1.init}, \code{A2.init})$.
+
+      \item \textbf{\code{add} preserves $R$.} If $R(\code{a1}, \code{a2})$,
+      then for every value \code{x : int},
+      $$R(\code{A1.add x a1},\; \code{A2.add x a2})$$
+
+      \item \textbf{Observations are equal on related states.} If
+      $R(\code{a1}, \code{a2})$, then
+      $$\code{A1.total a1} \;\eeq\; \code{A2.total a2}$$
+    \end{enumerate}
+
+    Note the asymmetry between (2) and (3). \code{add} returns the
+    \textbf{abstract} type \code{t}, so the best we can say is that its results
+    are \textit{related}. But \code{total} returns \code{int}, a type the client
+    can see and compare directly --- so its results must be genuinely
+    \textbf{equivalent}. (Writing $R$ in (3) would not even typecheck: $R$
+    relates a \code{A1.t} to a \code{A2.t}, not two \code{int}s.)
+
+    Together these give an induction on the client's sequence of calls: the two
+    structures start related, every \code{add} keeps them related, and any
+    \code{total} the client performs returns the same answer either way. Since
+    \code{t} is abstract, building with \code{init}/\code{add} and observing
+    with \code{total} is all a client can do.
+  \end{solutionorbox}
+
+\newpage

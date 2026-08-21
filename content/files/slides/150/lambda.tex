@@ -119,9 +119,14 @@
 % teal nonterminal accent: a bright pastel for dark mode, a deeper teal for light
 \iflightmode
   \definecolor{ntColor}{HTML}{0E7C6E}  % deep teal (readable on light)
+  \definecolor{linkColor}{HTML}{2A5DB0} % link: deep blue on light
 \else
   \definecolor{ntColor}{HTML}{5FD0C0}  % bright teal (for dark)
+  \definecolor{linkColor}{HTML}{7FB2E8} % link: soft sky-blue (not garish on dark)
 \fi
+% \link{url}{text}: a hyperlink styled in the (toggle-aware) link color.
+% Plain \url with \color{blue} is too harsh on the dark canvas.
+\newrobustcmd{\link}[2]{\href{#1}{\color{linkColor}\underline{#2}}}
 % \nt is mode-agnostic (\ensuremath) so it works bare in math AND inside the
 % text-mode \gline below. Regular weight (bold was too fat); distinction from
 % the cream terminals comes from color + the terminals being typewriter.
@@ -181,6 +186,11 @@
 % \newrobustcmd so \color survives inside moving args (e.g. \defBox does an
 % \edef, where a fragile \color would break).
 \newrobustcmd{\Y}{{\color{yColor}\texttt{Y}}}
+
+% \hlt{NAME}: a high-level lambda-calculus "widget" term (fact, IF, EQ, MUL,
+% PRED, ...) in gold typewriter, so the named building blocks stand out from
+% plain variables. Robust so it survives \defBox/moving args.
+\newrobustcmd{\hlt}[1]{{\color{auxColor}\texttt{#1}}}
 
 % Big Bird subtyping diagram for the "Why semantics?" section: an array of dogs
 % where muppetify drops a BigBird into slot 0, then barkify calls .bark() on all
@@ -472,19 +482,19 @@ We are interested in answering questions like:
   \frametitle{Syntax and Semantics}
 
   The way to look at any programming language is as a combination of
-  its \term{syntax} and \term{semantics}.
+  its syntax and semantics.
 
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, The syntax of a programming language is how you write
+  \defBox{}{\, The \term{syntax} of a programming language is how you write
   programs in the language.
   }
 
   \pause
   \vspace{\fill}
 
-  \defBox{}{\, The semantics of a programming language is set of rules
+  \defBox{}{\, The \term{semantics} of a programming language is the set of rules
   governing the behavior of programs in the language. }
 
   \pause
@@ -645,7 +655,7 @@ We are interested in answering questions like:
   Let's look at how we might derive the syntax of the SML program\footnote{A reminder that SML programs are whitespace
   agnostic, so we omit the newline in the derived program.}
   \begin{codeblock}
-    val x = 1;
+    val x = 1
     val _ = fn f => f x
   \end{codeblock}
 
@@ -686,14 +696,14 @@ We are interested in answering questions like:
   % \end{minipage}
   % \begin{minipage}{0.55\textwidth}
   \begin{align*}
-    \nt{dec} & \stepsTo \gline{\underline{\nt{dec_1} \nt{dec_2}}} & \tag{SEQ} \\
-              & \stepsTo \gline{\underline{val \nt{p} = \nt{e}} \nt{dec_2}} & \tag{VAL} \\
-              & \stepsTo \gline{val \underline{x} = \underline{1} \nt{dec_2}} & \tag{ID (x2)} \\
-              & \stepsTo \gline{val x = 1 \underline{val \nt{p} = \nt{e}}} & \tag{VAL} \\
-              & \stepsTo \gline{val x = 1 val \underline{\_} = \underline{fn \nt{p} => \nt{e}}} & \tag{LAM} \\
-              & \stepsTo \gline{val x = 1 val \_ = fn \underline{f} => \nt{e}} & \tag{ID} \\
-              & \stepsTo \gline{val x = 1 val \_ = fn f => \underline{\nt{e_1} \nt{e_2}}} & \tag{APP} \\
-              & \stepsTo \gline{val x = 1 val \_ = fn f => \underline{f} \underline{x}} & \tag{ID (x2)} \\
+    \nt{dec} & \stepsTo \gline{\underline{\nt{dec_1} \nt{dec_2}}} & \tag{sequence} \\
+              & \stepsTo \gline{\underline{val \nt{p} = \nt{e}} \nt{dec_2}} & \tag{value declaration} \\
+              & \stepsTo \gline{val \underline{x} = \underline{1} \nt{dec_2}} & \tag{identifier, integer literal} \\
+              & \stepsTo \gline{val x = 1 \underline{val \nt{p} = \nt{e}}} & \tag{value declaration} \\
+              & \stepsTo \gline{val x = 1 val \underline{\_} = \underline{fn \nt{p} => \nt{e}}} & \tag{wildcard, lambda expression} \\
+              & \stepsTo \gline{val x = 1 val \_ = fn \underline{f} => \nt{e}} & \tag{identifier} \\
+              & \stepsTo \gline{val x = 1 val \_ = fn f => \underline{\nt{e_1} \nt{e_2}}} & \tag{application} \\
+              & \stepsTo \gline{val x = 1 val \_ = fn f => \underline{f} \underline{x}} & \tag{variable (x2)} \\
   \end{align*}
 
   \vspace{-10pt}
@@ -839,7 +849,7 @@ We are interested in answering questions like:
 
   Because of this behavior, Java needs to be able to detect at runtime
   whether or not you are doing an unsafe operation, like storing Big Bird
-  in an array of dogs.
+  in an array of dogs\footnote{You only make that mistake once, though.}.
 
   \pause
   \vspace{\fill}
@@ -901,6 +911,9 @@ We are interested in answering questions like:
   \defBox{}{\term{Dynamic semantics} are the rules of a programming
   language that govern its properties during evaluation (how it runs)
   }
+
+  \pause
+  \vspace{\fill}
 
   In programming language theory, the language we use to communicate
   semantics is \term{judgements}.
@@ -987,7 +1000,7 @@ We are interested in answering questions like:
   \pause
   \vspace{\fill}
 
-  On the left, we see the judgements that are are allowed to use, in order
+  On the left, we see the judgements that we are allowed to use, in order
   to derive facts.
 
   \pause
@@ -1017,20 +1030,20 @@ We are interested in answering questions like:
   % operator spacing (it's a \mathbin). \code here would inject an \hbox that
   % breaks the surrounding math spacing.
   \[
-    \infer[\rname{Add}]{e_1 \op{+} e_2 : \ty{int}}{e_1 : \ty{int} \quad e_2 : \ty{int}}
+    \infer[\rname{S-Add}]{e_1 \op{+} e_2 : \ty{int}}{e_1 : \ty{int} \quad e_2 : \ty{int}}
     \qquad
-    \infer[\rname{Mul}]{e_1 \op{*} e_2 : \ty{int}}{e_1 : \ty{int} \quad e_2 : \ty{int}}
+    \infer[\rname{S-Mul}]{e_1 \op{*} e_2 : \ty{int}}{e_1 : \ty{int} \quad e_2 : \ty{int}}
     \qquad
-    \infer[\rname{Lit}]{n : \ty{int}}{}
+    \infer[\rname{S-Lit}]{n : \ty{int}}{}
   \]
   \[
-    \infer[\rname{Tup}]{(e_1, e_2) : \ty{t_1} \op{*} \ty{t_2}}{e_1 : \ty{t_1} \quad e_2 : \ty{t_2}}
+    \infer[\rname{S-Tup}]{(e_1, e_2) : \ty{t_1} \op{*} \ty{t_2}}{e_1 : \ty{t_1} \quad e_2 : \ty{t_2}}
   \]
 
   \pause
   \vspace{\fill}
 
-  We note that the \rname{Lit} judgement has no premises, because our
+  We note that the \rname{S-Lit} judgement has no premises, because our
   variable $n$ is quantified over all integer literals. Those require
   no justification to be at type \code{int}.
 
@@ -1052,15 +1065,15 @@ We are interested in answering questions like:
   \vspace{\fill}
 
   \[
-    \infer[\rname{Mul}]{(1 \op{+} 2) \op{*} (3 \op{+} 4) : \ty{int}}{
-      \infer[\rname{Add}]{1 \op{+} 2 : \ty{int}}{
-        \infer[\rname{Lit}]{1 : \ty{int}}{} \qquad
-        \infer[\rname{Lit}]{2 : \ty{int}}{}
+    \infer[\rname{S-Mul}]{(1 \op{+} 2) \op{*} (3 \op{+} 4) : \ty{int}}{
+      \infer[\rname{S-Add}]{1 \op{+} 2 : \ty{int}}{
+        \infer[\rname{S-Lit}]{1 : \ty{int}}{} \qquad
+        \infer[\rname{S-Lit}]{2 : \ty{int}}{}
       }
       \qquad
-      \infer[\rname{Add}]{3 \op{+} 4 : \ty{int}}{
-        \infer[\rname{Lit}]{3 : \ty{int}}{} \qquad
-        \infer[\rname{Lit}]{4 : \ty{int}}{}
+      \infer[\rname{S-Add}]{3 \op{+} 4 : \ty{int}}{
+        \infer[\rname{S-Lit}]{3 : \ty{int}}{} \qquad
+        \infer[\rname{S-Lit}]{4 : \ty{int}}{}
       }
     }
   \]
@@ -1093,12 +1106,12 @@ We are interested in answering questions like:
   evaluate a given program. We write $e \Downarrow v$ to mean ``$e$ evaluates
   to the value $v$'':
   \[
-    \infer[\rname{Lit}]{n \Downarrow n}{}
+    \infer[\rname{D-Lit}]{n \Downarrow n}{}
     \qquad
-    \infer[\rname{Add}]{e_1 \op{+} e_2 \Downarrow n}
+    \infer[\rname{D-Add}]{e_1 \op{+} e_2 \Downarrow n}
                        {e_1 \Downarrow n_1 \quad e_2 \Downarrow n_2 \quad n = n_1 + n_2}
     \qquad
-    \infer[\rname{Tuple}]{(e_1, e_2) \Downarrow (v_1, v_2)}
+    \infer[\rname{D-Tuple}]{(e_1, e_2) \Downarrow (v_1, v_2)}
                        {e_1 \Downarrow v_1 \quad e_2 \Downarrow v_2}
   \]
 
@@ -1117,14 +1130,14 @@ We are interested in answering questions like:
   \code{(1 + 2, 3 + 4)} evaluates to the value \code{(3, 7)}:
 
   \[
-    \infer[\rname{Tuple}]{(1 + 2, 3 + 4) \Downarrow (3, 7)}{
-      \infer[\rname{Add}]{1 + 2 \Downarrow 3}{
-        \infer[\rname{Lit}]{1 \Downarrow 1}{} \quad
-        \infer[\rname{Lit}]{2 \Downarrow 2}{}
+    \infer[\rname{D-Tuple}]{(1 + 2, 3 + 4) \Downarrow (3, 7)}{
+      \infer[\rname{D-Add}]{1 + 2 \Downarrow 3}{
+        \infer[\rname{D-Lit}]{1 \Downarrow 1}{} \quad
+        \infer[\rname{D-Lit}]{2 \Downarrow 2}{}
       } \quad
-      \infer[\rname{Add}]{3 + 4 \Downarrow 7}{
-        \infer[\rname{Lit}]{3 \Downarrow 3}{} \quad
-        \infer[\rname{Lit}]{4 \Downarrow 4}{}
+      \infer[\rname{D-Add}]{3 + 4 \Downarrow 7}{
+        \infer[\rname{D-Lit}]{3 \Downarrow 3}{} \quad
+        \infer[\rname{D-Lit}]{4 \Downarrow 4}{}
       }
     }
   \]
@@ -1159,13 +1172,13 @@ We are interested in answering questions like:
   % \code is verbatim (\lstinline), so \op, $, etc. inside it error out.
   We proceed by rule induction on the judgement $e \Downarrow v$.
   \begin{itemize}
-    \item \textbf{Case 1: \rname{Lit}} \\
-    Here, $e = n$ and $v = n$. By the statics rule \rname{Lit}, $n : \ty{int}$,
+    \item \textbf{Case 1: \rname{D-Lit}} \\
+    Here, $e = n$ and $v = n$. By the statics rule \rname{S-Lit}, $n : \ty{int}$,
     so $\ty{t} = \ty{int}$ and indeed $v : \ty{t}$. \\
-    \item \textbf{Case 2: \rname{Add}} \\
+    \item \textbf{Case 2: \rname{D-Add}} \\
     Here, $e = e_1 \op{+} e_2$ and $v = n$. The only statics rule for
-    $e_1 \op{+} e_2$ is \rname{Add}, so $\ty{t} = \ty{int}$; and $n : \ty{int}$
-    by \rname{Lit}. So $v : \ty{t}$.
+    $e_1 \op{+} e_2$ is \rname{S-Add}, so $\ty{t} = \ty{int}$; and $n : \ty{int}$
+    by \rname{S-Lit}. So $v : \ty{t}$.
   \end{itemize}
 \end{frame}
 
@@ -1173,19 +1186,26 @@ We are interested in answering questions like:
   \frametitle{Safety Proof: The Tuple Case}
 
   \begin{itemize}
-    \item \textbf{Case 3: \rname{Tuple}} \\
+    \item \textbf{Case 3: \rname{D-Tuple}} \\
     Here, $e = (e_1, e_2) \Downarrow (v_1, v_2) = v$, with assumptions
     $e_1 \Downarrow v_1$ and $e_2 \Downarrow v_2$. \\[2pt]
-    The only statics rule for $(e_1, e_2)$ is \rname{Tup}, so
+    The only statics rule for $(e_1, e_2)$ is \rname{S-Tup}, so
     $\ty{t} = \ty{t_1} \op{*} \ty{t_2}$ with $e_1 : \ty{t_1}$ and $e_2 : \ty{t_2}$. \\[2pt]
     \pause
     Now we use the IH: since $e_1 : \ty{t_1}$ and
     $e_1 \Downarrow v_1$, the IH gives $v_1 : \ty{t_1}$ and $v_2 : \ty{t_2}$. \\[2pt]
-    Then by \rname{Tup}, $(v_1, v_2) : \ty{t_1} \op{*} \ty{t_2} = \ty{t}$, as desired.
+    Then by \rname{S-Tup}, $(v_1, v_2) : \ty{t_1} \op{*} \ty{t_2} = \ty{t}$, as desired.
   \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Proofs of this kind can be rather tedious, but can be automated in
+  some cases. Usually, when we add more expressive constructs to our
+  languages, these proofs become more interesting and complex.
 \end{frame}
 
-\sectionSlide{3}{The Lambda Calculus}
+\sectionSlide{3}{Lambda Calculus and the Y Combinator}
 
 \begin{frame}[fragile]
   \frametitle{Toward the Lambda Calculus}
@@ -1255,9 +1275,9 @@ We are interested in answering questions like:
   \[
   \large
   \begin{array}{r r l r}
-    e & ::= & \lambda x . e & \text{(lambda abstraction)}\\
-      & |   & e_1 e_2 & \text{(application)} \\
-      & |   & x & \text{(variable)}
+    \nt{e} & ::= & \lam{\nt{x}} \nt{e} & \text{(lambda abstraction)}\\
+      & |   & \nt{e_1} \; \nt{e_2} & \text{(application)} \\
+      & |   & \nt{x} & \text{(variable)}
   \end{array}
   \]
 
@@ -1306,7 +1326,7 @@ We are interested in answering questions like:
   \frametitle{Beta-Reduction, Formally}
 
   Formally, the semantics of the lambda calculus are given by the
-  relation of \term{$\beta$-reduction}.
+  relation of \term{$\beta$-equivalence}.
   \vspace{-15pt}
   \[
     \infer[\rname{REFL}]{M \equiv_\beta M}{}
@@ -1322,8 +1342,8 @@ We are interested in answering questions like:
   \]
   \[
     \infer[\rname{BETA}]{(\lam{x}N)\, M \equiv_\beta N[x \mapsto M]\footnote{This means "the term $N$ where we substitute
-    $M$ for $x$. There is a bit of a subtlety here having to do with substitution and
-    variable capture. I will decline to elaborate further here.}}{}
+    $M$ for $x$". There is a bit of a subtlety here having to do with substitution and
+    variable capture---refer to {\color{linkColor}\href{https://www.cs.cmu.edu/~rwh/pfpl/supplements/ulc.pdf}{Bob Harper's notes for more}}}}{}
   \]
 
   Only the last rule is interesting--the other ones just tell us that
@@ -1368,7 +1388,7 @@ We are interested in answering questions like:
 \begin{frame}[fragile]
   \frametitle{Numbers Without Numbers}
 
-  The point being that, although we do not have numbers inbuilt in
+  The point being that, although we do not have numbers built into
   the lambda calculus, we can define terms in the lambda calculus
   which \textit{behave} like numbers.
 
@@ -1410,15 +1430,17 @@ We are interested in answering questions like:
   \pause
   \vspace{\fill}
 
+  \vspace{-5pt}
   { \large
-  \begin{itemize}
-    \item $\overline{0} \triangleq \lam{f} \lam{x} x$\footnote{Saying that $\overline{0} \triangleq M$ here means
+  \begin{center}
+    $\overline{0} \triangleq \lam{f} \lam{x} x$\footnote{Saying that $\overline{0} \triangleq M$ here means
     that $\overline{0}$ is defined to be the lambda term $M$. We just
-    write $\overline{0}$ as a shorthand--this is external to the lambda calculus.}
-    \item $\overline{1} \triangleq \lam{f} \lam{x} f x$
-    \item $\overline{2} \triangleq \lam{f} \lam{x} f (f x)$
-  \end{itemize}
+    write $\overline{0}$ as a shorthand---this is external to the lambda calculus.} \\
+    $\overline{1} \triangleq \lam{f} \lam{x} f x$ \\
+    $\overline{2} \triangleq \lam{f} \lam{x} f (f x)$
+  \end{center}
   }
+  \vspace{-5pt}
 
   \pause
   \vspace{\fill}
@@ -1448,35 +1470,40 @@ We are interested in answering questions like:
   \vspace{\fill}
 
   {\large
-  $$\texttt{ADD} \triangleq \lambda n. \lambda m. \lambda f. \lambda x. n f (m f x)$$
+  $$\hlt{ADD} \triangleq \lambda n. \lambda m. \lambda f. \lambda x. n f (m f x)$$
   }
 
   \pause
   \vspace{\fill}
 
-  Why does this work? We could induct to prove it, but essentially we see that
+  Why does this work? We could induct to prove it, but essentially
   \texttt{ADD $\overline{n}$ $\overline{m}$} evaluates to a function which
   accepts a function $f$ and a value $x$, as a Church numeral should.
 
-  Additionally, the definition of $\overline{n}$ is that $\overline{n} f x$ applies
+  \pause
+  \vspace{\fill}
+
+  Intuitively, the definition of $\overline{n}$ is that $\overline{n} f x$ applies
   $f$ to $x$ $n$ times, and similarly for $\overline{m}$. Therefore
-  $n f (m f x)$ applies $f$ to $x$ $n + m$ times, as desired.
+  $\overline{n} f (\overline{m} f x)$ applies $f$ to $x$ $n + m$ times, as desired.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Defining Multiplication}
 
   Cheekily, we can define multiplication pretty easily in the
-  Church encoding:
+  Church encoding using the same idea:
 
   {\large
-  $$\texttt{MUL} \triangleq \lambda n. \lambda m. \lambda f. \lambda x. n (m f) x$$
+  $$\hlt{MUL} \triangleq \lambda n. \lambda m. \lambda f. \lambda x. n (m f) x$$
   }
 
   \pause
   \vspace{\fill}
 
-  \customBox{Check your understanding}{\, Why does this work?}
+  \customBox{Check your understanding}{\, Why does this work?\footnote{
+    Hint: To understand this, it's important to know "what that $m f$ do".
+  }}
 
   \pause
   \vspace{\fill}
@@ -1488,19 +1515,57 @@ We are interested in answering questions like:
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Toward Recursion}
+  \frametitle{More Encodings}
 
-  So, we can define encodings in the lambda calculus that do
-  arithmetic. There are also encodings which let us define
-  complex data like tuples, control flow like conditionals, etc.
+  We can also define conditionals! To do this, we will need to
+  define terms \hlt{TRUE} and \hlt{FALSE} such that we can
+  define another term \hlt{IF} such that:
 
   \pause
   \vspace{\fill}
 
-  This is cool, but not very useful without any repetition. The
-  lambda calculus is only equipped with anonymous functions, meaning
-  that we don't have any way to do recursion. Without recursion or
-  loops, control flow isn't so useful.
+  \begin{itemize}
+    \item \hlt{IF} $e_1$ $e_2$ $e_3$ $\equiv_\beta$ $e_2$ if $e_1 \equiv_\beta \hlt{TRUE}$, and
+    \item \hlt{IF} $e_1$ $e_2$ $e_3$ $\equiv_\beta$ $e_3$ if $e_1 \equiv_\beta \hlt{FALSE}$
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Our encoding will be simply:
+  {\large
+  \begin{center}
+  $\hlt{TRUE} \triangleq \lambda x. \lambda y. x$ \\
+  $\hlt{FALSE} \triangleq \lambda x. \lambda y. y$ \\
+  $\hlt{IF} \triangleq \lambda x. \lambda y. \lambda z. x \;y \; z$
+  \end{center}
+  }
+
+  \pause
+  \vspace{\fill}
+
+  This is very cute. Essentially, if the behavior of \hlt{IF} is to
+  choose between $e_2$ and $e_3$ based on whether $e_1$ is \hlt{TRUE} or \hlt{FALSE},
+  why not make the definition of \hlt{TRUE} and \hlt{FALSE} simply to
+  do the choosing itself\footnote{This is a perspective that Bob Harper calls "active data".}?
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Toward Recursion}
+
+  So, we can define encodings in the lambda calculus that do
+  arithmetic. We can also define control flow like conditionals,
+  as well as richer data like tuples.
+
+  \pause
+  \vspace{\fill}
+
+  This is cool, but not very useful without any way of doing
+  repetition. The lambda calculus is only equipped with anonymous
+  functions, meaning that we don't have any way to do recursion.
+  To be a general purpose programming language, we need to be able
+  to loop or recurse.
 
   \pause
   \vspace{\fill}
@@ -1516,7 +1581,7 @@ We are interested in answering questions like:
   implement recursion\footnote{It was also a perfectly respectable
   term in combinatorial logic before being taken by a certain
   startup accelerator.}. It is a \term{fixpoint}, meaning that we
-  have that $\Y f = f (\Y f)$.}
+  have that $\Y f \equiv_\beta f (\Y f)$.}
 
   \pause
   \vspace{\fill}
@@ -1547,12 +1612,12 @@ We are interested in answering questions like:
                     &\equiv_\beta f ((\lambda x. f (x x)) (\lambda x. f (x x))) \\
   \end{align*}
   }
-  Let's call the $ (\lambda x. f (x x)) (\lambda x. f (x x)) $ expression $ \texttt{SELF}(f) $. Then,
+  Let's call the $ (\lambda x. f (x x)) (\lambda x. f (x x)) $ expression $ \hlt{SELF}_f $. Then,
   replacing it in the lines above:
   \begin{align*}
-    \Y \; f &\equiv_\beta (\texttt{SELF}(f)) & \tag{via def of \texttt{SELF}(f)}\\
-                 &\equiv_\beta f (\texttt{SELF}(f)) & \tag{via def of \texttt{SELF}(f)}\\
-                 &\equiv_\beta f (\Y \; f) & \tag{via def of \Y}\\
+    \Y \; f &\equiv_\beta (\hlt{SELF}_f) & \tag{via def of $\hlt{SELF}_f$}\\
+                 &\equiv_\beta f (\hlt{SELF}_f) & \tag{via def of $\hlt{SELF}_f$}\\
+                 &\equiv_\beta f (\Y \; f) & \tag{via equivalence of \Y \, two lines up}\\
   \end{align*}
 \end{frame}
 
@@ -1560,32 +1625,39 @@ We are interested in answering questions like:
   \frametitle{Using the Fixpoint}
 
   We mathematically derived the property we wanted, that
-  $\Y \; f = f (\Y \; f)$. But how do we use this?
+  $\Y \; f \equiv_\beta f (\Y \; f)$. But how do we use this?
 
   \pause
   \vspace{\fill}
 
   Any function which is recursive is essentially just a function
-  which has itself in scope. What if we write our desired-to-be-recursive
+  which has itself in scope. What if we make this explicit,
+  by writing our desired-to-be-recursive
   function as one which just takes itself as a parameter?
 
   \pause
   \vspace{\fill}
 
   {\large
-  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n. \ldots$$
+  $$\hlt{fact}_{proto} \triangleq \lambda fact. \lambda n. \ldots$$
   }
+
+  \pause
+  \vspace{\fill}
+
+  Then, the only job left for us is to tie the knot and implement the
+  body of the factorial function.
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{A Prototype Factorial}
 
   For now, let's assume the existence of the
-  \texttt{IF} and \texttt{EQ} terms such that:
+  \hlt{IF} and \hlt{EQ} terms such that:
   \begin{itemize}
-    \item \texttt{IF} $e_1$ $e_2$ $e_3$ evaluates to $e_2$ if $e_1$ evaluates to $\overline{true}$, and $e_3$ otherwise.
-    \item \texttt{EQ} $e_1$ $e_2$ evaluates to $\overline{true}$ if $e_1$ and $e_2$ evaluate to the same Church numeral, and $\overline{false}$ otherwise.
-    \item \texttt{PRED} $\overline{n + 1}$ evaluates to the Church numeral $\overline{n}$.
+    \item \hlt{IF} $e_1$ $e_2$ $e_3$ evaluates to $e_2$ if $e_1$ evaluates to $\overline{true}$, and $e_3$ otherwise.
+    \item \hlt{EQ} $e_1$ $e_2$ evaluates to $\overline{true}$ if $e_1$ and $e_2$ evaluate to the same Church numeral, and $\overline{false}$ otherwise.
+    \item \hlt{PRED} $\overline{n + 1}$ evaluates to the Church numeral $\overline{n}$.
   \end{itemize}
 
   \pause
@@ -1594,20 +1666,20 @@ We are interested in answering questions like:
   Then we could write:
 
   {\large
-  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
-  \texttt{IF} \pcond{(\texttt{EQ} \; n \; \overline{0})} \;
+  $$\hlt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \hlt{IF} \pcond{(\hlt{EQ} \; n \; \overline{0})} \;
   \pbase{\overline{1}} \;
-  \precase{(\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))}$$
+  \precase{(\hlt{MUL} \; n \; (fact \; (\hlt{PRED} \; n)))}$$
   }
 
   \pause
   \vspace{\fill}
 
   \begin{itemize}
-    \item $\pcond{(\texttt{EQ} \; n \; \overline{0})}$ is the conditional, which
+    \item $\pcond{(\hlt{EQ} \; n \; \overline{0})}$ is the conditional, which
     checks if $n$ is equivalent to $\overline{0}$.
     \item $\pbase{\overline{1}}$ is evaluated to if the conditional succeeds
-    \item $\precase{(\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))}$ is the "else" of the
+    \item $\precase{(\hlt{MUL} \; n \; (fact \; (\hlt{PRED} \; n)))}$ is the "else" of the
     conditional, evaluating to $\overline{n * (n - 1)!}$.
   \end{itemize}
 \end{frame}
@@ -1616,10 +1688,10 @@ We are interested in answering questions like:
   \frametitle{Reading \code{fact\_proto}}
 
   {\large
-  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
-  \texttt{IF} (\texttt{EQ} \; n \; \overline{0}) \;
+  $$\hlt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \hlt{IF} (\hlt{EQ} \; n \; \overline{0}) \;
   \overline{1} \;
-  (\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))$$
+  (\hlt{MUL} \; n \; (fact \; (\hlt{PRED} \; n)))$$
   }
 
   \pause
@@ -1632,15 +1704,15 @@ We are interested in answering questions like:
   \vspace{\fill}
 
   This also only works if the parameter $fact$ is truly the factorial
-  function, the lambda term such that $\texttt{fact} \; \overline{n}$ evaluates
+  function, the lambda term such that $\hlt{fact} \; \overline{n}$ evaluates
   to $\overline{n!}$.
 
   \pause
   \vspace{\fill}
 
   How do we tie the knot? The observation to make is that if we had
-  the "true" $fact$, then $fact_{proto} \; \texttt{fact}$ would just actually
-  be $\texttt{fact}$. So $\texttt{fact} = fact_{proto} \; \texttt{fact}$.
+  the "true" $fact$, then $fact_{proto} \; \hlt{fact}$ would just actually
+  be $\hlt{fact}$. So $\hlt{fact} \equiv_\beta fact_{proto} \; \hlt{fact}$.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -1651,33 +1723,33 @@ We are interested in answering questions like:
   }
   \vspace{-10pt}
   {\large
-  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
-  \texttt{IF} (\texttt{EQ} \; n \; \overline{0}) \;
+  $$\hlt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \hlt{IF} (\hlt{EQ} \; n \; \overline{0}) \;
   \overline{1} \;
-  (\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))$$
+  (\hlt{MUL} \; n \; (fact \; (\hlt{PRED} \; n)))$$
   }
 
   \pause
   \vspace{\fill}
 
 
-  Let's play around a bit. What happens if we evaluate $\Y \; \texttt{fact}_{proto}$?
+  Let's play around a bit. What happens if we evaluate $\Y \; \hlt{fact}_{proto}$?
 
   {\large
   \begin{align*}
-    \Y \; \texttt{fact}_{proto}
-    &\equiv_\beta \texttt{fact}_{proto} \; (\Y \; \texttt{fact}_{proto}) \\
-    &\equiv_\beta \lambda n.\ \texttt{IF} \; (\texttt{EQ} \; n \; \overline{0}) \;
-       \overline{1} \; (\texttt{MUL} \; n \; ((\Y \; \texttt{fact}_{proto}) \; (\texttt{PRED} \; n)))
+    \Y \; \hlt{fact}_{proto}
+    &\equiv_\beta \hlt{fact}_{proto} \; (\Y \; \hlt{fact}_{proto}) \\
+    &\equiv_\beta \lambda n.\ \hlt{IF} \; (\hlt{EQ} \; n \; \overline{0}) \;
+       \overline{1} \; (\hlt{MUL} \; n \; ((\Y \; \hlt{fact}_{proto}) \; (\hlt{PRED} \; n)))
   \end{align*}
   }
 
   \pause
   \vspace{\fill}
 
-  We reduce \texttt{fact}$_{proto}$ on its argument, substituting the
-  $\Y \; \texttt{fact}_{proto}$ term for $fact$. We are left with a
-  lambda term which has a recursive call to $\Y \; \texttt{fact}_{proto}$
+  We reduce \hlt{fact}$_{proto}$ on its argument, substituting the
+  $\Y \; \hlt{fact}_{proto}$ term for $fact$. We are left with a
+  lambda term which has a recursive call to $\Y \; \hlt{fact}_{proto}$
   stored within itself.
 \end{frame}
 
@@ -1685,26 +1757,26 @@ We are interested in answering questions like:
   \frametitle{Tying the Knot}
 
   {\large
-  $$\texttt{fact}_{proto} \triangleq \lambda fact. \lambda n.
-  \texttt{IF} (\texttt{EQ} \; n \; \overline{0}) \;
+  $$\hlt{fact}_{proto} \triangleq \lambda fact. \lambda n.
+  \hlt{IF} (\hlt{EQ} \; n \; \overline{0}) \;
   \overline{1} \;
-  (\texttt{MUL} \; n \; (fact \; (\texttt{PRED} \; n)))$$
+  (\hlt{MUL} \; n \; (fact \; (\hlt{PRED} \; n)))$$
   }
 
-  Now feed it a number. Write $F \triangleq \Y \; \texttt{fact}_{proto}$
-  (so $F \equiv_\beta \texttt{fact}_{proto} \; F$). Then:
+  Now feed it a number. Write $F \triangleq \Y \; \hlt{fact}_{proto}$
+  (so $F \equiv_\beta \hlt{fact}_{proto} \; F$). Then:
   {\large
   \begin{align*}
     F \; \overline{2}
-      &\equiv_\beta \cl{(\texttt{fact}_{proto} \; F)} \; \overline{2}
-        & \text{(since $F \equiv_\beta \texttt{fact}_{proto} \; F$)} \\
-      &\equiv_\beta \cl{\texttt{IF} \; (\texttt{EQ} \; \overline{2} \; \overline{0}) \;
-        \overline{1} \; (\texttt{MUL} \; \overline{2} \; (F \; (\texttt{PRED} \; \overline{2})))} & \text{def of \texttt{fact}$_{proto}$} \\
-      &\equiv_\beta \cl{\texttt{MUL} \; \overline{2} \; (F \; \overline{1})}
-        & \text{($\texttt{EQ} \; \overline 2 \; \overline 0$ is $\overline{false}$)} \\
-      &\equiv_\beta \texttt{MUL} \; \overline{2} \; (\cl{\texttt{MUL} \; \overline{1} \; (F \; \overline{0})}) \\
-      &\equiv_\beta \texttt{MUL} \; \overline{2} \; (\texttt{MUL} \; \overline{1} \; \cl{\overline{1}})
-        & \text{($\texttt{EQ} \; \overline 0 \; \overline 0$ is $\overline{true}$)} \\
+      &\equiv_\beta \cl{(\hlt{fact}_{proto} \; F)} \; \overline{2}
+        & \text{(since $F \equiv_\beta \hlt{fact}_{proto} \; F$)} \\
+      &\equiv_\beta \cl{\hlt{IF} \; (\hlt{EQ} \; \overline{2} \; \overline{0}) \;
+        \overline{1} \; (\hlt{MUL} \; \overline{2} \; (F \; (\hlt{PRED} \; \overline{2})))} & \text{def of \hlt{fact}$_{proto}$} \\
+      &\equiv_\beta \cl{\hlt{MUL} \; \overline{2} \; (F \; \overline{1})}
+        & \text{($\hlt{EQ} \; \overline 2 \; \overline 0$ is $\overline{false}$)} \\
+      &\equiv_\beta \hlt{MUL} \; \overline{2} \; (\cl{\hlt{MUL} \; \overline{1} \; (F \; \overline{0})}) \\
+      &\equiv_\beta \hlt{MUL} \; \overline{2} \; (\hlt{MUL} \; \overline{1} \; \cl{\overline{1}})
+        & \text{($\hlt{EQ} \; \overline 0 \; \overline 0$ is $\overline{true}$)} \\
       &\equiv_\beta \overline{2} & \text{grind it out}
   \end{align*}
   }
@@ -1712,8 +1784,8 @@ We are interested in answering questions like:
   \pause
   \vspace{\fill}
 
-  The recursion bottoms out because \texttt{IF} discards the recursive
-  branch once $\texttt{EQ} \; n \; \overline{0}$ is true. We built recursion
+  The recursion bottoms out because \hlt{IF} discards the recursive
+  branch once $\hlt{EQ} \; n \; \overline{0}$ is true. We built recursion
   with nothing but anonymous functions!
 \end{frame}
 
@@ -1732,10 +1804,12 @@ We are interested in answering questions like:
   but function application and variable substitution.
 \end{frame}
 
+\sectionSlide{4}{The Simply-Typed Lambda Calculus}
+
 \begin{frame}[fragile]
   \frametitle{Untyped vs. Typed}
 
-  It is worth noting that everything that we have disussed so far is
+  It is worth noting that everything that we have discussed so far is
   only in the untyped lambda calculus. In a normal typed language,
   you could not write the term $\lam{x} x\,x$.
 
@@ -1814,11 +1888,6 @@ We are interested in answering questions like:
 \begin{frame}[fragile]
   \frametitle{Simply-Typed Lambda Calculus: Typing Rules}
 
-
-
-  \pause
-  \vspace{\fill}
-
   \[
     \infer[\rname{Var}]{\Gamma, x : \ty{t} \vdash x : \ty{t}}{}
     \qquad
@@ -1826,7 +1895,7 @@ We are interested in answering questions like:
   \]
 
   \[
-    \infer[\rname{Abs}]{\Gamma \vdash \lam{x \op{:} \ty{t_1}} e : \ty{t_1} \to \ty{t_2}}
+    \infer[\rname{Abs}]{\Gamma \vdash \lam{(x \op{:} \ty{t_1})} e : \ty{t_1} \to \ty{t_2}}
                        {\Gamma, x : \ty{t_1} \vdash e : \ty{t_2}}
     \qquad
     \infer[\rname{App}]{\Gamma \vdash e_1 \; e_2 : \ty{t_2}}
@@ -1845,22 +1914,180 @@ We are interested in answering questions like:
   \]
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Languages as Lambda Calculus Plus Widgets}
+
+  This language is simple, but we can view it as just the lambda
+  calculus, plus tuples and \ty{nat}s as extra widgets.
+
+  \pause
+  \vspace{\fill}
+
+  The study of programming languages through type theory is exactly
+  this: we bolt on extra types or terms with certain properties, and
+  observe what changes about what we are able to prove.
+
+  \pause
+  \vspace{\fill}
+
+  For instance, we could add \ldots
+  \begin{itemize}
+    \item \term{variant types} (sums, like SML's \code{datatype})
+    \item \term{polymorphism} (polymorphic types like \code{'a}, but more powerful)
+    \item \term{recursive types} (so a type can mention itself)
+    \item \term{classes}, \term{references}, \term{exceptions}, \ldots
+  \end{itemize}
+\end{frame}
 
 
-% \begin{frame}[fragile]
-% \frametitle{Trivial Totality}
+\begin{frame}[fragile]
+  \frametitle{Languages as Lambda Calculus Plus Widgets}
+
+  The interplay between the widgets that we could add to the lambda
+  calculus and the programs you are able to express is where the
+  fun is.
+
+  \pause
+  \vspace{\fill}
+
+  For instance: before, we saw that the untyped lambda calculus was
+  Turing-complete, meaning that it can evaluate any general computable
+  function. The simply-typed lambda calculus as we just defined ends
+  up losing that property.
+
+  \pause
+  \vspace{\fill}
+
+  Later, we see that depending on what widgets we add, we get that
+  property back.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A Teaser: More Widgets}
+
+  To pique your interest, here are some typing rules you might meet later.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \begin{minipage}{0.45\textwidth}
+      \[
+        \infer[\rname{Inl}]{\Gamma \vdash \kw{inl}\; e : \ty{t_1} + \ty{t_2}}
+                          {\Gamma \vdash e : \ty{t_1}}
+      \]
+    \end{minipage}
+    \begin{minipage}{0.5\textwidth}
+      What if we add types which encompass values of other types?
+    \end{minipage}
+  \end{center}
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \begin{minipage}{0.45\textwidth}
+      \[
+        \infer[\rname{T-Abs}]{\Delta, \Gamma \vdash \Lambda \alpha.\, e : \forall \alpha.\, \ty{t}}
+                           {\Delta, \alpha \;\text{type}, \Gamma \vdash e : \ty{t}}
+      \]
+    \end{minipage}
+    \begin{minipage}{0.5\textwidth}
+      What if we add types which are allowed to be parameterized on other
+      types?
+    \end{minipage}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \begin{minipage}{0.45\textwidth}
+      \[
+        \infer[\rname{T-FOLD}]{\Gamma \vdash \kw{fold}\{t.\tau\}\; e : \mu\alpha.\, \tau}
+                            {\Gamma \vdash e : \tau[\alpha \mapsto \mu\alpha.\, \tau]}
+      \]
+    \end{minipage}
+    \begin{minipage}{0.5\textwidth}
+      What if we add types which are allowed to mention themselves?
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Types and Programs}
+
+  The \Y \, combinator is a cool trick, but the thesis is that while
+  untyped terms let you do a lot, it is harder to reason about.
+
+  \pause
+  \vspace{\fill}
+
+  In type theory, we are interested in enforcing static constraints
+  on the programs that we can write, such that the programs we
+  can write maintain nice properties.
+
+  \pause
+  \vspace{\fill}
+
+  \keyBox{}{It turns out that in a certain sense, restriction of the terms
+  we can express gives us more freedom in having a richer type
+  system that allows us to express programs in better ways.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Languages and Specification}
+
+  The Standard ML language is a {\color{linkColor}\href{https://smlfamily.github.io/sml97-defn.pdf}{fully specified}} language.
+
+  \pause
+  \vspace{\fill}
+
+  This means that, like how we saw judgements defining the simple
+  expression language, there are judgements that define every
+  typing rule and runtime behavior of an SML program. Moreover, it is proven to be correct, meaning
+  that we know that no SML program can exhibit undefined behavior, violate type safety, etc.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{minipage}{0.55\textwidth}
+
+  Not every language is fully specified, but the point of the lambda calculus as a mini programming
+  language is that by adding more widgets to it, we can emulate the features that are in real
+  programming languages. In essence, it is a tool that helps us understand what programming
+  languages really are, even if not formally specified.
+
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.4\textwidth}
+    \begin{center}
+    \includegraphics[width=0.95\textwidth]{pl_wolves.png}
+    \end{center}
+  \end{minipage}
+\end{frame}
 
 
-% \pause
-% \vspace{\fill}
 
-% It is a subfield of computer science that deals with the design, implementation, and analysis of programming languages.
+\begin{frame}[fragile]
+  \frametitle{Conclusion}
 
-% \pause
-% \vspace{\fill}
-% A \code{fun fact} is that syntactically sugared curried functions are trivially total.\footnote{
-% An even more fun fact is that there were three alliterations in that sentence.
-% }
+  This was a brief survey of the topic of programming language theory,
+  type theory, and the lambda calculus.
+
+  \pause
+  \vspace{\fill}
+
+  This was far from a thorough treatment---for more details, this
+  material will be covered again in 15-312: Foundations of
+  Programming Languages.
+
+  \pause
+  \vspace{\fill}
+
+  Please take it if interested!
+\end{frame}
+
+
 
 % \pause
 % \vspace{\fill}
@@ -2310,7 +2537,5 @@ We are interested in answering questions like:
 
 \thankyou
 
-\lecturePassword{HOFBYONE}
-
-
+% \lecturePassword{HOFBYONE}
 \end{document}

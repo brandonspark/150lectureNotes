@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -35,8 +35,8 @@
     \usepackage{lectureSlides}
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Polymorphism} % TODO
-    \subtitle{Awesome slides with an awesome subtitle} % TODO
-    \date{01 January 2020} % TODO
+    \subtitle{Giving our types more color} % TODO
+    \date{04 June 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -818,7 +818,7 @@
   \begin{center}
     \begin{tikzpicture}
       [level distance=15mm,
-      every node/.style={circle,inner sep=4pt, draw=black!80, thick},
+      every node/.style={circle,inner sep=4pt, draw=black!80, thick, fill=node_color},
       level 1/.style={sibling distance=36mm},
       level 2/.style={sibling distance=15mm},
       level 3/.style={sibling distance=12mm},
@@ -954,26 +954,26 @@
   \begin{center}
   \makebox[0.8\textwidth][c]{
     \begin{tikzpicture}
-      \node[shape=rectangle,draw=black] (L1) at (-4.5,0) {\small \code{int * real}};
+      \node[shape=rectangle,draw=black,fill=node_color] (L1) at (-4.5,0) {\small \code{int * real}};
 
       \node[] (E2) at (-2,-1) {\textellipsis};
-      \node[shape=rectangle,draw=black] (L2) at (-1.8,0) {\small \code{bool * 'b}};
+      \node[shape=rectangle,draw=black,fill=node_color] (L2) at (-1.8,0) {\small \code{bool * 'b}};
 
-      \node[shape=rectangle,draw=black] (L3) at (0.8,0) {\small \code{int list}};
+      \node[shape=rectangle,draw=black,fill=node_color] (L3) at (0.8,0) {\small \code{int list}};
 
-      \node[shape=rectangle,draw=black] (L4) at (3.2,0) {\small \code{unit list}};
+      \node[shape=rectangle,draw=black,fill=node_color] (L4) at (3.2,0) {\small \code{unit list}};
 
-      \node[shape=rectangle,draw=black] (L5) at (5.8,0) {\small \code{unit tree}};
+      \node[shape=rectangle,draw=black,fill=node_color] (L5) at (5.8,0) {\small \code{unit tree}};
 
-      \node[shape=rectangle,draw=black] (L6) at (8.5,0) {\small \code{int tree}};
+      \node[shape=rectangle,draw=black,fill=node_color] (L6) at (8.5,0) {\small \code{int tree}};
 
       \node[] (EL) at (-4,2) {\textellipsis};
-      \node[shape=rectangle,draw=black] (M1) at (-1,2) {\code{'a * 'b}};
-      \node[shape=rectangle,draw=black] (M2) at (2,2) {\code{'a list}};
-      \node[shape=rectangle,draw=black] (M3) at (5,2) {\code{'a tree}};
+      \node[shape=rectangle,draw=black,fill=node_color] (M1) at (-1,2) {\code{'a * 'b}};
+      \node[shape=rectangle,draw=black,fill=node_color] (M2) at (2,2) {\code{'a list}};
+      \node[shape=rectangle,draw=black,fill=node_color] (M3) at (5,2) {\code{'a tree}};
       \node[] (ER) at (8,2) {\textellipsis};
 
-      \node[shape=rectangle,draw=black] (T) at (2,4) {\code{'a}};
+      \node[shape=rectangle,draw=black,fill=node_color] (T) at (2,4) {\code{'a}};
 
       \draw[<-] (E2) -- (L2);
 
@@ -1024,7 +1024,7 @@
   \pause
   \vspace{\fill}
 
-  \badBox{}{\, Be careful not to confuse being an \term{instance} of a type with
+  \customColorBox{red}{white}{Warning}{\, Be careful not to confuse being an \term{instance} of a type with
   a \term{most general type}. All types are instances of \code{'a}, but most
   expressions do not have MGT \code{'a}.
   }
@@ -1309,8 +1309,8 @@
   \frametitle{\code{msort}, before}
   {\tiny
   \begin{codeblock}
-    fun split [] = []
-      | split [x] = [x]
+    fun split [] = ([], [])
+      | split [x] = ([x], [])
       | split (x::y::xs) =
           let
             val (A, B) = split xs
@@ -1417,5 +1417,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{POLLY}
 
 \end{document}

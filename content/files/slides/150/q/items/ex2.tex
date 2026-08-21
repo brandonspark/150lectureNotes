@@ -1,0 +1,29 @@
+\part[3]\hfill
+
+  Assume \code{exception B} is in scope and \code{risky : unit -> int} is a
+  function that always raises \code{B} when called. Consider:
+  \begin{codeblock}
+    val f = (fn () => risky ()) handle B => (fn () => 0)
+  \end{codeblock}
+
+  Does the handler \code{B => (fn () => 0)} ever fire during this declaration?
+  What is \code{f}, and what happens when we later evaluate \code{f ()}?
+  Justify briefly.
+
+  \begin{solutionorbox}[12em]
+    The handler does \textbf{not} fire. The try-expression \code{fn () => risky
+    ()} is already a \textbf{value} (a function) --- evaluating it does not call
+    \code{risky}, so no exception is raised during the \code{handle}, and there
+    is nothing to catch. Thus \code{f} is bound to \code{fn () => risky ()}
+    (type \code{unit -> int}).
+
+    Later, \code{f ()} \textbf{calls} \code{risky}, which raises \code{B} ---
+    and now there is no handler around it, so \code{B} propagates uncaught. A
+    \code{handle} only catches exceptions raised \textbf{while evaluating its
+    try-expression}, not exceptions latent in the value that expression returns.
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 3. Exceptions vs. options as a specification choice.
+% -----------------------------------------------------------------------------

@@ -1,0 +1,35 @@
+% Conceptual: let-binding is NOT the same as textual substitution under CBV.
+% Two independent failure modes, both verified in SML/NJ:
+%   - x unused, e1 raises:  let raises, substitution gives 5
+%   - x used twice, e1 prints: let prints P once, substitution prints PP
+%     (and both still return 2 -- the values agree, only the effects differ,
+%      which is why "same answer" is not the same as "equivalent")
+% Safe exactly when e1 is a VALUE. Also verified: x used exactly once is NOT
+% sufficient (order of effects can still shift in general), so the clean
+% condition to grade on is "e1 is a value" / effect-free.
+\part[3]\hfill
+
+  True or false: \code{let val x = e1 in e2 end} is equivalent to
+  $[\code{e1}/x]\,\code{e2}$, the substitution of \code{e1} for all occurrences
+  of \code{x} in \code{e2}. If false, give a counterexample.
+
+  \begin{solutionorbox}[15em]
+    \textbf{False.} \code{let} evaluates \code{e1} \textbf{once, up front};
+    substitution instead copies the unevaluated expression to each occurrence of
+    \code{x} --- so the number of times \code{e1} runs can change.
+
+    Take \code{e1} $=$ \code{(print "P"; 1)} and \code{e2} $=$ \code{x + x}. The
+    \code{let} prints \code{P} once; the substituted form
+    \code{(print "P"; 1) + (print "P"; 1)} prints it \textbf{twice}. Both return
+    \code{2}, so this is a case where the two agree on the value and still are
+    not equivalent.
+
+    Taking \code{e2} $=$ \code{5}, with \code{x} unused, breaks it the other
+    way: for \code{e1} $=$ \code{raise Fail ""} the \code{let} raises, while the
+    substituted form is just \code{5}, which evaluates fine. Here \code{let}
+    runs \code{e1} once and substitution runs it \textbf{zero} times.
+
+    The claim holds when \code{e1} is a \textbf{value} --- there is then nothing
+    to evaluate, so duplicating or dropping it costs nothing. (More generally it
+    suffices that \code{e1} be effect-free and terminating.)
+  \end{solutionorbox}

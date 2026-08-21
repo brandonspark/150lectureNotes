@@ -1,0 +1,101 @@
+\newpage
+\titledquestion{Two Predicates at Once}
+
+\textbf{Two Predicates at Once}
+
+Recall polymorphic trees and the function \code{treeAll}, which checks that
+\textbf{every} element of a tree satisfies a predicate:
+\begin{codeblock}
+  datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree
+
+  fun treeAll p Empty = true
+    | treeAll p (Node (l, x, r)) =
+        p x andalso treeAll p l andalso treeAll p r
+\end{codeblock}
+
+Checking a tree against two predicates \code{p} and \code{q} separately, and
+\code{andalso}-ing the results, ought to be the same as checking it once against
+the combined predicate ``\code{p} and \code{q}''. We will prove this.
+
+\begin{parts}
+  \part[18]\hfill
+
+    Prove the following theorem.
+
+    \textbf{Theorem.} For all values \code{p, q : 'a -> bool} and all values
+    \code{T : 'a tree}:
+    $$\code{treeAll p T andalso treeAll q T} \;\eeq\;
+      \code{treeAll (fn x => p x andalso q x) T}$$
+
+    You may use the following facts without proof. Write \code{r} for the
+    combined predicate \code{fn x => p x andalso q x}.
+
+    \textbf{Lemma 1 (totality):} For any total predicate, \code{treeAll} applied
+    to it is total; and \code{p}, \code{q}, \code{r} are total.
+
+    \textbf{Lemma 2 (booleans regroup):} For any expressions
+    \code{a, b, c, d, e, f} of type \code{bool} that each reduce to a value,
+    \begin{align*}
+      & \code{(a andalso b andalso c) andalso (d andalso e andalso f)} \\
+      \eeq\; & \code{(a andalso d) andalso (b andalso e) andalso (c andalso f)}
+    \end{align*}
+    (that is, \code{andalso} is associative and commutative on values.)
+
+    \textbf{Lemma 3:} For any value \code{x},
+    \code{r x} $\eeq$ \code{p x andalso q x} (by definition of \code{r}).
+
+    \begin{constraint}
+      You may assume \code{p} and \code{q} are total.
+    \end{constraint}
+
+    \begin{solutionorbox}[40em]
+
+      By structural induction on \code{T : 'a tree}.
+
+      \vspace{6pt}
+      \textbf{Base case:} \code{T = Empty}.
+
+      \begin{align*}
+        & \code{treeAll p Empty andalso treeAll q Empty} \\
+        &\eeq \code{true andalso true} \tag{clause 1 of \code{treeAll}, twice} \\
+        &\eeq \code{true} \tag{eval \code{andalso}} \\
+        &\eeq \code{treeAll r Empty} \tag{clause 1 of \code{treeAll}}
+      \end{align*}
+
+      \vspace{6pt}
+      \textbf{Inductive case:} \code{T = Node (l, x, r).}
+
+      \noindent IH$_l$: \code{treeAll p l andalso treeAll q l} $\eeq$
+      \code{treeAll r l}.
+
+      \noindent IH$_r$: \code{treeAll p r andalso treeAll q r} $\eeq$
+      \code{treeAll r r}.
+
+      \noindent WTS:
+      \code{treeAll p (Node (l,x,r)) andalso treeAll q (Node (l,x,r))} $\eeq$
+      \code{treeAll r (Node (l,x,r))}.
+
+      \vspace{4pt}
+      Starting from the left-hand side:
+      \begin{align*}
+        & \code{treeAll p (Node (l,x,r)) andalso treeAll q (Node (l,x,r))} \\
+        &\eeq \code{(p x andalso treeAll p l andalso treeAll p r)} \\
+        & \quad\; \code{andalso (q x andalso treeAll q l andalso treeAll q r)}
+          \tag{clause 2 of \code{treeAll}, twice} \\
+        &\eeq \code{(p x andalso q x)} \\
+        & \quad\; \code{andalso (treeAll p l andalso treeAll q l)} \\
+        & \quad\; \code{andalso (treeAll p r andalso treeAll q r)}
+          \tag{Lemma 2, Lemma 1} \\
+        &\eeq \code{(p x andalso q x)} \\
+        & \quad\; \code{andalso treeAll r l andalso treeAll r r}
+          \tag{IH$_l$ and IH$_r$} \\
+        &\eeq \code{r x andalso treeAll r l andalso treeAll r r}
+          \tag{Lemma 3} \\
+        &\eeq \code{treeAll r (Node (l,x,r))}
+          \tag{clause 2 of \code{treeAll}}
+      \end{align*}
+
+      which is the right-hand side. By the principle of structural induction, the
+      theorem holds for all \code{T : 'a tree}. $\qed$
+    \end{solutionorbox}
+\end{parts}

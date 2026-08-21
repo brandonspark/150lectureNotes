@@ -275,7 +275,7 @@
   \begin{codeblock}
     [1, 2, 3]
     |> `(fn grades =>` map applyCurve `grades)`
-    |> (fn L =>   foldr op+ 0 L`)`
+    |> (fn L =>      foldr op+ 0 L`)`
     |> `(fn total =>`  List.length `L)`
     |> `(fn len =>`    `total` div `len` )
   \end{codeblock}
@@ -393,7 +393,7 @@
   In case you're having trouble reading the previous code, this might be
   a little more clear:
 
-  \begin{codeblock}
+  \begin{codeblock}[style=expandedHL]
     [1, 2, 3] |> <r(r>fn grades =>
       map applyCurve grades |> <p(p>fn L =>
         foldr op+ 0 L |> <g(g>fn total =>

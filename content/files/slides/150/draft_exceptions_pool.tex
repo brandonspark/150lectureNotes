@@ -1,0 +1,111 @@
+% =============================================================================
+% EXCEPTIONS CONCEPTUAL POOL
+% Three items, each targeting a specific exceptions concept from lecture 12.
+% All SML behavior verified in SML/NJ. Written as \part items for a Conceptual
+% section (justify-your-answer boxes).
+%
+%   1. Exceptions are a side effect: they break equational reasoning
+%      (commutativity of + fails).
+%   2. `handle` only catches raises DURING the try-expression's evaluation,
+%      not raises latent in the value it returns.
+%   3. Exceptions vs. options as a specification choice: which forces the
+%      caller to acknowledge failure.
+% =============================================================================
+
+
+% -----------------------------------------------------------------------------
+% 1. Exceptions break equational reasoning.
+% -----------------------------------------------------------------------------
+\part[4]\hfill
+
+  A student claims: ``for any two expressions \code{e1} and \code{e2} of type
+  \code{int}, we have \code{e1 + e2} $\eeq$ \code{e2 + e1}, because addition is
+  commutative.''
+
+  Assume the following declarations are in scope:
+  \begin{codeblock}
+    exception A
+    exception B
+  \end{codeblock}
+
+  Give expressions \code{e1} and \code{e2} for which the claim \textbf{fails},
+  and explain in one or two sentences why.
+
+  \begin{solutionorbox}[12em]
+    Let \code{e1} $=$ \code{raise A} and \code{e2} $=$ \code{raise B} (each of
+    type \code{int}). SML evaluates \code{+}'s operands left to right, so
+    \code{e1 + e2} raises \code{A}, while \code{e2 + e1} raises \code{B}. These
+    are different behaviors, so the two expressions are \textbf{not}
+    equivalent.
+
+    Commutativity of \code{+} is a fact about \textbf{values}: it says
+    \code{v1 + v2} $\eeq$ \code{v2 + v1} for values. But \code{raise A} and
+    \code{raise B} do not evaluate to values --- they raise --- and \textit{which}
+    exception escapes depends on evaluation order. Raising an exception is a
+    \textbf{side effect}, and equational reasoning that is valid for pure
+    expressions can fail once effects are involved.
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 2. handle catches only during the try-expression's evaluation.
+% -----------------------------------------------------------------------------
+\part[4]\hfill
+
+  Assume \code{exception B} is in scope and \code{risky : unit -> int} is a
+  function that always raises \code{B} when called. Consider:
+  \begin{codeblock}
+    val f = (fn () => risky ()) handle B => (fn () => 0)
+  \end{codeblock}
+
+  Does the handler \code{B => (fn () => 0)} ever fire during this declaration?
+  What is \code{f}, and what happens when we later evaluate \code{f ()}?
+  Justify briefly.
+
+  \begin{solutionorbox}[12em]
+    The handler does \textbf{not} fire. The try-expression \code{fn () => risky
+    ()} is already a \textbf{value} (a function) --- evaluating it does not call
+    \code{risky}, so no exception is raised during the \code{handle}, and there
+    is nothing to catch. Thus \code{f} is bound to \code{fn () => risky ()}
+    (type \code{unit -> int}).
+
+    Later, \code{f ()} \textbf{calls} \code{risky}, which raises \code{B} ---
+    and now there is no handler around it, so \code{B} propagates uncaught. A
+    \code{handle} only catches exceptions raised \textbf{while evaluating its
+    try-expression}, not exceptions latent in the value that expression returns.
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 3. Exceptions vs. options as a specification choice.
+% -----------------------------------------------------------------------------
+\part[3]\hfill
+
+  Here are two implementations of a table lookup, which behave identically when
+  the key is present:
+  \begin{codeblock}
+    exception NotFound
+    fun findExn k []            = raise NotFound
+      | findExn k ((k',v)::rest) =
+          if k = k' then v else findExn k rest
+
+    fun findOpt k []            = NONE
+      | findOpt k ((k',v)::rest) =
+          if k = k' then SOME v else findOpt k rest
+  \end{codeblock}
+
+  Which of these \textbf{forces the caller} to account for the possibility that
+  the key is absent? Explain the difference in one or two sentences.
+
+  \begin{solutionorbox}[12em]
+    \code{findOpt}. Its result type \code{'a option} makes the possibility of
+    failure \textbf{visible in the type}: to use the result, the caller must
+    inspect it (case on \code{SOME}/\code{NONE}), so the absent case cannot be
+    ignored silently.
+
+    \code{findExn} returns an \code{'a} directly; the possibility of
+    \code{NotFound} is invisible in its type, so a caller can use the result as
+    if the key were always present --- and the program simply crashes at runtime
+    if it is not. The option version encodes the precondition in the type; the
+    exception version relies on the caller to remember it.
+  \end{solutionorbox}

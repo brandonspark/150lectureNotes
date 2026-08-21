@@ -1,0 +1,121 @@
+% =============================================================================
+% TYPES-AND-VALUES POOL
+%
+% Five "most general type and value" items, each targeting a specific typing
+% skill or misunderstanding rather than mechanical currying. All inferred
+% types verified in SML/NJ.
+%
+%   1. filter with the identity as its predicate: forces 'a = bool.
+%   2. Fanning one argument out to two functions: shared domain, distinct
+%      codomains. Tests unification, not quantifier placement.
+%   3. NWT: the [] seed and the `x + acc` body demand different accumulators.
+%   4. `map` as a fold: pure inference grind, four variables in one pass. The
+%      trap is collapsing the element type with the accumulator type.
+%   5. foldr vs foldl with subtraction: identical types, DIFFERENT values --
+%      the one item where computing the value is the whole point.
+%
+% Uses the same \part / solutionorlines format as the existing Types and
+% Values section. Reminder that the section instructions already tell students
+% to write NWT for not-well-typed and "same" for values that are already values.
+% =============================================================================
+
+
+% -----------------------------------------------------------------------------
+% 1. filter with the identity function as its predicate.
+%    Skill: a predicate must return bool, so `fn x => x` forces 'a = bool,
+%    giving bool list -> bool list.
+% -----------------------------------------------------------------------------
+\part[2]\hfill
+
+  \begin{codeblock}
+    List.filter (fn x => x)
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[2em] \code{bool list -> bool list} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] same \end{solutionorlines}
+
+  \vspace{10pt}
+
+
+% -----------------------------------------------------------------------------
+% 2. Fanning a single argument out to two functions.
+%    Skill: `x` is passed to both `f` and `g`, so their DOMAINS must unify to
+%    one 'a -- but their codomains are free to differ ('b and 'c). Getting
+%    this right means seeing which variables are forced equal and which
+%    aren't; the common error is collapsing 'b and 'c too.
+% -----------------------------------------------------------------------------
+\part[2]\hfill
+
+  \begin{codeblock}
+    fn (f, g) => fn x => (f x, g x)
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[3em] \code{('a -> 'b) * ('a -> 'c) -> 'a -> 'b * 'c} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] same \end{solutionorlines}
+
+  \vspace{10pt}
+
+
+% -----------------------------------------------------------------------------
+% 3. NWT from the accumulator. The seed [] forces the accumulator to be a
+%    list, but the body `x + acc` forces it to be an int. Same seed-vs-body
+%    reasoning as item 4, so the two reinforce each other -- and unlike a
+%    circularity puzzle, the conflict is a plain type mismatch a student can
+%    derive. Verified in SML/NJ.
+% -----------------------------------------------------------------------------
+\part[2]\hfill
+
+  \begin{codeblock}
+    foldr (fn (x, acc) => x + acc) [] [1,2,3]
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[4em] NWT. The seed \code{[]} makes the accumulator a list, but \code{x + acc} requires \code{acc : int}. A list cannot be an \code{int}, so the two constraints conflict. (Seeding with \code{0} instead would give \code{int}.) \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] no value \end{solutionorlines}
+
+  \vspace{10pt}
+
+\newpage
+
+% -----------------------------------------------------------------------------
+% 4. Pure inference grind: `map` written as a fold. Nothing tricky about the
+%    rules, but four variables have to be threaded through in one pass --
+%    foldr's own type, the fn's two parameters, and the [] seed.
+%    The trap is collapsing the element type and the accumulator type: `x` is
+%    'a and `acc` is 'b list, and they are NOT the same. A student who assumes
+%    the accumulator matches the elements lands on ('a -> 'a) -> ...
+%    Recognizable as `map` only AFTER the derivation. Verified in SML/NJ.
+% -----------------------------------------------------------------------------
+\part[2]\hfill
+
+  \begin{codeblock}
+    fn f => foldr (fn (x, acc) => f x :: acc) []
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[4em] \code{('a -> 'b) -> 'a list -> 'b list} \\[2pt] The seed \code{[]} and the result of \code{::} make the accumulator a \code{'b list}. Since \code{f x} is consed onto it, \code{f : 'a -> 'b} where \code{x : 'a}; \code{foldr} then takes an \code{'a list}. (This is \code{map}.) \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[2em] same \end{solutionorlines}
+
+  \vspace{10pt}
+
+
+% -----------------------------------------------------------------------------
+% 5. foldr vs foldl with a NON-associative, non-commutative operator.
+%    Skill: this is the one item where the VALUE carries the weight -- the two
+%    types are identical, so the only way to distinguish them is to actually
+%    unfold the recursion and see the direction. foldr gives
+%    1-(2-(3-(4-0))) = ~2; foldl gives 4-(3-(2-(1-0))) = 2.
+%    Verified in SML/NJ.
+% -----------------------------------------------------------------------------
+\part[2]\hfill
+
+  \begin{codeblock}
+    let val sub = fn (x, acc) => x - acc
+    in (foldr sub 0 [1,2,3,4], foldl sub 0 [1,2,3,4]) end
+  \end{codeblock}
+
+  \textbf{Type:} \begin{solutionorlines}[2em] \code{int * int} \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[3em] \code{(~2, 2)}. \code{foldr} folds from the right, giving $1-(2-(3-(4-0))) = -2$. \code{foldl} folds from the left, giving $4-(3-(2-(1-0))) = 2$. \end{solutionorlines}

@@ -1,0 +1,53 @@
+\titledquestion{Conceptual Questions}
+
+\textbf{Conceptual Questions}
+
+For each of the questions below, if it is a true or false question, please
+briefly justify your answer.
+
+\begin{parts}
+  \part[3]\hfill
+
+  Consider the specification of the \code{fact} function:
+  \spec
+    {fact}
+    {\code{int -> int}}
+    {\code{n >= 0}}
+    {\code{fact n} evaluates to $n!$}
+
+  Does the following code adhere to that specification?
+  \begin{codeblock}
+    fun fact n =
+      if n < 0 then 0
+      else if n = 0 then 1
+      else n * fact (n - 1)
+  \end{codeblock}
+
+  \begin{solutionorlines}[6em] True. \end{solutionorlines}
+
+  \part[3]\hfill
+
+  For any recurrence of the form
+  $$W(n) = 2W(n - 1) + c_1$$
+  is it true that the span recurrence must then be
+  $$S(n) = S(n - 1) + c_1$$
+
+  \begin{solutionorlines}[6em] False. The calls may not be parallelizable. \end{solutionorlines}
+
+  \part[3]\hfill
+
+  How many ref cells are allocated by the following expression?
+
+  \begin{codeblock}
+    ref ref
+  \end{codeblock}
+
+  \begin{solutionorlines}[6em] 1 \end{solutionorlines}
+
+\input{q/items/seq1.tex}
+
+\input{q/items/ex4.tex}
+
+\end{parts}
+
+\newpage

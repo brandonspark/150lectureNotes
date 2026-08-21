@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Lazy Programming} % TODO
     \subtitle{Work harder by working less} % TODO
-    \date{25 July 2023} % TODO
+    \date{09 July 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -500,7 +500,7 @@
   \vspace{\fill}
 
   \begin{center}
-  \includegraphics[scale=0.85]{all_the_integers.png}
+  \includegraphics[scale=0.38]{all_the_integers.png}
   \end{center}
 
   \pause
@@ -747,7 +747,7 @@
 
   \begin{codeblock}
     datatype 'a stream = Stream of (unit -> 'a front)
-    and 'a front = Nil | Cons of 'a * 'a stream
+    and 'a front = Empty | Cons of 'a * 'a stream
   \end{codeblock}
 
   \pause
@@ -993,7 +993,7 @@
 
   \begin{codeblock}
     fun map  f S = delay (fn () => map' f (expose S))
-    and map' f Nil = Nil
+    and map' f Empty = Empty
       | map' f (Cons (x, s)) = Cons (f x, map f s)
   \end{codeblock}
 
@@ -1018,7 +1018,7 @@
   \begin{codeblock}
     fun map f s =
       case expose s of
-        Nil => delay (fn () => Nil)
+        Empty => delay (fn () => Empty)
       | Cons (x, s') => delay (fn () => Cons (f x, map f s'))
   \end{codeblock}
 

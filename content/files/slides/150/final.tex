@@ -1,4 +1,4 @@
-\documentclass[addpoints,12pt, answers]{exam}
+\documentclass[addpoints,12pt]{exam}
 
 \usepackage{amsmath, amsthm, amssymb, amsfonts}
 \usepackage{thmtools}
@@ -249,16 +249,13 @@ unknown/.style={text=white, circle, draw=black, line width=0.4mm, inner sep=4pt,
 
 % ------------------------------------------------------------------------------
 
-\usepackage{fancyhdr}
 \begin{document}
 
-% Set the page style to "fancy"...
-\pagestyle{fancy}
-%... then configure it.
-\fancyhead{} % clear all header fields
-\fancyhead[R]{15-150: Principles of Functional Programming}
-\fancyhead[L]{Final Exam}
-\fancyfoot[C]{\thepage} % clear all footer fields
+% Use the exam class's native headers/footers. (fancyhdr 1.11b conflicts
+% with the exam class, which already defines \lhead/\rhead/\chead.)
+\pagestyle{headandfoot}
+\header{Final Exam}{}{15-150: Principles of Functional Programming}
+\footer{}{\thepage}{}
 
 % ------------------------------------------------------------------------------
 % Cover Page and ToC
@@ -272,8 +269,8 @@ unknown/.style={text=white, circle, draw=black, line width=0.4mm, inner sep=4pt,
       \uppercase{Final Exam} \\
       15-150 Principles of Functional Programming M23} \\
     \HRule{1.5pt}
-    \date{}
 }
+\date{}
 
 \maketitle
 
@@ -286,7 +283,7 @@ unknown/.style={text=white, circle, draw=black, line width=0.4mm, inner sep=4pt,
 \begin{itemize}
   \item Write your name, Andrew ID, and House name on this page.
   \vspace{-5pt}
-  \item This is a 180 minute examination of 7 parts, with 1 bonus question.
+  \item This is a 180 minute examination of 8 parts.
   \vspace{-5pt}
   \item Answers should be short and to the point. Obey question constraints, wherever
   they appear, and write syntactically legal SML programs!
@@ -1816,6 +1813,8 @@ The given implementation is:
     \end{solutionorbox}
 \end{parts}
 
+\input{draft_samefringe.tex}
+
 \newpage
 \titledquestion{Extra Credit: Type Design}
 
@@ -1843,7 +1842,7 @@ You have cats, dogs, horses, and cows. They have the following specifications:
 \vspace{20pt}
 
 \begin{center}
-\includegraphics{farms.png}
+\includegraphics{../../../../crucible/farms.png}
 \end{center}
 
 \newpage
@@ -1932,5 +1931,7 @@ signature STREAM =
 
 
 % ------------------------------------------------------------------------------
+
+\end{questions}
 
 \end{document}

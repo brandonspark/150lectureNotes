@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -14,7 +14,7 @@
     % Color settings
     \useauxtrue
 
-    \newcommand{\auxColor}{B66F2D}     % the color of note boxes and stuff
+    \newcommand{\auxColor}{18b6d6}     % the color of note boxes and stuff
     \newcommand{\presentColor}{929292} % the primary color of the slide borders
     \newcommand{\bgColor}{f0e9e1}      % the color of the background of the slide
     \newcommand{\darkBg}{8b98ad}
@@ -34,7 +34,7 @@
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
     \title{Imperative Programming} % TODO
     \subtitle{Breaking all the rules} % TODO
-    \date{27 July 2023} % TODO
+    \date{14 July 2026} % TODO
     \author{Brandon Wu} % TODO
 
     \graphicspath{ {./img/} }
@@ -132,7 +132,7 @@
   \pause
   \vspace{\fill}
 
-  Our solution was to simply not to play, by only dealing with \term{pure} code
+  Our solution was to simply not play, by only dealing with \term{pure} code
   which eschewed side effects for predictable, safe behavior.
 \end{frame}
 
@@ -195,7 +195,7 @@
   \pause
   \vspace{\fill}
 
-  We've shyed away from it thus far, but at some point we have to be able to read
+  We've shied away from it thus far, but at some point we have to be able to read
   from files, which is a side effect of its own. At some point, we need to be able
   to interface with the real world. We can't get away from reality forever.
 
@@ -241,7 +241,7 @@
   \vspace{\fill}
 
   This is commonly known as Tony Hoare's
-  {\color{blue}\href{https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/}{"billion-dollar mistake"}}\footnote{His words, not mine.}
+  {\color{blue}\href{https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/}{"billion-dollar mistake"}}\footnote{His words, not mine.}\footnote{Who actually died earlier this year. Rest in peace.}
 
   \pause
   \vspace{\fill}
@@ -327,7 +327,7 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    val ref : 'a -> a ref
+    val ref : 'a -> 'a ref
     val !   : 'a ref -> 'a
     val :=  : 'a ref * 'a -> unit
   \end{codeblock}
@@ -534,8 +534,8 @@
 
   For instance, take the following code, in the context of the previous three boxes:
   \begin{codeblock}
-    val () = v1 := 1
-    val () = v2 := "1"
+    val () = r1 := 2
+    val () = r2 := "1"
   \end{codeblock}
 
   \pause
@@ -552,8 +552,8 @@
     \begin{minipage}[t][2.5in][t]{0.55\textwidth}
       \vspace{\fill}
       \begin{codeblock}
-        val () = v1 := 2
-        val () = v2 := "1"
+        val () = r1 := 2
+        val () = r2 := "1"
       \end{codeblock}
       \vspace{\fill}
     \end{minipage}
@@ -580,8 +580,8 @@
     \begin{minipage}[t][2.5in][t]{0.55\textwidth}
       \vspace{\fill}
       \begin{codeblock}
-        `val () = v1 := 2`
-        val () = v2 := "1"
+        `val () = r1 := 2`
+        val () = r2 := "1"
       \end{codeblock}
       \vspace{\fill}
     \end{minipage}
@@ -608,8 +608,8 @@
     \begin{minipage}[t][2.5in][t]{0.55\textwidth}
       \vspace{\fill}
       \begin{codeblock}
-        val () = v1 := 2
-        `val () = v2 := "1"`
+        val () = r1 := 2
+        `val () = r2 := "1"`
       \end{codeblock}
       \vspace{\fill}
     \end{minipage}
@@ -640,13 +640,13 @@
   However, if our code had contained the following line, then our code
   would never have run, because it would not have type-checked:
   \begin{codeblock}
-    val () = v2 := 1
+    val () = r2 := 1
   \end{codeblock}
 
   \pause
   \vspace{\fill}
 
-  This is because \code{v2} is of type \code{string ref}, and
+  This is because \code{r2} is of type \code{string ref}, and
   \code{:= : 'a ref * 'a -> unit}, so it doesn't type-check!
 
   \pause
@@ -677,7 +677,7 @@
   \begin{center}
     \begin{minipage}{0.15\textwidth}
       \centering
-      \code{!v1}
+      \code{!r1}
     \end{minipage}
     \begin{minipage}{0.1\textwidth}
       \centering
@@ -686,7 +686,7 @@
     \begin{minipage}{0.15\textwidth}
       \centering
       \begin{tikzpicture}
-        \node[box, label=below:\code{v1}] (N1) {\code{2}};
+        \node[box, label=below:\code{r1}] (N1) {\code{2}};
       \end{tikzpicture}
     \end{minipage}
     \begin{minipage}{0.1\textwidth}
@@ -702,7 +702,7 @@
   \pause
   \vspace{\fill}
 
-  We simply unpack the contents of the box \code{v1}, which is \code{2}.
+  We simply unpack the contents of the box \code{r1}, which is \code{2}.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -713,15 +713,15 @@
   \pause
   \vspace{\fill}
 
-  For instance, for the refs \code{v1 : int ref} and \code{v2 : string ref}
+  For instance, for the refs \code{r1 : int ref} and \code{r2 : string ref}
   that we have been working with, we could write:
   \begin{codeblock}
-    case (v1, v2) of
+    case (r1, r2) of
       (ref 2, ref "1") => true
     | _ => false
   \end{codeblock}
   which would successfully return \code{true}. We might say that this kind
-  of pattern matching includes an \textit{implicit deference}, because we
+  of pattern matching includes an \textit{implicit dereference}, because we
   access the contents of each ref without needing to call \code{!} explicitly.
 
   \pause
@@ -1120,6 +1120,44 @@
   calls. We might prefer to have each call to \code{fact} spawn its own, private
   \code{ref} cell, for use in its calculations.
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Too Many \code{ref}s}
+
+  We need to be careful not to overdo it, though! Our problem with the
+  last function was that it had too few \code{ref}s, but it is also
+  possible to have too \textit{many}.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{codeblock}
+    fun fact n =
+      let
+        val store = ref 1
+      in
+        ( store := n * (!store);
+          fact (n - 1)
+        )
+      end
+  \end{codeblock}
+
+  \pause
+  \vspace{\fill}
+
+  This code is wrong, because every single call to \code{fact}, including
+  its recursive calls, will spawn a new \code{store} that no one else
+  uses. This means we always return \code{n}.
+
+  \pause
+  \vspace{\fill}
+
+  Our next idea will be to use a single private \code{ref} cell for each
+  top-level call to \code{fact}, but to use an inner helper to do the
+  actual recursion.
+\end{frame}
+
+
 
 \begin{frame}[fragile]
   \frametitle{\code{fact}, re\code{fact}ored}
@@ -1746,7 +1784,7 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    structure UNIQUE_ID =
+    signature UNIQUE_ID =
       sig
         (* an abstract type of fresh identifiers *)
         type t
@@ -1822,7 +1860,7 @@
 
   \begin{codeblock}
     val function_i_need_but_dont_have_hook :
-      (int -> int) ref = ref NONE
+      (int -> int) option ref = ref NONE
   \end{codeblock}
 
   \pause
@@ -1918,6 +1956,8 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{}
 
 
 \end{document}

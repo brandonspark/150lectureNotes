@@ -1,0 +1,45 @@
+% Abstract types: representation independence. Verified: Q1 stores the queue
+% in order and appends; Q2 stores it reversed and conses; a client sees no
+% difference.
+\part[3]\hfill
+
+  Both structures below seal to the same signature, but represent a queue
+  differently: \code{Q1} keeps its elements front-to-back, while \code{Q2} keeps
+  them \textbf{reversed}.
+  \begin{codeblock}
+    signature QUEUE =
+      sig
+        type 'a t
+        val empty  : 'a t
+        val push   : 'a -> 'a t -> 'a t
+        val toList : 'a t -> 'a list     (* front to back *)
+      end
+
+    structure Q1 :> QUEUE = struct
+      type 'a t = 'a list
+      val empty = []
+      fun push x q = q @ [x]
+      fun toList q = q
+    end
+
+    structure Q2 :> QUEUE = struct
+      type 'a t = 'a list
+      val empty = []
+      fun push x q = x :: q
+      fun toList q = rev q
+    end
+  \end{codeblock}
+
+  Can a client written against \code{QUEUE} tell the two apart? Explain.
+
+  \begin{solutionorbox}[16em]
+    No. A client can only build queues with \code{empty} and \code{push} and can
+    only observe them with \code{toList}, and both structures agree on every such
+    sequence of operations --- e.g.\ pushing \code{1}, \code{2}, \code{3} onto
+    \code{empty} and calling \code{toList} gives \code{[1, 2, 3]} in both.
+
+    The differing internals are invisible because \code{'a t} is
+    \textbf{abstract}: the client cannot inspect a queue directly, only through
+    the operations the signature provides. This is what lets an implementation be
+    swapped for another --- say, a faster one --- without any client noticing.
+  \end{solutionorbox}

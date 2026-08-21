@@ -1,0 +1,342 @@
+\documentclass[crop=false]{standalone}
+\usepackage{15150toolbox}
+\usepackage{needspace}
+
+% Toggle: set \soltrue to render solutions inline (blue boxes).
+\newif\ifsol
+\soltrue   % comment this line for the student version
+
+% Solution environment. When \ifsol is true, render as a blue framed box;
+% when false, use the comment package to swallow the body (handles verbatim
+% content correctly, unlike environ's \BODY).
+\usepackage{comment}
+\ifsol
+  \newenvironment{solution}
+    {\par\color{solution_color}\begin{framed}\textbf{Solution.}\par}
+    {\end{framed}}
+\else
+  \excludecomment{solution}
+\fi
+
+% Lecture-slide macros that aren't in 15150toolbox; local re-definitions
+% so the quiz is self-contained.
+\newcommand{\term}[1]{\textbf{\textit{#1}}}
+\newcommand{\thmBox}[2]{\par\noindent\begin{mdframed}[backgroundcolor=blue!8,hidealllines=true]\textbf{Theorem#1.} #2\end{mdframed}}
+\newcommand{\bcBox}[1]{\par\noindent\textbf{Base case.} #1\par}
+\newcommand{\ihBox}[2]{\par\noindent\textbf{Inductive hypothesis#1.} #2\par}
+\newcommand{\isBox}[2]{\par\noindent\textbf{Inductive step#1.} #2\par}
+
+\newcommand{\quizproblem}[2]{%
+  \needspace{5\baselineskip}%
+  \stepcounter{problem}%
+  \ifsol
+    \subsection*{Problem \arabic{problem}. #1 \hfill \timing{#2}}%
+  \else
+    \subsection*{Problem \arabic{problem}. #1}%
+  \fi
+}
+
+\newcommand{\answerspace}[1]{\ifsol\else\vspace{#1}\par\fi}
+
+\printout{Quiz 1 --- Lectures 1--4}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textbf{15-150 --- Quiz 1}} \\
+  \vspace{4pt}
+  Topics: \textit{Prologue}; \textit{Equivalence, Binding, and Scope}; \\
+  \textit{Induction and Recursion}; \textit{Structural Induction and Tail Recursion} \\
+  \vspace{4pt}
+  \textit{60 minutes. You should comfortably finish in 30--45 minutes.}
+\end{center}
+
+\vspace{1em}
+
+\noindent\textbf{Name:} \hrulefill \hspace{2em} \textbf{Andrew ID:} \hrulefill
+
+\vspace{1em}
+
+% =============================================================================
+% PROBLEM 1 --- Equivalence and Specifications
+% =============================================================================
+
+\quizproblem{Equivalence and Specifications}{10}
+
+\textbf{(a)} A student writes the following definition of extensional
+equivalence:
+
+\begin{quote}
+``Two expressions \code{e1} and \code{e2} of the same type are
+\term{extensionally equivalent} if they evaluate to the same value.''
+\end{quote}
+
+This definition is \textbf{incomplete}. State what is missing, and give an
+example of two expressions of the same type that the definition above
+\emph{incorrectly} classifies as not equivalent.
+
+\answerspace{4cm}
+
+\begin{solution}
+The definition is missing the cases where \code{e1} and \code{e2}
+\textbf{do not evaluate to a value}. The full definition requires three
+cases: they reduce to the same value, \emph{or} they both loop forever,
+\emph{or} they both raise the same exception.
+
+Acceptable examples: any two nonterminating expressions of the same
+type, or any two expressions that raise the same exception.
+\end{solution}
+
+\vspace{1em}
+
+\textbf{(b)} Consider the \code{pow} function from lecture, with a
+partial specification:
+
+\begin{codeblock}
+  (* pow : int * int -> int *)
+  (* REQUIRES: <fill this in> *)
+  (* ENSURES: pow (n, k) evaluates to n^k. *)
+  fun pow (n : int, 0 : int) : int = 1
+    | pow (n, k) = n * pow (n, k - 1)
+\end{codeblock}
+
+\textbf{Write a correct REQUIRES clause for \code{pow}.}
+
+\vspace{0.5em}
+
+\hspace{2em} REQUIRES: \underline{\hspace{8cm}}
+
+\answerspace{1.5cm}
+
+\begin{solution}
+\textbf{REQUIRES: \code{k >= 0}.}
+
+Acceptable answers: \code{k >= 0}, \code{0 <= k}, ``\code{k} is
+non-negative.'' A student who writes \code{n >= 0} or \code{n >= 0 and
+k >= 0} has not analyzed which variable controls termination.
+\end{solution}
+
+% =============================================================================
+% PROBLEM 2 --- Well-Typed vs. Valuable
+% =============================================================================
+
+\clearpage
+\quizproblem{Well-Typed vs.\ Valuable}{5}
+
+For each expression below, fill in both columns. For \textbf{Well-typed?}
+write yes if the expression is well-typed (and give its type), or write no. For \textbf{Valuable?}
+write yes if the expression reduces to a value (and give the value), or write no.
+
+\vspace{0.5em}
+
+\begin{center}
+\begin{tabular}{|l|p{4cm}|p{4cm}|}
+  \hline
+  \textbf{Expression} & \textbf{Well-typed?} & \textbf{Valuable?} \\
+  \hline
+  \code{2 + 2} & & \\[2.2em] \hline
+  \code{1 div 0} & & \\[2.2em] \hline
+  \code{"hi" + 1} & & \\[2.2em] \hline
+  \code{(fn x => x) 5} & & \\[2.2em] \hline
+\end{tabular}
+\end{center}
+
+\begin{solution}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  \textbf{Expression} & \textbf{Well-typed?} & \textbf{Valuable?} \\
+  \hline
+  \code{2 + 2} & Yes, \code{int} & Yes, \code{4} \\
+  \hline
+  \code{1 div 0} & Yes, \code{int} & No, raises \code{Div} \\
+  \hline
+  \code{"hi" + 1} & No (\code{+} needs \code{int}s) & No \\
+  \hline
+  \code{(fn x => x) 5} & Yes, \code{int} & Yes, \code{5} \\
+  \hline
+\end{tabular}
+\end{center}
+\end{solution}
+
+% =============================================================================
+% PROBLEM 3 --- Binding and Scope
+% =============================================================================
+
+\quizproblem{Binding and Scope}{5}
+
+Consider the following SML code:
+
+\begin{codeblock}
+  val x : int = 2
+  fun foo (y : int) : int = x + y
+  val x : int = 4
+\end{codeblock}
+
+After these three declarations have executed, the function \code{foo} is
+\emph{later} called as \code{foo 1}.
+
+\vspace{0.5em}
+
+\textbf{(a)} Which environment does the body of \code{foo} use to look
+up \code{x} during this call? Circle one.
+
+\vspace{0.5em}
+
+\hspace{2em}
+(A) \quad $[\code{2}/\code{x}]$ \hfill
+(B) \quad $[\code{4}/\code{x}]$ \hfill
+(C) \quad $[\code{2}/\code{x},\ \code{4}/\code{x}]$ \hfill
+(D) \quad whichever was bound most recently when \code{foo} was called
+
+\vspace{1em}
+
+\textbf{(b)} In one sentence, explain why.
+
+\answerspace{4cm}
+
+\begin{solution}
+\textbf{(a)} \textbf{A.} The body of \code{foo} looks up \code{x} in
+$[\code{2}/\code{x}]$.
+
+\textbf{(b)} When \code{foo} was \emph{declared}, the binding
+of \code{x} to \code{2} was active, so \code{foo} ``captures'' that binding and
+carries it forward. Later bindings of \code{x} (the \code{val x = 4})
+merely shadow the old one.
+
+Would also accept any answer involving the "closure" of \code{foo}, or that
+\code{foo} "saves" or "remembers" the environment at the time of declaration.
+\end{solution}
+
+% =============================================================================
+% PROBLEM 4 --- Induction Proof
+% =============================================================================
+
+\quizproblem{An Induction Proof}{10}
+
+Recall the \code{@} function from lecture:
+
+\begin{codeblock}
+  infix @
+  fun ([] : int list) @ (R : int list) : int list = R
+    | (x::xs) @ R = x :: (xs @ R)
+\end{codeblock}
+
+\thmBox{}{\, For all \code{L : int list}, \code{L @ []} $\eeq$ \code{L}.}
+
+\textbf{Prove this theorem.} Be sure to state your inductive hypothesis
+explicitly and justify each step of your calculation.
+
+\answerspace{11cm}
+
+\begin{solution}
+We proceed by \textbf{structural induction} on \code{L : int list}.
+
+\vspace{5pt}
+
+\bcBox{\, Case: \code{L = []}}
+\begin{align*}
+  \code{[] @ []}  &\stepsTo \code{[]}    & \text{(clause 1 of \code{@})}
+\end{align*}
+
+\vspace{5pt}
+
+\ihBox{}{\, Case: \code{L = xs}, for some \code{xs : int list}. Assume
+\code{xs @ []} $\eeq$ \code{xs}.}
+
+\vspace{5pt}
+
+\isBox{}{\, Case: \code{L = x::xs}, for some \code{x : int}. We want to
+show \code{(x::xs) @ []} $\eeq$ \code{x::xs}.}
+
+\begin{align*}
+  \code{(x::xs) @ []}
+    &\stepsTo \code{x :: (xs @ [])}
+        & \text{(clause 2 of \code{@})} \\
+    &\eeq    \code{x :: xs}
+        & \text{(inductive hypothesis)}
+\end{align*}
+
+Thus, by the principle of structural induction, the theorem holds for
+all \code{L : int list}.
+
+\vspace{5pt}
+
+\textbf{Common mistakes to watch for:}
+\begin{itemize}
+  \item Using simple/natural-number induction instead of structural ---
+    \code{L} is a list, not a number.
+  \item Quantifying the IH wrong (``Assume for \emph{all} \code{xs},
+    \code{xs @ []} $\eeq$ \code{xs}'') --- that assumes the theorem.
+    The IH is for \emph{some} \code{xs}.
+\end{itemize}
+\end{solution}
+
+% =============================================================================
+% PROBLEM 5 --- Writing a Tail-Recursive Function
+% =============================================================================
+
+\clearpage
+\quizproblem{A Tail-Recursive \code{sum}}{10}
+
+In lecture, we wrote a non-tail-recursive \code{length} function, and then
+rewrote it tail-recursively using an \term{accumulator}:
+
+\begin{codeblock}
+  fun tlength ([] : int list, acc : int) : int = acc
+    | tlength (x::xs, acc) = tlength (xs, 1 + acc)
+
+  fun length (L : int list) : int = tlength (L, 0)
+\end{codeblock}
+
+Following the same pattern, write a tail-recursive function \code{tsum}
+and a wrapper \code{sum} satisfying the spec:
+
+\spec
+  {sum}
+  {int list -> int}
+  {true}
+  {\code{sum L} evaluates to the sum of the elements of \code{L}.}
+
+\answerspace{4cm}
+
+\begin{solution}
+\begin{codeblock}
+  fun tsum ([] : int list, acc : int) : int = acc
+    | tsum (x::xs, acc) = tsum (xs, x + acc)
+
+  fun sum (L : int list) : int = tsum (L, 0)
+\end{codeblock}
+\end{solution}
+
+% =============================================================================
+% PROBLEM 6 --- Reduction vs. Equivalence
+% =============================================================================
+
+\quizproblem{Reduction vs. Equivalence}{5}
+
+Recall the \code{fast\_pow} and \code{pow} functions from lecture. The
+following is an attempted proof of the base case of the theorem
+\code{fast\_pow} $\eeq$ \code{pow}:
+
+\begin{align*}
+  \code{fast\_pow (n, 0)}
+    &\stepsTo \code{1}              & \text{(clause 1 of \code{fast\_pow})} \\
+    &\stepsTo \code{pow (n, 0)}      & \text{(clause 1 of \code{pow})}
+\end{align*}
+
+Exactly one step is invalid. \textbf{Identify which step is wrong, and
+explain in one sentence why.}
+
+\answerspace{4cm}
+
+\begin{solution}
+The \textbf{second step} is invalid. It claims that \code{1} \emph{reduces
+to} \code{pow (n, 0)}, but \code{1} is already a value --- it doesn't step
+to anything. While \code{1} $\eeq$ \code{pow (n, 0)} (since both evaluate
+to \code{1}), equivalence does not imply reduction. Both steps should use
+$\eeq$ throughout, since the theorem itself is an equivalence claim, not
+a reduction claim.
+\end{solution}
+
+\end{document}

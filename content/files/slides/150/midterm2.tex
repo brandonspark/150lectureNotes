@@ -1,4 +1,4 @@
-\documentclass[addpoints,12pt]{exam}
+\documentclass[addpoints,12pt, answers]{exam}
 
 \usepackage{amsmath, amsthm, amssymb, amsfonts}
 \usepackage{thmtools}
@@ -106,9 +106,17 @@
 % spec
 \RequirePackage{framed}
 \usepackage{mdframed}
+\newsavebox{\specline}
 \newrobustcmd{\spec}[4]{
 \begin{mdframed}
-\code{#1 :}\code{#2}\par
+% Measure "name : type" on one line. If it fits the frame width, keep them
+% together; otherwise put the type on its own (indented) line.
+\sbox{\specline}{\code{#1 :}~{\small\code{#2}}}%
+\ifdim\wd\specline>\linewidth
+  \code{#1 :}\par{\small\hspace{0.5em}\code{#2}}\par
+\else
+  \usebox{\specline}\par
+\fi
 \ifstrempty{#3}{}{\par REQUIRES: #3}
 \ifstrempty{#4}{}{\par ENSURES: #4}
 \end{mdframed}
@@ -239,16 +247,13 @@
 
 % ------------------------------------------------------------------------------
 
-\usepackage{fancyhdr}
 \begin{document}
 
-% Set the page style to "fancy"...
-\pagestyle{fancy}
-%... then configure it.
-\fancyhead{} % clear all header fields
-\fancyhead[R]{15-150: Principles of Functional Programming}
-\fancyhead[L]{Midterm 2 (2)}
-\fancyfoot[C]{\thepage} % clear all footer fields
+% Use the exam class's native headers/footers. (fancyhdr 1.11b conflicts
+% with the exam class, which already defines \lhead/\rhead/\chead.)
+\pagestyle{headandfoot}
+\header{Midterm 2}{}{15-150: Principles of Functional Programming}
+\footer{}{\thepage}{}
 
 % ------------------------------------------------------------------------------
 % Cover Page and ToC
@@ -259,22 +264,22 @@
 \title{ \normalsize \textsc{}
 		\HRule{1.5pt} \\
 		\large \textbf{
-      \uppercase{Midterm 2 (2)} \\
-      15-150 Principles of Functional Programming M23} \\
+      \uppercase{Midterm 2} \\
+      15-150 Principles of Functional Programming M26} \\
     \HRule{1.5pt}
-    \date{}
 }
+\date{}
 
 \maketitle
 
 \vspace{-3cm}
 
-\hspace{-1cm} Name \rule{5cm}{0.4pt} \, Andrew ID \rule{3cm}{0.4pt} \, House \rule{3.5cm}{0.4pt}
+\hspace{-1cm} Name \rule{6cm}{0.4pt} \, Andrew ID \rule{6cm}{0.4pt}
 
 \vspace{5pt}
 
 \begin{itemize}
-  \item Write your name, Andrew ID, and House name on this page.
+  \item Write your name and Andrew ID on this page.
   \item This is an 80 minute examination of 6 parts.
   \item Answers should be short and to the point. Obey question constraints, wherever
   they appear, and write syntactically legal SML programs!
@@ -295,7 +300,7 @@
 \vspace{\fill}
 
 \begin{center}
-  Feel free to use this space to draw a joke or meme about functional programming: \\
+  Feel free to use this space to draw something! (jokes or memes encouraged)
 
   \vspace{10pt}
 
@@ -334,43 +339,9 @@ For each of the expressions below, write its \textbf{most general type} and valu
         z x
   \end{codeblock}
 
-  \textbf{Type:} \begin{solutionorlines}[2em] NWT \end{solutionorlines}
+  \textbf{Type:} \begin{solutionorlines}[4em] NWT \end{solutionorlines}
 
-  \textbf{Value:} \begin{solutionorlines}[2em] no value, not well typed \end{solutionorlines}
-
-  \vspace{10pt}
-
-  \part[2]\hfill
-
-  \begin{codeblock}
-    fn x => (x, x)
-  \end{codeblock}
-
-  \textbf{Type:} \begin{solutionorlines}[2em] \code{'a -> 'a * 'a} \end{solutionorlines}
-
-  \textbf{Value:} \begin{solutionorlines}[2em] \code{fn x => (x, x)} \end{solutionorlines}
-
-  \vspace{10pt}
-
-  \newpage
-
-  \part[2]\hfill
-
-  \begin{codeblock}
-    Node (
-      Empty,
-      Node (
-        Empty,
-        [],
-        Empty
-      ),
-      Empty
-    )
-  \end{codeblock}
-
-  \textbf{Type:} \begin{solutionorlines}[2em] \code{'a list tree tree} \end{solutionorlines}
-
-  \textbf{Value:} \begin{solutionorlines}[2em] \code{Node (Empty, Node (Empty, [], Empty), Empty)} \end{solutionorlines}
+  \textbf{Value:} \begin{solutionorlines}[4em] no value, not well typed \end{solutionorlines}
 
   \vspace{10pt}
 
@@ -380,239 +351,98 @@ For each of the expressions below, write its \textbf{most general type} and valu
     (fn x => fn y => fn z => (x ^ y, z y)) "here" "kitty"
   \end{codeblock}
 
-  \textbf{Type:} \begin{solutionorlines}[2em] \code{(string -> 'a) -> (string * 'a)} \end{solutionorlines}
+  \textbf{Type:} \begin{solutionorlines}[4em] \code{(string -> 'a) -> (string * 'a)} \end{solutionorlines}
 
-  \textbf{Value:} \begin{solutionorlines}[2em] \code{fn z => ("here" ^ "kitty", z "kitty")} \end{solutionorlines}
-
-\end{parts}
-
-\newpage
-
-\titledquestion{Evaluation and Equivalence}
-
-\textbf{Evaluation and Equivalence}
-
-For each of the questions below, please mark whether they are "true" or
-"false". If your answer is false, please briefly justify why.
-
-\begin{parts}
-  \part[2]\hfill
-
-  Given \code{g : (t1 -> t2) -> t3}, if \code{f : t1 -> t2} is total, then
-  \code{g f} is valuable.
-
-  \begin{solutionorlines}[4em] False. Consider \code{fn _ => 1 div 0}. \end{solutionorlines}
-
-  \part[2]\hfill
-
-  For any \code{f : t1 -> t2 -> t3}, \code{f} is total.
-
-  \begin{solutionorlines}[4em] False, consider \code{fn _ => raise Div} \end{solutionorlines}
-
-  \part[2]\hfill
-
-  \code{foldr (fn (x, acc) => f x :: acc) [] L} $\eeq$ \code{map f L}, for an \\
-  arbitrary \code{f : t1 -> t2} and \code{L : t1 list}.
-
-  \begin{solutionorlines}[4em] False, in the presence of exceptions. \code{foldr}
-  goes from the right, so this may cause exceptions to be raised in a different
-  order. \end{solutionorlines}
-
-  \part[5]\hfill
-
-  Consider the following code:
-
-  \begin{codeblock}
-    exception Fact of int
-
-    fun factCPS 0 k = k (raise Fact 1)
-      | factCPS n k =
-          factCPS (n - 1) (fn res =>
-            res handle Fact res' => k (n * res')
-          )
-
-    fun fact n = factCPS n (fn x => x handle Fact res => res)
-  \end{codeblock}
-
-  True or false, this is a correct implementation of \code{fact}.
-
-  \begin{solutionorlines}[4em] False, the exception \code{Fact} is never
-  actually handled. \end{solutionorlines}
+  \textbf{Value:} \begin{solutionorlines}[4em] \code{fn z => ("here" ^ "kitty", z "kitty")} \end{solutionorlines}
 
   \newpage
 
   \part[2]\hfill
 
-  Consider the following expression:
   \begin{codeblock}
-    plus 2 (mul 3 (plus 1 0))
+    foldr filter
   \end{codeblock}
 
-  Suppose you are given \code{plusCPS}, and \code{mulCPS}
-  that take in an additional continuation as an argument. True or false,
-  this is the correct way to translate this code to CPS:
+  \textbf{Type:} \begin{solutionorlines}[4em] NWT \end{solutionorlines}
+
+  \textbf{Value:} \begin{solutionorlines}[4em] no value \end{solutionorlines}
+
+  \part[2]\hfill
 
   \begin{codeblock}
-    plusCPS 1 0  (fn res =>
-    mulCPS 3 res (fn res2 =>
-    plusCPS 2 res2  ))
+    let
+      fun f (x, y) = if x then y else y + 2
+    in
+      fn z => fn L => foldr f z L
+    end
   \end{codeblock}
 
-  \begin{solutionorlines}[4em]
-    False, \code{plusCPS} is not given a continuation.
-  \end{solutionorlines}
+  \textbf{Type:} \begin{solutionorlines}[4em]
+    \code{f} has type \code{(bool * int) -> int}, therefore
+    \code{int -> bool list -> int} \end{solutionorlines}
 
+  \textbf{Value:} \begin{solutionorlines}[4em] \code{fn z => fn L => foldr f z L} \end{solutionorlines}
 \end{parts}
 
-\newpage
-\titledquestion{Cool Trees}
+% \newpage
 
-\textbf{Cool Trees}
+% \titledquestion{Evaluation and Equivalence}
 
-Consider the following datatype for \textit{cool trees}.
-\begin{codeblock}
-  datatype 'a cool =
-      Empty
-    | Node of 'a cool * 'a * 'a cool
-    | Leaf of 'a
-\end{codeblock}
+% \textbf{Evaluation and Equivalence}
 
-In this section, we are going to be solving the problem of
-\textit{subtree equivalence}. This is the problem of, given
-two trees, trying to find all subtrees of the second tree which
-are equivalent to the first tree.
+% For each of the questions below, please mark whether they are "true" or
+% "false". If your answer is false, please briefly justify why.
 
-For instance, given the following two cool trees:
+% \begin{parts}
+%   \part[2]\hfill
 
-\begin{center}
-  \begin{minipage}{0.3\textwidth}
-    \begin{center}
-      \begin{tikzpicture}
-        [level distance=12mm,
-        every node/.style={circle,inner sep=4pt, draw=black!80, thick},
-        ]
-        \node[fill=black!20!white] {1}
-          child {node[fill=black!20!white] {2}}
-          child[missing];
-        \end{tikzpicture}
-    \end{center}
-  \end{minipage}
-  \begin{minipage}{0.3\textwidth}
-  \begin{center}
-    \begin{tikzpicture}
-      [level distance=12mm,
-      every node/.style={circle,inner sep=4pt, draw=black!80, thick},
-      ]
-      \node {3}
-        child {node[fill=black!20!white] {1}
-          child{node[fill=black!20!white]{2}}
-          child[missing]
-        }
-        child {node {4}};
-      \end{tikzpicture}
-  \end{center}
-  \end{minipage}
-\end{center}
-the grey nodes in both trees are equivalent trees.
-The second tree has only a single subtree which is equivalent to the first tree.
+%   Given \code{g : (t1 -> t2) -> t3}, if \code{f : t1 -> t2} is total, then
+%   \code{g f} is valuable.
 
-\begin{parts}
-  \part[5]\hfill
+%   \begin{solutionorlines}[4em] False. Consider \code{fn _ => 1 div 0}. \end{solutionorlines}
 
-    Before we can solve the problem of subtree equivalence, we need to define what
-    it means for two trees to be equivalent. With the
-    \code{'a tree} type that we saw in lecture, this is an easy question to answer,
-    because they are only equal when their tree values are literally equal, according
-    to some equality function on elements.
+%   \part[2]\hfill
 
-    Cool trees are a little different because they allow a \code{Leaf} case.
-    We'd like to say that this is a little redundant, because a \code{Leaf x}
-    tree is pretty much the same thing as \code{Node (Empty, x, Empty)}. In
-    this case, we say that these two trees are \textit{equivalent}.
+%   For any \code{f : t1 -> t2 -> t3}, \code{f} is total.
 
-    Implement the following function:
+%   \begin{solutionorlines}[4em] False, consider \code{fn _ => raise Div} \end{solutionorlines}
 
-    \spec
-      {coolEquiv}
-      {('a * 'a -> bool) -> 'a cool -> 'a cool -> bool}
-      {\code{eq} is total}
-      {\code{coolEquiv eq T1 T2} $\eeq$ \code{true} iff \code{T1} and
-      \code{T2} are equivalent cool trees, by the discussion above.}
+%   \part[2]\hfill
 
-    So, for instance:
-    \begin{codeblock}
-      val N = Node
-      val E = Empty
+%   \code{foldr (fn (x, acc) => f x :: acc) [] L} $\eeq$ \code{map f L}, for an \\
+%   arbitrary \code{f : t1 -> t2} and \code{L : t1 list}.
 
-      val true  = coolEquiv (op=) E E
-      val false = coolEquiv (op=) E (N (E, 1, E))
-      val true  = coolEquiv (op=) (Leaf 1) (N (E, 1, E))
-      val false = coolEquiv (op=) (Leaf 2) (N (E, 1, E))
-      val false = coolEquiv (op=) (N (E, 2, E)) (N (E, 1, E))
-      val false =
-        coolEquiv (fn _ => false) (N (E, (), E)) (N (E, (), E))
-    \end{codeblock}
+%   \begin{solutionorlines}[4em] False, in the presence of exceptions. \code{foldr}
+%   goes from the right, so this may cause exceptions to be raised in a different
+%   order. \end{solutionorlines}
 
-    Please fill in the missing cases in the below implementation of
-    \code{coolEquiv}. This can be done in four cases.
+%   \part[5]\hfill
 
-    \begin{codeblock}
-      fun coolEquiv eq Empty Empty = true
-        (* FILL IN BELOW! *)
-    \end{codeblock}
-    \begin{solutionorbox}[25em]
-      \begin{codeblock}
-          | coolEquiv eq (Leaf x) (Leaf x') = eq x x'
-          | coolEquiv eq (Node (Empty, x, Empty)) (Leaf x') = eq x x'
-          | coolEquiv eq (Leaf x) (Node (Empty, x', Empty)) = eq x x'
-          | coolEquiv eq (Node (L, x, R)) (Node (L', x', R')) =
-              coolEquiv L L' andalso eq x x' andalso coolEquiv R R'
-      \end{codeblock}
-    \end{solutionorbox}
-    \begin{codeblock}
-      (* FILL IN ABOVE! *)
-        | coolEquiv eq _ _ = false
-    \end{codeblock}
+%   Consider the following code:
 
-  \newpage
-  \part[8]\hfill
+%   \begin{codeblock}
+%     exception Fact of int
 
-    Now, let's complete the problem. Suppose you are given the function \\
-    \code{subtrees : 'a cool -> 'a cool list}, which simply computes all of the subtrees of a given cool
-    tree. For instance, it may be implemented like so:
+%     fun factCPS 0 k = k (raise Fact 1)
+%       | factCPS n k =
+%           factCPS (n - 1) (fn res =>
+%             res handle Fact res' => k (n * res')
+%           )
 
-    \begin{codeblock}
-      fun subtrees Empty = [Empty]
-        | subtrees (Leaf x) = [(Leaf x)]
-        | subtrees (Node (L, x, R)) =
-            subtree L @ ((Node (L, x, R)) :: subtrees R)
-    \end{codeblock}
+%     fun fact n = factCPS n (fn x => x handle Fact res => res)
+%   \end{codeblock}
 
-    Using \code{subtrees} and
-    \code{coolEquiv}, implement a function with the following specification:
+%   True or false, this is a correct implementation of \code{fact}.
 
-    \spec
-      {matchSubtrees}
-      {('a * 'a -> bool) -> 'a cool -> 'a cool -> 'a cool list}
-      {\code{eq} is total}
-      {\code{matchSubtrees eq T1 T2} evaluates to all of the subtrees
-      of \code{T2} that are equivalent to \code{T1}}
+%   \begin{solutionorlines}[4em] False, the exception \code{Fact} is never
+%   actually handled. \end{solutionorlines}
 
-    \begin{constraint}
-      To get full points for this problem, you cannot use any lambda expressions.
-    \end{constraint}
+%   \part[2]\hfill
 
-    \begin{solutionorbox}[25em]
-      \begin{codeblock}
-        fun matchSubtrees eq T1 T2 =
-          subtrees T2
-          |> List.filter (coolTreeEq eq T1)
-      \end{codeblock}
-    \end{solutionorbox}
+%   For any expression \code{e : t1 -> t2}, (\code{fn x => e x}) $\eeq$ \code{e}.
 
-  Congratulations. You basically just implemented what I do for Semgrep
-  as a \\ software engineer.
-\end{parts}
+%   \begin{solutionorlines}[6em] False. See when \code{e} is \code{raise Div}. \end{solutionorlines}
+% \end{parts}
 
 \newpage
 \titledquestion{Binary Search Trees, Again}
@@ -636,7 +466,7 @@ following definition:
 \end{enumerate}
 
 \begin{parts}
-  \part[12]\hfill
+  \part[10]\hfill
 
   First, we will define a helper function:
 
@@ -654,13 +484,23 @@ following definition:
     You must write this function in CPS, and with no helper functions.
   \end{constraint}
 
-  \begin{solutionorbox}[25em]
+  \begin{codeblock}
+    fun isBST' p Empty k =
+  \end{codeblock}
+  \begin{solutionorbox}[4em]
     \begin{codeblock}
-      fun isBST' p Empty k = k true
-        | isBST' p (Node (L, x, R)) k =
-            isBST' (fn y => y <= x) L (fn is_bst_l =>
-            isBST' (fn y => x <= y) R (fn is_bst_r =>
-            k (is_bst_l andalso is_bst_r andalso p x)))
+      k true
+    \end{codeblock}
+  \end{solutionorbox}
+
+  \begin{codeblock}
+      | isBST' p (Node (L, x, R)) k =
+  \end{codeblock}
+  \begin{solutionorbox}[12em]
+    \begin{codeblock}
+      isBST' (fn y => y <= x andalso p y) L (fn is_bst_l =>
+      isBST' (fn y => x <= y andalso p y) R (fn is_bst_r =>
+      k (is_bst_l andalso is_bst_r andalso p x)))
     \end{codeblock}
   \end{solutionorbox}
 
@@ -691,110 +531,317 @@ following definition:
 \end{parts}
 
 \newpage
-\titledquestion{Code Cleanup}
+\titledquestion{Fusing Transformations}
 
-\textbf{Code Cleanup}
+\textbf{Fusing Transformations}
 
-Brandon is writing code to deal with his 150 grades database, but
-accidentally wrote it very redundantly!\footnotemark His code is:
+We would like to apply geometric transformations to scalar values.
+Each transformation is one of the following:
 
 \begin{codeblock}
-  type grades = (string * int) list
-
-  (* DISCLAIMER: NOT NECESSARILY INDICATIVE OF HOW YOU WILL
-     ACTUALLY BE GRADED IN THIS COURSE
-   *)
-
-  fun getAStudents ([] : grades) = ([], [])
-    | getAStudents ((student, grade)::xs) =
-        let
-          val (agrades, nagrades) = getAStudents xs
-        in
-          if grade >= 90 then
-            (student :: agrades, nagrades)
-          else
-            (agrades, student :: nagrades)
-        end
-
-  fun getBStudents ([] : grades) = ([], [])
-    | getBStudents ((student, grade)::xs) =
-        let
-          val (bgrades, nbgrades) = getBStudents xs
-        in
-          if grade >= 80 then
-            (student :: bgrades, nbgrades)
-          else
-            (bgrades, student :: nbgrades)
-        end
-
-  fun getCStudents ([] : grades) = ([], [])
-    | getCStudents ((student, grade)::xs) =
-        let
-          val (cgrades, ncgrades) = getCStudents xs
-        in
-          if grade >= 70 then
-            (student :: cgrades, ncgrades)
-          else
-            (cgrades, student :: ncgrades)
-        end
+  datatype transform = Scale of int | Shift of int | Flip
 \end{codeblock}
 
-\footnotetext[1]{Joke's on you, this is an exam problem, I would never do this. I am perfect.}
+where \code{Scale k} multiplies a value by \code{k}, \code{Shift k} adds
+\code{k} to it, and \code{Flip} negates it. A \code{transform list} is thus a
+\textit{pipeline}: we apply its transformations in order.
+
+Each transformation is really just an \textbf{affine map} --- a function of the
+form \code{fn x => a * x + b} --- which we represent as the pair of its
+coefficients \code{(a, b)}:
+
+\begin{codeblock}
+  type affine = int * int
+
+  fun toAffine (Scale k) = (k, 0)
+    | toAffine (Shift k) = (1, k)
+    | toAffine Flip      = (~1, 0)
+\end{codeblock}
+
+A first attempt at applying a series of affine maps to a value is to map each transformation to a normal
+function, and then apply them serially:
+
+\begin{codeblock}
+  fun toFn (tf : transform) : int -> int =
+    let
+      val (a, b) = toAffine tf
+    in
+      fn x => a * x + b
+    end
+
+  fun run (ts : transform list) : int -> int =
+    let
+      val fns = map toFn ts
+    in
+      fn input => foldl (fn (f, acc) => f acc) input fns
+    end
+\end{codeblock}
+
+This works, but it's inefficient: the returned function does $n$
+applications of the affine maps. We can do better---we can
+exploit the property that any sequence of affine maps is itself a single
+affine map.
 
 \newpage
 
 \begin{parts}
   \part[2]\hfill
 
-  Identify the one significant difference between \code{getAStudents},
-  \code{getBStudents}, and \code{getCStudents}. Do not count names of variables.
+    First, implement \code{combine}, which fuses two affine maps into one.
+    \code{combine (g, f)} is the affine map equivalent to applying \code{f} first,
+    then \code{g}.
 
-  \begin{solutionorbox}[10em]
-    They use different hard-coded thresholds for where to separate the students.
-  \end{solutionorbox}
+    \textbf{Hint:} This is math-based. What is the result of applying
+    $x \mapsto a_1 x + b_1$ and then $y \mapsto a_2 y + b_2$?
 
-  \part[8]\hfill
+    \spec
+      {combine}
+      {affine * affine -> affine}
+      {\code{true}}
+      {\code{combine ((a2, b2), (a1, b1))} is the affine map equivalent to
+      applying \code{(a1, b1)} and then \code{(a2, b2)}.}
 
-  Come up with a function \code{f} such that \code{f} encapsulates
-  the same logic as all of the functions \code{getAStudents},
-  \code{getBStudents}, and \code{getCStudents}, but "factors out"
-  your answer from the previous part. Your answer should have a
-  different type.
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        fun combine ((a2, b2), (a1, b1)) = (a2 * a1, a2 * b1 + b2)
+      \end{codeblock}
+    \end{solutionorbox}
 
-  \begin{constraint}
-    Your function cannot be recursive.
-  \end{constraint}
+  \part[4]\hfill
 
-  \begin{solutionorbox}[30em]
-    \begin{codeblock}
-      fun partitionGrades threshold L =
-        foldr (fn ((student, grade), (above, below)) =>
-          if grade >= threshold then
-            (student :: above, below)
-          else
-            (above, student :: below)
-        ) ([], [])
-    \end{codeblock}
-  \end{solutionorbox}
+    Now implement \code{fuseAll}, which collapses a list of affine maps into the
+    single affine map that applies all of them in order, head first.
 
-  \part[2]\hfill
+    \spec
+      {fuseAll}
+      {affine list -> affine}
+      {\code{true}}
+      {\code{fuseAll ms} is the affine map equivalent to applying every map in
+      \code{ms} to a coordinate, in order, head first.}
 
-  Define the \code{getAStudents} function in terms of your function \code{f}.
+    \begin{constraint}
+      Your solution must be \textit{point-free}: you may not use any
+      \code{fun} declarations or \code{fn} expressions.
+    \end{constraint}
 
-  \begin{solutionorbox}[20em]
-    \begin{codeblock}
-      val getAStudents = partitionGrades 90
-    \end{codeblock}
-  \end{solutionorbox}
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        val fuseAll = foldl combine (1, 0)
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[4]\hfill
+
+    Finally, implement \code{compile}, which stages a pipeline: it fuses the
+    whole pipeline into one affine map \textit{once}, and returns a function that
+    applies that single map to an input value.
+
+    \spec
+      {compile}
+      {transform list -> (int -> int)}
+      {\code{true}}
+      {\code{compile ts} evaluates to a function that, given a coordinate
+      \code{x}, applies the pipeline \code{ts} to \code{x} in order.}
+
+    \begin{constraint}
+      Your function must be properly staged: it should do the minimal number
+      of actual multiplication and addition operations.
+    \end{constraint}
+
+    \begin{solutionorbox}[16em]
+      \begin{codeblock}
+        fun compile ts =
+          let
+            val (a, b) = fuseAll (map toAffine ts)
+          in
+            fn x => a * x + b
+          end
+      \end{codeblock}
+    \end{solutionorbox}
+
 \end{parts}
 
 \newpage
-\titledquestion{Bounded Regular Expressions}
+\titledquestion{Cursed Predicates}
 
-\textbf{Bounded Regular Expressions}
+\textbf{Cursed Predicates}
 
-Consider the following extension of the \code{regexp} datatype, as
-shown in lecture:
+An important idea is that the specific form of data
+in a program does not matter, it only matters that producers and
+consumers agree on a common \textit{contract}.
+
+Standard predicate functions return a \code{bool}, which can be cased or
+conditioned on later. Here, we discuss a cursed setup instead---instead of
+returning a \code{bool}, a
+\textbf{cursed predicate} signals its answer through \textit{control flow}: it
+calls a continuation when it is satisfied, and raises an exception when it is
+not. Assume the following have been declared:
+
+\begin{codeblock}
+  exception Drop
+  type ('a, 'b) cursed_pred = 'a -> (unit -> 'b) -> 'b
+\end{codeblock}
+
+The contract for a value \code{cp : ('a, 'b) cursed\_pred}\footnote{We
+need two type parameters because the type of the output is independent
+of the type of the element being scrutinized.} is: for all values
+\code{x} and \code{k : unit -> 'b}, evaluating \code{cp x k} calls \code{k ()} if
+\code{x} satisfies the predicate, and raises \code{Drop} otherwise.
+
+\noindent
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \textbf{Regular predicate}
+  \[
+    \code{p x} \eeq
+    \begin{cases}
+      \code{true} & \text{if } \code{x} \text{ satisfies } \code{p}  \\
+      \code{false} & \text{else}
+    \end{cases}
+  \]
+\end{minipage}%
+\hfill%
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \textbf{Cursed predicate}
+  \[
+    \code{cp x k} \eeq
+    \begin{cases}
+      \code{k ()} & \text{if } \code{x} \text{ satisfies } \code{p} \\
+      \code{raise Drop} & \text{else}
+    \end{cases}
+  \]
+\end{minipage}
+
+\begin{parts}
+  \part[2]\hfill
+
+    First, show that a cursed predicate carries no more information than an
+    ordinary one, by implementing a function \code{curse} that converts a real
+    predicate into a cursed one.
+
+    \spec
+      {curse}
+      {('a -> bool) -> ('a, 'b) cursed_pred}
+      {\code{p} is a total predicate}
+      {\code{curse p} is a cursed predicate that fulfills its contract analogously
+      to the regular predicate \code{p}.}
+
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        fun curse p = fn x => fn k => if p x then k () else raise Drop
+      \end{codeblock}
+    \end{solutionorbox}
+
+  \newpage
+
+  \part[6]\hfill
+
+    Now show that we can still consume the library, by reimplementing
+    \code{List.filter} using a cursed predicate.
+
+    Here, our cursed predicate is of type \code{('a, 'a list) cursed_pred}
+    because \code{cursed_filter} has to return an \code{'a list}.
+
+    \spec
+      {cursed_filter}
+      {('a, 'a list) cursed_pred -> 'a list -> 'a list}
+      {\code{cp} is a cursed predicate}
+      {\code{cursed_filter cp l} evaluates to the list of all elements of \code{l}
+      which satisfy \code{cp}, in order.}
+
+    \begin{constraint}
+      You may not use \code{List.filter}, \code{List.foldr}, or \code{List.foldl}.
+    \end{constraint}
+
+    \begin{codeblock}
+      fun cursed_filter cp [] =
+    \end{codeblock}
+    \begin{solutionorbox}[4em]
+      \begin{codeblock}
+        []
+      \end{codeblock}
+    \end{solutionorbox}
+
+    \begin{codeblock}
+        | cursed_filter cp (x::xs) =
+    \end{codeblock}
+    \begin{solutionorbox}[10em]
+      \begin{codeblock}
+        cp x (fn () => x :: cursed_filter cp xs)
+        handle Drop => cursed_filter cp xs
+      \end{codeblock}
+    \end{solutionorbox}
+
+\end{parts}
+
+\newpage
+\titledquestion{Robust Folding}
+
+\textbf{Robust Folding}
+
+We've seen the folding function, which lets us accumulate a result over
+a list by applying a custom folding function.
+
+Up until now we've assumed the folding function is total, but let's suppose
+it is unreliable --- on some elements, it might \code{raise} an exception rather
+than produce a result. Rather than let a single failure abort the entire fold, we
+would like to \textit{skip} the offending element, continue folding, and
+collect every exception that was raised along the way.
+
+\spec
+  {robust_foldl}
+  {('a * 'b -> 'b) -> 'b -> 'a list -> 'b * exn list}
+  {\code{true}}
+  {\code{robust_foldl f acc l} folds \code{f} over \code{l} from left to right.
+  For each element, if \code{f} raises an exception, the exception is recorded
+  in a list of errors, and the element is skipped; otherwise, it is folded
+  normally. It evaluates to a pair of the final accumulator and the list of all
+  raised exceptions.}
+
+For instance, if we have
+\begin{codeblock}
+    exception Stop
+    fun f (122, y) = raise Stop
+      | f (x, y) = x + y
+\end{codeblock}
+then \code{robust_foldl f 0 [4, 122, 5, 122]} $\eeq$ \code{(9, [Stop, Stop])}: the
+successful elements \code{4} and \code{5} contribute to the accumulator, and
+each failure is recorded in order.\footnote{In the reference implementation,
+the exceptions end up in the final list in reverse order of the elements
+they were raised on. This should be
+the intuitive implementation.}
+
+\begin{constraint}
+  You must use \code{foldl}. The folding function \code{f} may raise
+  \textit{any} exception.
+\end{constraint}
+
+\begin{parts}
+  \part[8]\hfill
+
+\begin{solutionorbox}[14em]
+  \begin{codeblock}
+    fun robust_foldl f acc l =
+      foldl
+        (fn (x, (a, errs)) =>
+          (f (x, a), errs)
+          handle e => (a, e :: errs))
+        (acc, [])
+        l
+  \end{codeblock}
+\end{solutionorbox}
+\end{parts}
+
+\newpage
+
+\titledquestion{Matching with Prefixes}
+
+\textbf{Matching with Prefixes}
+
+Consider the \code{regexp} datatype, as shown in lecture:
 
 \begin{codeblock}
   datatype regexp =
@@ -804,30 +851,95 @@ shown in lecture:
     | Times of regexp * regexp
     | Plus of regexp * regexp
     | Star of regexp
-    | Bounded of int * regexp
 \end{codeblock}
 
-We have introduced a new \code{Bounded} operator which has the following
-mathematical description:
+Regular expressions are cool and all, but one weakness of the \code{match}
+function is that we don't know what the \code{char list} that was actually
+matched \textit{was} -- we only know what comes after it!
 
-$$s \in L(\code{Bounded(n, r)}) \iff s \in L(r) \, \land \, s \text{ is at most \code{n} characters long}$$
+Consider the following refinement of the \code{match} function:
+
+\spec
+  {matchWithPrefix}
+  {regexp -> char list -> (char list * char list -> bool) -> bool}
+  {\code{k} total}
+  {\code{matchWithPrefix r cs k} evaluates to \code{true} iff
+  \code{cs} $\eeq$ \code{p @ s}, where \code{p} $\in L(\code{r})$ and
+  \code{k (p, s)} $\eeq$ \code{true}. Otherwise, it evaluates to \code{false}.
+  }
+
+Note the different specification! The key is simply that \code{k} takes in
+\textit{both} \code{p} and \code{s}.
+
+On the next page, we will implement some cases of \code{matchWithPrefix}:
+
+\vspace{120pt}
+
+THIS SPACE INTENTIONALLY LEFT BLANK. I MEAN IT. DO NOT WRITE HERE.
+
+\newpage
 
 \begin{parts}
-  \part[10]\hfill
+  \part[12]\hfill
 
-  Implement only the \code{Bounded} case for the \code{match} function, on
-  the next page. The entire \code{match} function is duplicated there for your
-  convenience.
+  Implement the \code{Char} and \code{Times} cases for the function
+  \code{matchWithPrefix} here. The other cases have been provided for you.
 
-  \vspace{160pt}
+  For your convenience, the \code{match} function has been provided on the next page.
 
-  THIS SPACE INTENTIONALLY LEFT BLANK
+  Hint: Draw a picture. For brevity, you can abbreviate \code{matchWithPrefix}.
 
-  \newpage
-
-  \begin{EnvUplevel}
-  \setlength{\leftmargin}{0pt}
   \begin{codeblock}
+    fun matchWithPrefix
+          (r : regexp)
+          (cs : char list)
+          (k : char list * char list -> bool) : bool =
+      case r of
+        Zero => false
+      | One => k ([], cs)
+  \end{codeblock}
+  \vspace{-12pt}
+  \begin{codeblock}[autogobble=false]
+  | Char c =>
+  \end{codeblock}
+  \vspace{-24pt}
+  \begin{solutionorbox}[13em]
+    \begin{codeblock}
+            case cs of
+              [] => false
+            | c'::cs' =>
+                c = c' andalso k ([c], cs')
+    \end{codeblock}
+  \end{solutionorbox}
+  \begin{codeblock}[autogobble=false]
+  | Times (r1, r2) =>
+  \end{codeblock}
+  \vspace{-24pt}
+  \begin{solutionorbox}[13em]
+    \begin{codeblock}
+            matchWithPrefix r1 cs (fn (pre, suff) =>
+              matchWithPrefix r2 suff (fn (pre2, suff2) =>
+                k (pre @ pre2, suff2)
+              )
+            )
+    \end{codeblock}
+  \end{solutionorbox}
+  \begin{codeblock}
+    (* FILL IN ABOVE *)
+      | Plus (r1, r2) =>
+          matchWithPrefix r1 cs k orelse matchWithPrefix r2 cs k
+      | Star r =>
+          (* this case is long. don't worry about it. *)
+  \end{codeblock}
+\end{parts}
+
+\newpage
+
+\textbf{Appendix: The \code{match} function}
+
+\vspace{10pt}
+
+\begin{codeblock}
   fun match (r : regexp)
             (cs : char list)
             (k : char list -> bool) : bool =
@@ -844,21 +956,10 @@ $$s \in L(\code{Bounded(n, r)}) \iff s \in L(r) \, \land \, s \text{ is at most 
         match r cs (fn cs' =>
           cs' <> cs andalso match (Star r) cs' k
         )
-    | Bounded (n, r) =>
-        (* FILL IN HERE! *)
-  \end{codeblock}
-  \end{EnvUplevel}
-  \begin{solutionorbox}[25em]
-    \begin{codeblock}
-        match r cs (fn cs' =>
-          if length cs - length cs' <= n then
-            k cs'
-          else
-            false
-        )
-    \end{codeblock}
-  \end{solutionorbox}
-\end{parts}
+\end{codeblock}
+
+
+
 
 \end{questions}
 

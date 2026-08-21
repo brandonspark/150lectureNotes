@@ -1,7 +1,7 @@
 % Jacob Neumann
 
 % DOCUMENT CLASS AND PACKAGE USE
-    \documentclass[aspectratio=169, handout]{beamer}
+    \documentclass[aspectratio=169]{beamer}
 
     % Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
     \newif\ifcolorlambda
@@ -109,6 +109,29 @@
 \end{frame}
 
 \sectionSlide{1}{Analyzing a Tree via Depth}
+
+% \begin{frame}[fragile]
+%   \frametitle{Where We're At}
+%   \begin{center}
+%     \begin{tabular}{ c|c|c }
+%     Complexity of \code{treesum} (nodes) & Work & Span \\
+%     \hline & \\[-1.5ex]
+%      Balanced & TBD & $O(\log n)$ \\ [0.5ex]
+%     \hline & \\[-1.5ex]
+%      Unbalanced & TBD & $O(n)$
+%     \end{tabular}
+%   \end{center}
+
+%   % \begin{center}
+%   %   \begin{tabular}{ c|c|c }
+%   %   Complexity of \code{treesum} (depth) & Work & Span \\
+%   %   \hline & \\[-1.5ex]
+%   %    Balanced & TBD & TBD \\ [0.5ex]
+%   %   \hline & \\[-1.5ex]
+%   %    Unbalanced & TBD & TBD
+%   %   \end{tabular}
+%   % \end{center}
+% \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Measuring a Tree (again)}
@@ -261,7 +284,7 @@
   \pause
   \vspace{\fill}
 
-  So in a balanced tree, $n \approx 2^d$, so our previous bound is $O(\log n) = O(\log (2^d)) = O(d)$.
+  So in a balanced tree, $n \approx 2^d$\footnote{Specifically, $n = 2^{d + 1} - 1$.}, so our previous bound is $O(\log n) = O(\log (2^d)) = O(d)$.
   We get the same thing either way, so this is perfectly consistent!
 \end{frame}
 
@@ -332,6 +355,14 @@
      Unbalanced & $O(n)$ & $O(d)$
     \end{tabular}
   \end{center}
+
+  \pause
+  \vspace{\fill}
+  Note that we haven't done the work of \code{treesum} yet.
+
+  \vspace{\fill}
+  We will suspend our discussion of \code{treesum} for a second,
+  and move on to a new function, \code{inord} for that.
 
 \end{frame}
 
@@ -1267,8 +1298,8 @@
   \vspace{\fill}
 
   \begin{codeblock}
-    fun split ([] : int list) : int list * int list = []
-      | split [x] = [x]
+    fun split ([] : int list) : int list * int list = ([], [])
+      | split [x] = ([x], [])
       | split (x::y::xs) =
           let
             val (A, B) = split xs
@@ -1538,5 +1569,7 @@
 % \end{frame}
 
 \thankyou
+
+\lecturePassword{PRISMATIC}
 
 \end{document}

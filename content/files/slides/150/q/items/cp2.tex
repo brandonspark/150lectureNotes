@@ -1,0 +1,35 @@
+\part[3]\hfill
+
+  Consider the following declarations, evaluated in order:
+
+  \begin{codeblock}
+    fun makeAdder () =
+      let
+        val n = 42
+      in
+        fn y => n + y
+      end
+
+    val add = makeAdder ()
+    val n = 1000
+    val res = add 1
+  \end{codeblock}
+
+  What is the value of \code{res}? Justify your answer in one sentence.
+
+  \begin{solutionorbox}[9em]
+    \code{res} $\eeq$ \code{43}.
+
+    The function \code{fn y => n + y} captures the binding of \code{n} in scope
+    \textbf{where it was defined} --- the \code{val n = 42} inside
+    \code{makeAdder} --- not whatever \code{n} happens to be bound to at the
+    point where \code{add} is later called. The later \code{val n = 1000} is a
+    different, unrelated binding and has no effect on \code{add}.
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 3. Equivalence is not runtime cost.
+%    Misunderstanding: students conflate "provably equivalent" with "the same
+%    program" / "same efficiency", and think ~= says anything about cost.
+% -----------------------------------------------------------------------------

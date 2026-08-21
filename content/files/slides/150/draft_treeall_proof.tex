@@ -1,0 +1,106 @@
+\newpage
+\titledquestion{Inversion Preserves the Verdict}
+
+\textbf{Inversion Preserves the Verdict}
+
+Recall the type of polymorphic trees:
+\begin{codeblock}
+  datatype 'a tree = Empty | Node of 'a tree * 'a * 'a tree
+\end{codeblock}
+
+and the \code{invert} function, which mirrors a tree by swapping every left and
+right subtree:
+\begin{codeblock}
+  fun invert Empty = Empty
+    | invert (Node (L, x, R)) = Node (invert R, x, invert L)
+\end{codeblock}
+
+We now define \code{treeAll}, which checks whether \textbf{every} element of a
+tree satisfies a predicate:
+\begin{codeblock}
+  fun treeAll p Empty = true
+    | treeAll p (Node (L, x, R)) =
+        p x andalso treeAll p L andalso treeAll p R
+\end{codeblock}
+
+Intuitively, mirroring a tree should not change \textit{which} elements it
+contains --- only their arrangement. So whether all of them satisfy \code{p}
+should be unaffected by inversion.
+
+\begin{parts}
+  \part[18]\hfill
+
+    Prove the following theorem.
+
+    \textbf{Theorem.} For all values \code{p : 'a -> bool} and all values
+    \code{T : 'a tree}:
+    $$\code{treeAll p (invert T)} \eeq \code{treeAll p T}$$
+
+    You may use the following lemmas without proof:
+
+    \textbf{Lemma 1:} \code{invert} is total.
+
+    \textbf{Lemma 2:} For any total \code{p}, \code{treeAll p} is total.
+
+    \textbf{Lemma 3 (commuting a conjunction):} For all expressions
+    \code{a}, \code{b}, \code{c} of type \code{bool} that each reduce to a
+    value, \\
+    \code{a andalso b andalso c} $\eeq$ \code{a andalso c andalso b}.
+
+    \begin{constraint}
+      You may assume \code{p} is total.
+    \end{constraint}
+
+    \begin{solutionorbox}[40em]
+
+      By structural induction on \code{T : 'a tree}.
+
+      \vspace{6pt}
+      \textbf{Base case:} \code{T = Empty}.
+
+      WTS: \code{treeAll p (invert Empty)} $\eeq$ \code{treeAll p Empty}.
+
+      \begin{align*}
+        & \code{treeAll p (invert Empty)} \\
+        &\eeq \code{treeAll p Empty} \tag{clause 1 of \code{invert}} \\
+        &\eeq \code{true} \tag{clause 1 of \code{treeAll}}
+      \end{align*}
+
+      and directly \code{treeAll p Empty} $\eeq$ \code{true} by clause 1 of
+      \code{treeAll}, so both sides are equal.
+
+      \vspace{6pt}
+      \textbf{Inductive case:} \code{T = Node (L, x, R)}.
+
+      IH1: \code{treeAll p (invert L)} $\eeq$ \code{treeAll p L}
+
+      IH2: \code{treeAll p (invert R)} $\eeq$ \code{treeAll p R}
+
+      WTS: \code{treeAll p (invert (Node (L, x, R)))} $\eeq$
+           \code{treeAll p (Node (L, x, R))}
+
+      \vspace{4pt}
+      Starting from the left-hand side:
+      \begin{align*}
+        & \code{treeAll p (invert (Node (L, x, R)))} \\
+        &\eeq \code{treeAll p (Node (invert R, x, invert L))}
+          \tag{clause 2 of \code{invert}} \\
+        &\eeq \code{p x andalso treeAll p (invert R)} \\
+        & \qquad \code{andalso treeAll p (invert L)}
+          \tag{clause 2 of \code{treeAll}, Lemma 1} \\
+        &\eeq \code{p x andalso treeAll p R andalso treeAll p L}
+          \tag{IH1 and IH2} \\
+        &\eeq \code{p x andalso treeAll p L andalso treeAll p R}
+          \tag{Lemma 3, Lemma 2} \\
+        &\eeq \code{treeAll p (Node (L, x, R))}
+          \tag{clause 2 of \code{treeAll}}
+      \end{align*}
+
+      which is the right-hand side, completing the inductive case.
+
+      \vspace{4pt}
+      By the principle of structural induction, the theorem holds for all
+      \code{T : 'a tree}. $\qed$
+
+    \end{solutionorbox}
+\end{parts}

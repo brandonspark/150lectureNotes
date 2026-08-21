@@ -1,0 +1,152 @@
+% =============================================================================
+% CONCEPTUAL / TYPES-AND-VALUES POOL
+%
+% Four items, each targeting a specific fundamental misunderstanding rather
+% than a language-trivia fact. All SML behavior verified in SML/NJ.
+%
+%   1. A function body does not run until the function is applied.
+%   2. Static scope: a closure captures bindings at its definition site.
+%   3. Equivalence is not runtime cost.
+%   4. Mutation breaks referential transparency.
+%
+% Each is written as a self-contained \part so it can be dropped into either
+% the Types-and-Values or Conceptual Questions section of either exam.
+% =============================================================================
+
+
+% -----------------------------------------------------------------------------
+% 1. A function body does not run until applied.
+%    Misunderstanding tested: students believe binding a `fn` (or defining a
+%    fun) evaluates its body, so effects/exceptions inside fire "at definition".
+% -----------------------------------------------------------------------------
+\part[3]\hfill
+
+  Consider the following sequence of declarations, evaluated in order:
+
+  \begin{codeblock}
+    val a = 1
+    val f = fn () => 1 div 0
+    val g = fn x => raise Fail "boom"
+    val res = a + a
+  \end{codeblock}
+
+  Does evaluating these declarations raise an exception? Answer yes or no, and
+  justify your answer in one sentence. If it does not raise, state the value of
+  \code{res}.
+
+  \begin{solutionorbox}[9em]
+    No. Binding \code{f} and \code{g} does \textbf{not} run their bodies --- a
+    function's body is only evaluated when the function is \textit{applied},
+    and neither \code{f} nor \code{g} is ever applied. So no division by zero
+    and no \code{raise} occurs, and \code{res} $\eeq$ \code{2}.
+
+    (Contrast \code{val c = 1 div 0}, which is not a function and \textit{would}
+    raise immediately, because its right-hand side is evaluated at binding
+    time.)
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 2. Static scope: a closure captures the binding in effect at its definition,
+%    not at its call. Misunderstanding: students think name lookup happens at
+%    call time against the "current" binding.
+% -----------------------------------------------------------------------------
+\part[3]\hfill
+
+  Consider the following declarations, evaluated in order:
+
+  \begin{codeblock}
+    fun makeAdder () =
+      let
+        val n = 42
+      in
+        fn y => n + y
+      end
+
+    val add = makeAdder ()
+    val n = 1000
+    val res = add 1
+  \end{codeblock}
+
+  What is the value of \code{res}? Justify your answer in one sentence.
+
+  \begin{solutionorbox}[9em]
+    \code{res} $\eeq$ \code{43}.
+
+    The function \code{fn y => n + y} captures the binding of \code{n} in scope
+    \textbf{where it was defined} --- the \code{val n = 42} inside
+    \code{makeAdder} --- not whatever \code{n} happens to be bound to at the
+    point where \code{add} is later called. The later \code{val n = 1000} is a
+    different, unrelated binding and has no effect on \code{add}.
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 3. Equivalence is not runtime cost.
+%    Misunderstanding: students conflate "provably equivalent" with "the same
+%    program" / "same efficiency", and think ~= says anything about cost.
+% -----------------------------------------------------------------------------
+\part[4]\hfill
+
+  A student claims: ``if \code{e1} $\eeq$ \code{e2}, then \code{e1} and
+  \code{e2} must take the same amount of time to evaluate.''
+
+  Consider these two functions, which you may assume are extensionally
+  equivalent (they return the same result on every input):
+
+  \begin{codeblock}
+    fun sumTo1 n = if n = 0 then 0 else n + sumTo1 (n - 1)
+
+    fun sumTo2 n = (n * (n + 1)) div 2
+  \end{codeblock}
+
+  Is the student's claim true or false? Justify your answer with reference to
+  these two functions.
+
+  \begin{solutionorbox}[12em]
+    False.
+
+    \code{sumTo1} and \code{sumTo2} are extensionally equivalent --- for every
+    \code{n} $\geq 0$ they evaluate to the same integer --- so
+    \code{sumTo1 n} $\eeq$ \code{sumTo2 n}. But \code{sumTo1} does $O(n)$
+    additions while \code{sumTo2} does a constant number of operations.
+
+    Equivalence ($\eeq$) is a statement about \textbf{what value} an expression
+    evaluates to, not \textbf{how much work} it takes to get there. Two
+    equivalent expressions may have wildly different work and span.
+  \end{solutionorbox}
+
+
+% -----------------------------------------------------------------------------
+% 4. Mutation breaks referential transparency.
+%    Misunderstanding: students believe you can always substitute equals for
+%    equals (replace `f x` by its "value"), even in the presence of effects.
+% -----------------------------------------------------------------------------
+\part[4]\hfill
+
+  Consider the following declarations:
+
+  \begin{codeblock}
+    val c = ref 0
+    fun next () = (c := !c + 1; !c)
+  \end{codeblock}
+
+  A student reasons: ``let \code{v = next ()}. Then \code{next () + next ()}
+  $\eeq$ \code{v + v} $\eeq$ \code{2 * v}, by substituting the value of
+  \code{next ()}.''
+
+  Is this reasoning valid? State the actual value of
+  \code{next () + next ()} when it is the first thing evaluated after the
+  declarations above, and explain in one sentence what went wrong.
+
+  \begin{solutionorbox}[12em]
+    The reasoning is invalid. The actual value is \code{1 + 2} $\eeq$ \code{3},
+    not \code{2 * v} for any single \code{v}.
+
+    Each call to \code{next} \textbf{mutates} \code{c} and returns a different
+    result, so \code{next ()} is not a fixed value that can be substituted for
+    all its occurrences. Mutation breaks \textbf{referential transparency} ---
+    the property that lets you replace an expression by its value without
+    changing the program's meaning. That substitution is only valid for
+    \textit{effect-free} (pure) expressions.
+  \end{solutionorbox}

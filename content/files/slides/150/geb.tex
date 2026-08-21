@@ -1,0 +1,2173 @@
+% Jacob Neumann
+
+% DOCUMENT CLASS AND PACKAGE USE
+\documentclass[aspectratio=169]{beamer}
+
+% Establish the colorlambda boolean, to control whether the lambda is solid color (true), or the same as the picture (false)
+\newif\ifcolorlambda
+\colorlambdafalse % DEFAULT: false
+
+% Use auxcolor for syntax highlighting
+\newif\ifuseaux
+\useauxfalse % DEFAULT: false
+
+% Color settings
+\useauxtrue
+
+% LIGHT MODE TOGGLE: flip \lightmodetrue for a projector-friendly light theme
+% (dark text on a near-white canvas). The base palette below switches on it, and
+% the accent colors further down (ntColor, part*, code*) get darker variants too.
+\newif\iflightmode
+\lightmodefalse % DEFAULT: dark mode
+
+\iflightmode
+  % --- light theme: dark ink on a soft near-white page ---
+  \newcommand{\auxColor}{9A6B12}     % darker gold (readable on light)
+  \newcommand{\presentColor}{0C4033} % deep green accent
+  \newcommand{\bgColor}{F4F1E8}      % soft off-white canvas
+  \newcommand{\darkBg}{8b98ad}
+  \newcommand{\textColor}{1A2420}    % near-black ink
+\else
+  % --- dark theme: aged vellum / alchemical grimoire ---
+  \newcommand{\auxColor}{B5432E}     % brick-red accent (rubrication ink)
+  \newcommand{\presentColor}{4A3524} % warm umber slide borders
+  \newcommand{\bgColor}{2A1E12}      % deep desaturated umber canvas (less yellow)
+  \newcommand{\darkBg}{8b98ad}
+  \newcommand{\textColor}{E8D9BC}    % warm ivory ink (desaturated parchment)
+\fi
+\newcommand{\lambdaColor}{\auxColor}
+
+\colorlambdatrue
+
+\usepackage{comment} % comment blocks
+\usepackage{soul} % strikethrough
+\usepackage{listings} % code
+\usepackage{makecell}
+\usepackage{transparent}
+\usepackage{proof} % PL inference rules: \infer{conclusion}{premises}
+
+\setbeamertemplate{itemize items}[circle]
+% \setbeameroption{show notes on second screen=right}
+
+\usepackage{lectureSlides}
+
+% Serif body text. lectureSlides loads Inter (sans) as the default family;
+% point the roman family at Crimson and make the document default roman so
+% canvas body text is serif.
+\usepackage[T1]{fontenc}
+\usepackage{crimson}              % sets \rmdefault to the Crimson family
+\renewcommand{\familydefault}{\rmdefault}
+
+% The inter package (loaded by lectureSlides) drives math italic letters through
+% a `pureletters` symbol font that follows the text roman family. Once crimson
+% repointed \rmdefault, math letters rendered in Crimson and clashed with the CM
+% symbols. Redeclare `pureletters` back to Computer Modern math italic so math
+% stays in CM while body text stays Crimson. Must be \AtBeginDocument: inter
+% installs `pureletters` at begin-document, after the preamble.
+\AtBeginDocument{\DeclareSymbolFont{pureletters}{OML}{cmm}{m}{it}}
+
+% Override ONLY the frametitle bar colors for this file (must come after
+% lectureSlides, which defines the frametitle template + theme). Change the
+% hex to recolor the title bar; leave the rest of the theme untouched.
+\definecolor{frametitleBar}{HTML}{4A3524}
+% Named manuscript inks. titleInk = cinnabar rubric (title text); goldInk =
+% illuminated gold (separator rules, section dividers). Declared here so both are
+% available to the frametitle/footline templates and the plain-slide overrides.
+\definecolor{titleInk}{HTML}{C9A227}
+\definecolor{goldInk}{HTML}{C9A227}
+\setbeamercolor{frametitle}{fg=titleInk, bg=frametitleBar}
+
+
+% The custom frametitle template (lectureSlides.sty) sets a font but never
+% applies the frametitle fg, so beamer's fg= gets dropped. Re-inject it.
+\addtobeamertemplate{frametitle}{\usebeamercolor[fg]{frametitle}\color{fg}}{}
+
+% Primary body text color on the canvas. The dark bgColor makes the default
+% black text unreadable. Note \textColor is just a macro holding a hex string;
+% xcolor/beamer's fg= needs a *registered* color name, so define one first.
+\definecolor{textColor}{HTML}{\textColor}
+\setbeamercolor{normal text}{fg=textColor}
+
+% TOC entries inherit from `structure` -> presentColor (near-black here), so the
+% Table of Contents was invisible. Color the toc entries explicitly.
+\setbeamercolor{section in toc}{fg=auxColor}
+\setbeamercolor{subsection in toc}{fg=textColor}
+
+% itemize/enumerate markers also inherit from `structure` (near-black), so the
+% bullets were invisible on the dark canvas. Color the markers gold.
+\setbeamercolor{itemize item}{fg=auxColor}
+\setbeamercolor{itemize subitem}{fg=auxColor}
+\setbeamercolor{itemize subsubitem}{fg=auxColor}
+\setbeamercolor{enumerate item}{fg=auxColor}
+
+% Footnotes inherit from `structure` too, so the footnote text was near-black and
+% invisible (only its separator rule showed). \setbeamercolor alone didn't take,
+% so force the color directly in the template around \insertfootnotetext.
+\setbeamercolor{footnote}{fg=textColor}
+\setbeamercolor{footnote mark}{fg=auxColor}
+\setbeamertemplate{footnote}{%
+  \parindent 1em\noindent%
+  \raggedright
+  \hbox to 1.8em{\hfil{\color{auxColor}\insertfootnotemark}}%
+  {\color{textColor}\insertfootnotetext}\par%
+}
+
+% Grammar markup: distinguish nonterminals from terminals by color AND font.
+%   \nt{...} nonterminal (a symbol that expands further) -> bright gold, the
+%            regular math italic (NOT bold: bold-italic e was muddy/hard to read)
+%   \op{...} terminal OPERATOR (+ - * /) -> cream typewriter, kept as a \mathbin
+%            so it retains the normal binary-operator spacing
+%   \tm{...} terminal literal (numbers, parens, <integer literal>) -> cream
+%            typewriter, so program text reads like code (\texttt-style)
+% Coloring a math sub-expression with {\color..#1} turns it into an ordinary
+% atom and strips operator spacing; \op uses \mathbin to restore it.
+% teal nonterminal accent: a bright pastel for dark mode, a deeper teal for light
+\iflightmode
+  \definecolor{ntColor}{HTML}{0E7C6E}  % deep teal (readable on light)
+  \definecolor{linkColor}{HTML}{2A5DB0} % link: deep blue on light
+\else
+  \definecolor{ntColor}{HTML}{5FD0C0}  % bright teal (for dark)
+  \definecolor{linkColor}{HTML}{7FB2E8} % link: soft sky-blue (not garish on dark)
+\fi
+% \link{url}{text}: a hyperlink styled in the (toggle-aware) link color.
+% Plain \url with \color{blue} is too harsh on the dark canvas.
+\newrobustcmd{\link}[2]{\href{#1}{\color{linkColor}\underline{#2}}}
+% \nt is mode-agnostic (\ensuremath) so it works bare in math AND inside the
+% text-mode \gline below. Regular weight (bold was too fat); distinction from
+% the cream terminals comes from color + the terminals being typewriter.
+\newcommand{\nt}[1]{\ensuremath{{\color{ntColor}#1}}}
+% \mathtt does NOT restyle digits/operators (they come from the symbol fonts),
+% so terminals must use real text-mode \texttt via \text{} to look like code.
+\newcommand{\op}[1]{\mathbin{\text{\color{textColor}\texttt{#1}}}}
+\newcommand{\tm}[1]{\text{\color{textColor}\texttt{#1}}}
+
+% \gline{...}: terminal-by-default wrapper. Sets the ambient font to cream
+% typewriter (text mode), so bare characters ( ) + * / digits spaces all render
+% as terminals with NO markup. Only nonterminals need wrapping in \nt{...}, which
+% pops into gold math. \gto is the derivation arrow for use inside \gline.
+% \text{} forces text mode so \gline works even inside an align*/array cell.
+\newcommand{\gline}[1]{\text{\ttfamily\color{textColor}#1}}
+\newcommand{\gto}{\ensuremath{\;\Longrightarrow\;}}
+% \kw{...}: a terminal KEYWORD inside \gline -> gold typewriter (matches the
+% gold keyword highlighting that \code gives). Everything else in \gline stays
+% cream; \nt{...} stays teal.
+\newcommand{\kw}[1]{{\color{auxColor}#1}}
+% \rname{...}: an inference-rule name for \infer's optional [..] arg -- small
+% caps, gold, so rule labels read as a consistent set. Usage:
+%   \infer[\rname{Add}]{conclusion}{premises}
+\newcommand{\rname}[1]{\text{\small\color{auxColor}\textsc{#1}}}
+% \ty{...}: a type name (int, bool, ...) in code/typewriter style, like \tm but
+% semantically "a type". Body is in math mode (\ensuremath) so subscripts like
+% t_1 work; \mathtt gives the typewriter look for letters. For compound types
+% use \op for the connective, e.g. \ty{t_1} \op{*} \ty{t_2}.
+\newcommand{\ty}[1]{\ensuremath{{\color{textColor}\mathtt{#1}}}}
+
+% fact_proto part-highlighting: three semantic colors to mark the condition,
+% the base case, and the recursive case, then referenced in the explanation.
+\iflightmode
+  \definecolor{partCond}{HTML}{1763B0}  % blue  (deeper, for light)
+  \definecolor{partBase}{HTML}{2E8B40}  % green (deeper, for light)
+  \definecolor{partRec}{HTML}{B03C86}   % pink  (deeper, for light)
+\else
+  \definecolor{partCond}{HTML}{6FB7F0}  % condition  -> blue
+  \definecolor{partBase}{HTML}{9FE0A0}  % base case  -> green
+  \definecolor{partRec}{HTML}{E59BC8}   % recursive case -> pink
+\fi
+% (\prec is a built-in relation symbol, so the recursive-case macro is \precase)
+\newcommand{\pcond}[1]{{\color{partCond}#1}}
+\newcommand{\pbase}[1]{{\color{partBase}#1}}
+\newcommand{\cl}[1]{{\color{partCond}#1}}
+\newcommand{\precase}[1]{{\color{partRec}#1}}
+
+% \lam{x}: a lambda binder "lambda x." with a TIGHT dot. A bare \lambda x. gives
+% the period \mathpunct spacing (a wide gap after the dot); {.} makes the dot an
+% ordinary atom and \mkern adds just a hair of space before the body. Usage:
+%   \lam{f} \lam{x} f x   ==>   lambda f. lambda x. f x
+\newcommand{\lam}[1]{\lambda #1{.}\mkern2mu}
+
+% \Y: the Y combinator, in a poppy magenta so it stands out as the "magic" term.
+% Use it (in math mode) anywhere the mathematical Y appears: \Y, \Y \; f, etc.
+\definecolor{yColor}{HTML}{F25CA2}
+% \newrobustcmd so \color survives inside moving args (e.g. \defBox does an
+% \edef, where a fragile \color would break).
+\newrobustcmd{\Y}{{\color{yColor}\texttt{Y}}}
+
+% \hlt{NAME}: a high-level lambda-calculus "widget" term (fact, IF, EQ, MUL,
+% PRED, ...) in gold typewriter, so the named building blocks stand out from
+% plain variables. Robust so it survives \defBox/moving args.
+\newrobustcmd{\hlt}[1]{{\color{auxColor}\texttt{#1}}}
+
+% ---------------------------------------------------------------------------
+% Godel-notation kit. Color = semantic LEVEL, mirroring the lambda deck's
+% color-equals-role convention. Introduced to students on the "Godel
+% Numbering" slide; used consistently everywhere after:
+%   \tm{...}   a STRING made of plain characters (MIU, pq-) -> cream tt
+%              (already defined above; text mode, so hyphens stay hyphens)
+%   \tnt{...}  a STRING of TNT -> cream tt, math mode so it can hold
+%              \forall, \exists, {\sim}, {\cdot} etc.
+%   \gnum{...} a NUMBER (codons, Godel numbers) -> teal
+%   \gn{...}   THE Godel number of a string: teal Quine corners, the
+%              bridge that carries a string down to the number level
+%   \THM       the provability predicate, a named "widget" (like the
+%              lambda lecture's IF/EQ/MUL) -> gold
+%   \AQ        the arithmoquine operation, the self-reference magic ->
+%              the same magenta as \Y, because it plays the same role
+%   \mv{...}   a METAVARIABLE in a rule schema: a placeholder ranging over
+%              strings, NOT a symbol of the system itself -> soft blue
+%              (teal would match the parsing deck's nonterminals, but teal
+%              is taken by the number level here)
+% ---------------------------------------------------------------------------
+\newrobustcmd{\tnt}[1]{\ensuremath{{\color{textColor}\mathtt{#1}}}}
+\newrobustcmd{\mv}[1]{\ensuremath{{\color{partCond}#1}}}
+% pq- strings: consecutive cmtt hyphens fuse into one long dash, making the
+% tally marks uncountable ("--p---q-----" must read as 2 + 3 = 5!). \pqs{...}
+% retypesets a string with a hair of kerning after every character so each
+% hyphen stays distinct. Works in text and math.
+\makeatletter
+\def\pq@end{\pq@end}
+\def\pq@scan#1{\ifx\pq@end#1\else#1\kern0.07em\expandafter\pq@scan\fi}
+\newrobustcmd{\pqs}[1]{\text{\color{textColor}\ttfamily\pq@scan#1\pq@end}}
+\makeatother
+\newrobustcmd{\gnum}[1]{\ensuremath{{\color{ntColor}#1}}}
+% The raw \ulcorner/\urcorner glyphs only reach cap height, so their bars
+% sit BESIDE the letter tops instead of hooking over them. Raise them so the
+% corners frame the top corners of the enclosed expression, and tuck them in
+% slightly with negative kerns.
+\newrobustcmd{\gn}[1]{\ensuremath{%
+  {\color{ntColor}\raisebox{0.3ex}{\ensuremath{\ulcorner}}}\mkern-2mu #1%
+  \mkern-2mu{\color{ntColor}\raisebox{0.3ex}{\ensuremath{\urcorner}}}%
+}}
+\newrobustcmd{\THM}{\ensuremath{{\color{auxColor}\mathtt{THM}}}}
+\newrobustcmd{\AQ}{\ensuremath{{\color{yColor}\mathtt{AQ}}}}
+
+% \cod{symbol}{codon}: one entry of the TNT codon table -- cream symbol,
+% arrow, teal codon.
+\newrobustcmd{\cod}[2]{\tnt{#1}\;\ensuremath{\mapsto}\;\gnum{#2}}
+
+% \koan{source}{body}: a Zen koan as an inset block -- gold bar down the
+% left, small italic body (use \\ for speaker turns / verse lines), source
+% in small gold caps underneath. The bare \vrule stretches to the height of
+% the minipage beside it.
+\newrobustcmd{\koan}[2]{%
+  \par\medskip
+  \noindent\hspace*{0.04\textwidth}%
+  {\color{goldInk}\vrule width 1.2pt}\hspace{10pt}%
+  \begin{minipage}{0.84\textwidth}
+    {\small\itshape #2\par}
+    \vspace{2pt}
+    {\footnotesize\color{auxColor}\textsc{---\,#1}}%
+  \end{minipage}
+  \par\medskip
+}
+
+% Big Bird subtyping diagram for the "Why semantics?" section: an array of dogs
+% where muppetify drops a BigBird into slot 0, then barkify calls .bark() on all
+% -- every dog says woof, but the bird (slot 0) can't (???).
+\definecolor{birdRed}{HTML}{E0564F}
+\usetikzlibrary{positioning,arrows.meta}
+\newcommand{\birddiagram}{%
+\begin{tikzpicture}[
+   font=\ttfamily\footnotesize,
+   cell/.style={draw=textColor, minimum width=1.05cm, minimum height=0.95cm},
+   dog/.style={cell, text=ntColor},
+   bird/.style={cell, draw=birdRed, fill=bgColor, text=birdRed, very thick},
+   % gaps live here -- edit these instead of absolute coordinates:
+   % woof/??? sit just below the index labels (i##1), which sit below the cells:
+   sound/.style={below=3pt of i##1},  % ## because this is inside a \newcommand body
+]
+  % the array: bird in slot 0, dogs in 1..5
+  \node[bird] (c0) at (0,0) {bird};
+  \foreach \i in {1,...,5} { \node[dog] (c\i) at (\i*1.15, 0) {dog}; }
+  \foreach \i in {0,...,5} { \node[font=\tiny\ttfamily, text=textColor, below=1pt of c\i] (i\i) {[\i]}; }
+  % muppetify drops Big Bird into slot 0 (label sits just above the array)
+  \node[text=birdRed, font=\scriptsize\bfseries, above=12pt of c0] (mup) {muppetify: animals[0] = BigBird};
+  \draw[-{Stealth[length=2mm]}, birdRed, thick] (mup) -- (c0);
+  % barkify: .bark() on each -- woof under the dogs, ??? under the bird
+  \foreach \i in {1,...,5} { \node[text=auxColor, font=\tiny, sound=\i] (w\i) {woof}; }
+  \node[text=birdRed, font=\small\bfseries, sound=0] {???};
+  % barkify caption below the woof row, spanning toward the middle
+  \node[text=auxColor, font=\scriptsize, below=8pt of w3] {barkify: call \texttt{.bark()} on each};
+\end{tikzpicture}}
+
+% Code blocks: the shared 15150code listings style assumes a LIGHT slide (light
+% gray panel, dark-ish text). On this dark deck the code text inherited cream and
+% vanished on the light box. Re-issue the style with a DARK panel + light text +
+% dark-tuned syntax colors. (Overrides lectureSlides; shared .sty untouched.)
+\iflightmode
+  \definecolor{codeBg}{HTML}{ECEAE0}      % light panel
+  \definecolor{codeKeyword}{HTML}{9A6B12} % darker gold
+  \definecolor{codeString}{HTML}{8A6A00}  % darker warm gold
+  \definecolor{codeComment}{HTML}{5E7468} % muted green-gray (darker)
+  \definecolor{codeNumber}{HTML}{6B7570}  % gray
+\else
+  \definecolor{codeBg}{HTML}{201509}      % panel: a touch deeper than bgColor (warm umber)
+  \definecolor{codeKeyword}{HTML}{CC9A49} % keywords -> gold (auxColor); teal is
+                                          % reserved for nonterminals
+  \definecolor{codeString}{HTML}{E7B95C}  % strings  -> warm gold
+  \definecolor{codeComment}{HTML}{9C8365} % comments -> muted warm umber
+  \definecolor{codeNumber}{HTML}{C4B49A}  % line numbers -> warm parchment gray
+\fi
+\lstdefinestyle{15150code}{
+    basicstyle=\ttfamily\color{textColor},
+    numberstyle=\tiny\ttfamily\color{codeNumber},
+    backgroundcolor=\color{codeBg},
+    stringstyle=\color{codeString},
+    keywordstyle=\color{codeKeyword},
+    commentstyle=\color{codeComment},
+    numbers=left,
+    frame=shadowbox,
+    rulesepcolor=\color{codeBg},
+    linewidth=\textwidth,
+    columns=fixed,
+    tabsize=2,
+    xleftmargin=\MaxSizeOfLineNumbers,
+    breaklines=true,
+    keepspaces=true,
+    showstringspaces=false,
+    captionpos=b,
+    autogobble=true,
+    mathescape=true,
+    literate={~}{{$\thicksim$}}1
+}
+
+% Tint the top-right lambda. white_lambda.png is a WHITE silhouette whose alpha
+% channel IS the glyph mask. Rather than fight PDF blend modes (which tint the
+% bounding box), we bake a recolored copy once (RGB = tint, alpha preserved) and
+% include that. The tinted asset is generated by tint_lambda.py; rerun it to
+% change the color.
+\newcommand{\tintedlambda}{%
+  \includegraphics[width=0.6cm]{aux_lambda.png}%
+}
+
+% Re-point ONLY the image in the frametitle template to the tinted version.
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{beamercolorbox}[sep=0.2cm,ht=1.3em,wd=\paperwidth]{frametitle}
+    \vbox{}\vskip-2ex%
+    \usebeamercolor[fg]{frametitle}\color{fg}%
+    \intermedium\fontsize{10.5}{12.5}\selectfont
+    \strut\insertframetitle\strut
+    \hfill
+    \raisebox{-2mm}{\tintedlambda}%
+    \vskip-1ex%
+  \end{beamercolorbox}%
+  % Gold rule flush under the title bar, separating it from the canvas.
+  % Reuse a full-width beamercolorbox (same mechanism as the bar above) so the
+  % rule starts at the exact same left edge — no manual margin math. sep=0
+  % removes padding; the box bg is the gold itself.
+  \nointerlineskip\vskip-1pt
+  \begin{beamercolorbox}[sep=0pt,wd=\paperwidth]{}%
+    {\color{goldInk}\rule{\paperwidth}{0.4pt}}%
+  \end{beamercolorbox}%
+}
+
+% Mirror of the title-bar rule, but ABOVE the bottom (footline) bar. Prepended
+% to the footline template so it sits directly atop the bar; same full-width
+% beamercolorbox mechanism for identical left-edge alignment.
+\addtobeamertemplate{footline}{%
+  \begin{beamercolorbox}[sep=0pt,wd=\paperwidth]{}%
+    {\color{goldInk}\rule{\paperwidth}{0.4pt}}%
+  \end{beamercolorbox}%
+  \nointerlineskip
+}{}
+
+% Gold side decals on every regular slide. Drawn in the `background` template
+% (runs behind content on every frame) with TikZ anchored to the page edges; the
+% right copy is the left one mirrored via xscale=-1. Skipped on [plain] frames
+% (title page + \sectionSlide dividers) via beamer's \ifbeamer@plainframe.
+%
+% side_decal.png is a tall vertical strip, so size it by HEIGHT and run it down
+% the full page edge. Tunables:
+%   \decalheight — rendered height of one decal (default: full paper height)
+%   \decalinset  — horizontal gap from the paper edge
+\usetikzlibrary{calc}
+\newcommand{\decalimg}{geb_side_decal_gold} % flooded to goldInk by img/flood_decal.py, so
+                                         % it keeps its tint even when faded
+\newlength{\decalheight}\setlength{\decalheight}{\paperheight}
+% negative = push decals further toward (partly off) the page edge
+\newlength{\decalinset}\setlength{\decalinset}{-4.5mm}
+% \decalopacity: 1 = solid, lower = fainter so the ornaments read as faint
+% impressions in the background rather than foreground pieces. Applied via the
+% TikZ `opacity` node option below (TikZ-native; \transparent breaks inside a
+% TikZ node path).
+\newcommand{\decalopacity}{0.66}
+\newcommand{\sidedecal}{\includegraphics[height=\decalheight]{\decalimg}}
+% The template body runs in the document body, where @ is not a letter, so
+% \ifbeamer@plainframe can't be used directly. Capture the test into an @-free
+% macro now (under \makeatletter): \ifplainframe{<skip>}{<draw>}.
+\makeatletter
+\newcommand{\ifplainframe}{\ifbeamer@plainframe \expandafter\@firstoftwo \else \expandafter\@secondoftwo \fi}
+\makeatother
+% The texture/decals/border are baked DARK-green assets, so in light mode we
+% suppress all of them and let the light bgColor canvas show through.
+\addtobeamertemplate{background}{%
+  \iflightmode\else
+  \ifplainframe{%
+    % PLAIN frames (title, section dividers, break, poll): a full-frame
+    % celestial border (16:9, white keyed out) filling the whole slide, plus the
+    % mottled texture underneath. Same opacity as the side decals.
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=center] at (current page.center)
+        {\includegraphics[width=\paperwidth,height=\paperheight]{bg_texture}};
+      \node[anchor=center, opacity=\decalopacity] at (current page.center)
+        {\includegraphics[width=\paperwidth,height=\paperheight]{celestial_border2_gold}};
+    \end{tikzpicture}%
+  }{%
+    \begin{tikzpicture}[remember picture, overlay]
+      % Subtle mottled texture filling the whole page, UNDERNEATH the decals.
+      % Generated by make_bg_texture.py; tinted to bgColor.
+      \node[anchor=center] at (current page.center)
+        {\includegraphics[width=\paperwidth,height=\paperheight]{bg_texture}};
+      % left decal, against the left edge (opacity fades it into the background)
+      \node[anchor=west, opacity=\decalopacity] at ([xshift=\decalinset]current page.west)  {\sidedecal};
+      % right decal: mirror the IMAGE with \reflectbox (flipping the node's
+      % transform instead would move it off-page), anchored at the right edge.
+      \node[anchor=east, opacity=\decalopacity] at ([xshift=-\decalinset]current page.east) {\reflectbox{\sidedecal}};
+    \end{tikzpicture}%
+  }%
+  \fi
+}{}
+
+% Keep body text clear of the decals by widening the L/R text margins to the
+% decal width plus a little breathing room.
+\setbeamersize{text margin left=1.2cm, text margin right=1.6cm}
+
+% The shared title-page template positions the full-bleed title image relative
+% to a \textwidth-centered \makebox, so changing the text margins above shifted
+% it sideways. Re-anchor the image to the absolute page center so it fills the
+% slide regardless of margins.
+\setbeamertemplate{title page}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node at (current page.center) {\includegraphics[width=\paperwidth,height=\paperheight]{title.png}};
+  \end{tikzpicture}%
+}
+
+% Plain-slide text fixes. The shared \sectionSlide / \lecturePassword color
+% their text with presentColor, which is near-black on this dark deck and so
+% invisible. Override them locally (shared .sty untouched) to illuminated gold
+% (goldInk, defined up with the other manuscript inks near the frametitle setup).
+\renewrobustcmd{\sectionSlide}[2]{%
+  \section{#2}%
+  \begin{frame}[plain]
+    \begin{center}
+      \huge \color{goldInk} \intermedium{#1 - #2}
+    \end{center}
+  \end{frame}%
+}
+\renewrobustcmd{\lecturePassword}[1]{%
+  \begin{frame}[plain]
+    \begin{center}
+      {\huge \color{goldInk} \intermedium{Post-lecture attendance poll}}
+
+      \vspace{10pt}
+
+      \color{goldInk} \intermedium{Password: #1}
+    \end{center}
+  \end{frame}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| <----- Don't make the title any longer than this
+\title{G\"odel, Escher, Bach}
+\subtitle{An Eternal Golden Braid}
+\date{13 July 2026} % TODO: set the actual lecture date
+\author{Brandon Wu}
+
+\graphicspath{ {./img/} }
+% DONT FORGET TO PUT [fragile] on frames with codeblocks, specs, etc.
+    %\begin{frame}[fragile]
+    %\begin{codeblock}
+    %fun fact 0 = 1
+    %  | fact n = n * fact(n-1)
+    %\end{codeblock}
+    %\end{frame}
+
+% INCLUDING codefile:
+    % 1. In some file under code/NN (where NN is the lecture id num), include:
+%       (* FRAGMENT KK *)
+%           <CONTENT>
+%       (* END KK *)
+
+%    Remember to not put anything on the same line as the FRAGMENT or END comment, as that won't be included. KK here is some (not-zero-padded) integer. Note that you MUST have fragments 0,1,...,KK-1 defined in this manner in order for fragment KK to be properly extracted.
+    %  2. On the slide where you want code fragment K
+            % \smlFrag[color]{KK}
+    %     where 'color' is some color string (defaults to 'white'. Don't use presentColor.
+%  3. If you want to offset the line numbers (e.g. have them start at line 5 instead of 1), use
+            % \smlFragOffset[color]{KK}{5}
+
+\begin{document}
+
+% Make it so ./mkWeb works correctly
+\ifweb
+\renewcommand{\pause}{}
+\fi
+
+\setbeamertemplate{itemize items}[circle]
+
+% SOLID COLOR TITLE (see SETTINGS.sty)
+{
+\begin{frame}[plain]
+\colorlambdatrue
+\titlepage
+\end{frame}
+}
+
+\begin{frame}[fragile]
+\frametitle{Lesson Plan}
+
+\tableofcontents
+\end{frame}
+
+
+\sectionSlide{1}{An Eternal Golden Braid}
+
+\begin{frame}[fragile]
+\frametitle{What is GEB?}
+
+  \textit{Gödel, Escher, Bach: an Eternal Golden Braid} (GEB) is
+  a 1979 Pulitzer-winning book by Douglas R. Hofstadter, relating
+  the works of Gödel, Escher, and Bach to each other in a long
+  and complex thesis.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{minipage}[c]{0.65\textwidth}
+  Many have tried and failed to understand GEB in pursuit of the
+  answer to the question: ``what is the thesis of the book?''\footnote{In
+  fairness, Hofstadter did not make this answer simple.}
+
+  \pause
+  \vspace{5pt}
+
+  \begin{itemize}
+    \item GEB is about how math, music, and art are the same
+    \item GEB is about how to mathematically model human cognition
+    \item GEB is about how G\"odel, Escher, and Bach contributed to AI
+  \end{itemize}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.35\textwidth}
+    \centering
+    \includegraphics[height=0.62\textheight]{geb.jpeg}
+  \end{minipage}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Recursion}
+  In the words of the author himself:
+  \vspace{10pt}
+
+  \begin{quote}
+    \textit{``In a word, GEB is a very personal attempt to say how
+    it is that animate beings can come out of inanimate
+    matter. What is a self, and how can a self come out
+    of stuff that is as selfless as a stone or a puddle?''}
+
+    \vspace{6pt}
+    \hfill {\normalfont\small --- Douglas R. Hofstadter}
+  \end{quote}
+
+  In the most true and simplest sense, GEB is about artificial intelligence.
+
+  \pause
+  \vspace{\fill}
+
+  Not artificial intelligence necessarily as we know it today, but in a
+  GOFAI (good old-fashioned artificial intelligence) sense. In an age
+  where LLMs did not yet exist, GEB was one conjecture for how to
+  conceive of intelligence--as something which arises from unintelligent
+  parts, through recursion and self-introspection and "jumping out of the
+  system".
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops}
+
+  % to explain what these things were in service of, we must know what
+  % a strange loop is
+
+  To understand what any of these were in service of, we first need
+  the book's central object.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\, A \term{strange loop} occurs when, by moving up or down
+  through the levels of a hierarchical system, we unexpectedly find
+  ourselves exactly where we began.}
+
+  \pause
+  \vspace{\fill}
+
+  He posits this idea as not just a curious observation, but as a fundamental,
+  recurring theme in any attempt to synthesize greater emergent properties
+  from lesser parts.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Music}
+
+  A strange loop is really just a particular manifestation of self-reference.
+
+  \pause
+  \vspace{\fill}
+
+  We're familiar with recursion, as programmers.
+
+  \begin{pythoncodeblock}
+    def factorial(n):
+      if n == 0:
+        return n
+      return n * factorial(n - 1)
+  \end{pythoncodeblock}
+
+  \pause
+  \vspace{\fill}
+
+  What other examples of recursion can we think of?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Language}
+
+  The interesting behavior of recursion is in how it seems to dually break
+  as well as unlock things.
+
+  \pause
+  \vspace{\fill}
+
+  Take, for instance, the classic \term{Liar's paradox}, which is stated
+  as "this sentence is false".
+
+  \pause
+  \vspace{\fill}
+
+  Inspection of this sentence reveals an impossibility to assign this
+  sentence either truth value, as it will cause it to flip to the other.
+  One could argue that in language, the sentence's ability to refer to
+  itself is what causes the "dangerous" behavior.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Language}
+
+  Or, we might consider a different kind of self-reference which breaks things.
+  Consider the sentence "yields falsehood when preceded by its quotation".
+
+  \pause
+  \vspace{\fill}
+
+  The quotation of that sentence is just the quoted string given above, and
+  it instructs us to put it before the sentence itself. Doing that gives us
+  "'yields falsehood when preceded by its quotation' yields falsehood when preceded by its quotation".
+
+  \pause
+  \vspace{\fill}
+
+  This sentence is a paradoxical sentence that is equivalent to the Liar's paradox!
+
+  \pause
+  \vspace{\fill}
+
+  Its construction is rather interesting, though. We will call this \term{quining}\footnote{
+    As Hofstadter puts it, "'to quine a term', to quine a term"
+  },
+  and it is helpful to understand when we move to self-referential mathematics.
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Music}
+
+  % examples of strange loops in music and art to build the
+  % intuition for tangled hierarchies
+  % can go specifically into showing crab canons, little fugue, etc
+
+  Johann Sebastian Bach, one of the great composers of all time, is
+  a central figure in Hofstadter's analysis of strange loops.
+
+  \pause
+  \vspace{\fill}
+
+  A \term{canon} is a self-referential piece of music which uses
+  a central theme or voice, which is then repeated with itself in
+  a way as to create a pleasing effect.
+
+  \pause
+  \vspace{\fill}
+
+  Bach's \textit{Musical Offering} contains a canon now known as the
+  \term{Endlessly Rising Canon}. Each repetition modulates the key up
+  one whole tone--climbing, climbing--until after six repetitions, it
+  lands back in the home key, one octave up.
+
+  \pause
+  \vspace{\fill}
+
+  By moving strictly \textit{upward} through the hierarchy of keys, the
+  music arrives back where it started. In this, Hofstadter saw a strange
+  loop.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Music}
+
+  Bach's Little Fugue is probably one of my favorite examples of a
+  self-referential piece\footnote{A fugue being a slightly more
+  relaxed version of a canon}.
+
+  \pause
+  \vspace{\fill}
+
+  {\color{linkColor}\href{https://www.youtube.com/watch?v=ddbxFi3-UO4}{Bach's Little Fugue}}
+
+  \pause
+  \vspace{\fill}
+
+  In it, we hear a voice which is accompanied by lower and higher versions
+  of itself at different points in time, each voice alternating between
+  leading and accompanying the other parts.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Art}
+
+  M.\,C.\,Escher spent a career drawing tangled hierarchies:
+
+  \textit{Waterfall}, \textit{Ascending and Descending}: every
+    local step is fine; the global loop is impossible
+
+  \begin{center}
+    \includegraphics[width=0.35\textwidth]{waterfall.jpeg}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Art}
+
+  \textit{Drawing Hands}: two levels, each drawing the other
+
+  \begin{center}
+    \includegraphics[width=0.6\textwidth]{drawing_hands.jpeg}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops in Art}
+
+  \textit{Print Gallery}: a man in a gallery, viewing a print
+      of a city, which contains the gallery, which contains him
+
+  \begin{center}
+    \includegraphics[width=0.6\textwidth]{print_gallery.jpg}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Strange Loops and Cognition}
+
+  % arrive at the conclusion which is that strange loops ultimately
+  % characterize Hofstadter's view of intelligence
+  % this idea of "jumping out of the system"
+
+  So why does a book about intelligence care about any of this?
+
+  \pause
+  \vspace{\fill}
+
+  Hofstadter's claim: the ``I''--the self--\textit{is} a strange loop.
+  A neuron is as meaningless as a symbol on a page. But neurons form
+  patterns, patterns form symbols, symbols form concepts--and
+  somewhere near the top, the system builds a symbol for
+  \textit{itself}, and the hierarchy tangles.
+
+  \pause
+  \vspace{\fill}
+
+  Humans also seem able to step outside a system of rules and reason
+  \textit{about} it--what Hofstadter calls \term{jumping out of the
+  system}. Whatever intelligence is, it seems to live near that move.
+
+  \pause
+  \vspace{\fill}
+
+  We can't cash this claim out yet. First, we need to watch the same
+  trick happen somewhere much more precise: inside mathematics.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An Eternal Golden Braid}
+
+  % how did GEB set out to and succeed in creating an "eternal golden braid"?
+  % on how GEB is as much a work of art as it is a nonfiction book
+
+  % explain the form of GEB in dialogues that relate to music and art
+  % so taht people understand the artistic foundation of GEB
+
+  GEB is not just a book \textit{about} strange loops, exhibited through
+  the eyes of Godel, Escher, and Bach. Its very structure is built out of
+  that premise.
+
+  \pause
+  \vspace{\fill}
+
+  Chapters alternate with \term{dialogues} starring Achilles and the
+  Tortoise\footnote{On loan from Lewis Carroll's ``What the Tortoise
+  Said to Achilles'' (1895)--itself a strange loop about inference.},
+  and each dialogue's \textit{form} is often inspired by a Bach piece
+  or Escherian painting. These include:
+
+  \pause
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item \textit{Crab Canon}: the dialogue reads the same forwards
+      and backwards
+    \item \textit{Sloth Canon}: one speaker echoes the other,
+      slowed-down and inverted
+    \item \textit{Contracrostipunctus}: an acrostic whose hidden
+      message describes its own acrostic trick--and spells out
+      J.~S.~Bach
+    \item \textit{Sonata for Unaccompanied Achilles}: itself a
+    dialogue of a one-sided conversation containing only Achilles,
+    parodying the Sonata for Unaccompanied Violin
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  The book does not just discuss its thesis, but encoded it into
+  its very structure--a kind of strange loop in and of itself.
+
+  % TODO: photo of the Crab Canon dialogue page next to the score
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Crab Canon}
+
+  Let's give GEB's Crab Canon dialogue a read.
+
+  \begin{center}
+  \includegraphics[width=0.6\textwidth]{crab_canon.jpeg}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Towards Incompleteness}
+
+  In his book, Hofstadter discusses a great many things--Zen Buddhism,
+  molecular biology, foundations of mathematics, speculative AI,
+  computer systems, natural language, neuroscience, and comparative
+  literature.
+
+  \pause
+  \vspace{\fill}
+
+  We will only have time for some of these, but the important thing
+  to remember is that, however deep he goes into one given topic, GEB
+  is a book which is ultimately about the nature of intelligence.
+
+  \pause
+  \vspace{\fill}
+
+  We will spend a good deal of time discussing one of Hofstadter's major
+  efforts in the first part of the book, which is G\"odel's incompleteness
+  theorem.
+\end{frame}
+
+\sectionSlide{2}{Formal Systems and Zen}
+
+% spend this whole time developing Godel's result.
+% whereas in the past i've treated this really rather explicitly and
+% taken this as the final lesson to be taught, i think that's actually
+% a disservice
+% i should give them enough intuition to understand, via the MU-puzzle
+% and encodings, how typographic systems can seem to encode "meaning"
+
+% then contrast this idea of "syntax and semantics" to understand how
+% we can potentially have "self-referential mathematical statements"
+% then LIGHTLY show them the Godel encoding of first-order logic
+
+% statements into numbers. then walk them through the IDEA of G's sentence
+% and how you can "break" math
+%
+% but my ideal is that this should NOT take more than 35 minutes.
+
+% quote from book:
+% So we can legitimately quote this latter as the second passive meaning of MUMON. It may seem very strange because, after all, MUMON contains nothing but plus signs, parentheses, and so forth-symbols of TNT. How can it possibly express any statement with other than arithmetical content?
+% The fact is, it can. Just as a single musical line may serve as both harmony and melody in a single piece; just as "BACH" may be interpreted as both a name and a melody; just as a single sentence may be an accurate structural description of a picture by Escher, of a section of DNA, of a piece by Bach, and of the dialogue in which the sentence is embedded, so MUMON can be taken in (at least) two entirely different ways. This state of affairs comes about because of two facts:
+
+% neat example of G + E + B in a fugue, escher's concave and convex,
+% and TNT encoded strings
+
+% PACING: ~58 min as scaffolded (14 frames, now incl. the two-frame Zen
+% beat after the MU resolution) -- the honest cost of actually building G,
+% plus the record-player coda. trims to get nearer 40: fold
+% "One String, Two Meanings" into Godel numbering (-3), merge the pq- and
+% isomorphism frames (-4), tighten the MU activity (-2), or move the
+% record-player frame back next to section 1's dialogues slide (-3).
+
+% ---------------------------------------------------------------------------
+% Beat 1: a formal system with NO meaning (the MU-puzzle)
+% ---------------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{The MU-Puzzle}
+
+  % ~6 min INCLUDING a short live activity: pose the puzzle, let them
+  % scribble ~2 min. most generate strings mechanically and get
+  % nowhere; some start noticing a pattern in the I-counts -- don't
+  % spoil it yet.
+
+  \defBox{}{\, A \term{formal system} consists of symbols, a starting
+  string (an \term{axiom}), and typographical rules for deriving new
+  strings from old ones.}
+
+  \pause
+  \vspace{\fill}
+
+  The \term{MIU system}: strings are made of \tm{M}, \tm{I}, and
+  \tm{U}, and we begin with the axiom \tm{MI}.\footnote{The blue
+  letters are \textit{metavariables}: placeholders standing for any
+  string, not symbols of the system itself.}
+
+  \vspace{-5pt}
+  \[
+  \begin{array}{c l l}
+    \rname{I} & \mv{x}\tm{I} \stepsTo \mv{x}\tm{IU} & \text{\small append \tm{U} to a string ending in \tm{I}} \\
+    \rname{II} & \tm{M}\mv{x} \stepsTo \tm{M}\mv{x}\mv{x} & \text{\small double everything after the \tm{M}} \\
+    \rname{III} & \mv{x}\tm{III}\mv{y} \stepsTo \mv{x}\tm{U}\mv{y} & \text{\small replace \tm{III} with \tm{U}} \\
+    \rname{IV} & \mv{x}\tm{UU}\mv{y} \stepsTo \mv{x}\mv{y} & \text{\small delete \tm{UU}} \\
+  \end{array}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  To be clear: these symbols do not \textit{mean} anything. This is
+  typography, not mathematics.
+
+  \pause
+  \vspace{\fill}
+
+  \textbf{The puzzle:} starting from \tm{MI}, can you derive \tm{MU}?
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Jumping Out of the System}
+
+  Here is the kind of thing you probably tried (underlining what each
+  rule produces):
+
+  % Tighten the derivation so the slide leaves room for the footnote:
+  % smaller font + reduced inter-row gap (\jot), as in the parsing deck.
+  \vspace{-5pt}
+  {\small
+  \setlength{\jot}{2pt}
+  \begin{align*}
+    \tm{MI} &\stepsTo \tm{M}\underline{\tm{II}} \tag{\rname{II}} \\
+      &\stepsTo \tm{MII}\underline{\tm{II}} \tag{\rname{II}} \\
+      &\stepsTo \tm{MIIII}\underline{\tm{U}} \tag{\rname{I}} \\
+      &\stepsTo \tm{M}\underline{\tm{U}}\tm{IU} \tag{\rname{III}} \\
+      &\stepsTo \;\; ???
+  \end{align*}
+  }
+  \vspace{-15pt}
+
+  \pause
+
+  You cannot derive \tm{MU}--but no amount of rule-following will ever
+  tell you so. Instead, count the \tm{I}s: \pbase{rule \rname{II}
+  doubles the count}, \precase{rule \rname{III} subtracts three}, and
+  the rest leave it alone. Starting from $1$, the count is
+  \textit{never} divisible by $3$. And \tm{MU} has zero \tm{I}s.
+
+  \pause
+  \vspace{\fill}
+
+  That answer did not come from inside the system. It came from
+  stepping outside and reasoning \textit{about} it--what Hofstadter
+  calls \term{jumping out of the system}. Machines grind rules;
+  something else notices patterns.
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Jumping Out of the System}
+
+  \begin{center}
+  \includegraphics[width=0.45\textwidth]{dragon.jpg}
+  \end{center}
+
+\end{frame}
+
+
+% ---------------------------------------------------------------------------
+% Beat 1.5: the puzzle's name -- Zen, part one. Four koan frames: words
+% fail (Nansen) -> un-asking (Shuzan, Hyakujo) -> Joshu's MU + the pun ->
+% Doko, bridging toward incompleteness -- then the M/I/U modes. (The
+% "Gateless Gate" payoff stays in section 3, where Godel is in hand.)
+% ---------------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{Mumon and G\"odel: Zen}
+
+  Before we push on: the puzzle's \textit{name}. GEB devotes a whole
+  chapter to Zen--a tradition that had been saying ``you cannot get
+  there from inside the system'' for a thousand years before there
+  was a theorem to prove it.
+
+  \pause
+  \vspace{\fill}
+
+  Zen \term{koans} are short stories and poems which aim to break the
+  mind of logic and bewilder you--and perhaps restore you towards a
+  state of enlightenment.
+
+  \koan{Mumonkan, case 27}{%
+    A monk asked Nansen: ``Is there a teaching no master ever taught
+    before?''\\
+    Nansen said: ``Yes, there is.''\\
+    ``What is it?'' asked the monk.\\
+    Nansen replied: ``It is not mind, it is not Buddha, it is not
+    things.''}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Mumon and G\"odel: Words}
+
+  Words cannot capture the true nature of reality--but they are all
+  we have. Mumon's verse on this koan:
+
+  \koan{Mumon's commentary}{%
+    Nansen was too kind and lost his treasure.\\
+    Truly, words have no power.\\
+    Even though the mountain becomes the sea,\\
+    Words cannot open another's mind.}
+
+  \pause
+  \vspace{\fill}
+
+  A koan often hands you a question where every available answer
+  loses:
+
+  \koan{Mumonkan, case 43}{%
+    Shuzan held out his short staff and said: ``If you call this a
+    short staff, you oppose its reality. If you do not call it a
+    short staff, you ignore the fact. Now, what do you wish to call
+    this?''}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Un-asking the Question}
+
+  One of my favorite examples--a koan which just utterly baffles the
+  mind:
+
+  \koan{Mumonkan, case 40}{%
+    Hyakujo wished to send a monk to open a new monastery. He told
+    his pupils that whoever answered a question most ably would be
+    appointed. Placing a water vase on the ground, he asked: ``Who
+    can say what this is without calling its name?''\\
+    The chief monk said: ``No one can call it a wooden shoe.''\\
+    Isan, the cooking monk, tipped over the vase with his foot and
+    went out.\\
+    Hyakujo smiled and said: ``The chief monk loses.'' And Isan
+    became the master of the new monastery.}
+
+  \pause
+  \vspace{\fill}
+
+  Isan does not answer the question. He steps outside it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Joshu's MU}
+
+  The most famous koan of all opens the \textit{Mumonkan} (``The
+  Gateless Gate''), the great 13th-century koan collection compiled
+  by the monk Mumon:
+
+  \koan{Mumonkan, case 1}{%
+    A monk asked Joshu: ``Does a dog have Buddha-nature?''\\
+    Joshu replied: ``Mu.''}
+
+  \pause
+
+  \term{Mu} un-asks the question: your framing is broken, and I
+  decline its premises. Mumon's verse:
+
+  \koan{Mumon's commentary}{%
+    Has a dog Buddha-nature?\\
+    This is the most serious question of all.\\
+    If you say yes or no,\\
+    You lose your own Buddha-nature.}
+
+  \pause
+  \vspace{\fill}
+
+  \textit{Any} answer from inside the yes/no system loses. ``Can you
+  derive \tm{MU}?'' had no answer inside the MIU system either.
+  Hofstadter named the puzzle after the koan.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{``I Cannot Understand Myself''}
+
+  \koan{quoted in GEB}{%
+    The student Doko came to a Zen master, and said: ``I am seeking
+    the truth. In what state of mind should I train myself, so as to
+    find it?''\\
+    Said the master: ``There is no mind, so you cannot put it in any
+    state. There is no truth, so you cannot train yourself for
+    it.''\\
+    ``If there is no mind to train, and no truth to find, why do you
+    have these monks gather before you every day to study Zen and
+    train themselves for this study?''\\
+    ``But I haven't an inch of room here,'' said the master, ``so how
+    could the monks gather? I have no tongue, so how could I call
+    them together or teach them?''\\
+    ``Oh, how can you lie like this?'' asked Doko.\\
+    ``But if I have no tongue to talk to others, how can I lie to
+    you?'' asked the master.\\
+    Then Doko said sadly: ``I cannot follow you. I cannot understand
+    you.''\\
+    ``I cannot understand myself,'' said the master.}
+
+  \pause
+  \vspace{\fill}
+
+  Some things are not understandable. Some truths in a formal system
+  cannot be reached. The best we can do is work with the incomplete
+  and limited formal systems that we have--a lesson mathematics is
+  about to learn the hard way.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Why Zen is in This Book}
+
+  Zen's great enemy is \term{dualism}: the division of the world into
+  categories--subject and object, true and false, self and other.
+
+  \pause
+  \vspace{\fill}
+
+  But categories are exactly what \textit{words} are. So Zen's
+  deepest distrust lands on language itself: a formal system so
+  familiar that we mistake its symbols for the world. Koans are
+  strings \textit{engineered} to defeat interpretation--inputs on
+  which the meaning-machine crashes.
+
+  \pause
+  \vspace{\fill}
+
+  And here is a joke GEB planted on page one. When Hofstadter posed
+  the MU-puzzle, he named three ways of approaching a problem:
+
+  \begin{itemize}
+    \item \term{M-mode}, the \tm{M}echanical mode: grind the rules
+    \item \term{I-mode}, the \tm{I}ntelligent mode: step outside and
+      reason \textit{about} the rules
+    \item \term{U-mode}, the \tm{U}n-mode: the Zen move--reject the
+      framing entirely
+  \end{itemize}
+
+  \pause
+
+  The MIU system had its alphabet all along. (Zen returns at the end
+  of section 3, once we've seen what G\"odel actually proved.)
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% Beat 2: meaning sneaks in (pq- system, isomorphism)
+% ---------------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{The pq- System}
+
+  One more symbol game. The \term{pq- system} has three symbols:
+  \tm{p}, \tm{q}, and \tm{-}.
+
+  \vspace{-5pt}
+  \[
+  \begin{array}{r l}
+    \text{(axioms)} & \mv{x}\tm{p-q}\mv{x}\tm{-} \quad \text{for any group of hyphens } \mv{x} \\
+    \text{(one rule)} &\mv{x}\tm{p}\mv{y}\tm{q}\mv{z} \stepsTo \mv{x}\tm{p}\mv{y}\tm{-q}\mv{z}\tm{-} \\
+  \end{array}
+  \]
+
+  \pause
+
+  So \pqs{--p-q---} is an axiom, and the rule gives us
+  \pqs{--p--q----}, then \pqs{--p---q-----}, and so on.
+
+  \pause
+  \vspace{\fill}
+
+  Again, nothing means anything. Except... try reading \tm{p} as
+  ``plus'' and \tm{q} as ``equals'':
+
+  \[
+  \pqs{--p---q-----} \quad \rightsquigarrow \quad 2 + 3 = 5
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  Every derivable string is a \textit{true} addition fact, and every
+  true addition fact is derivable. We never put meaning in. It leaked
+  in on its own, because the rules happen to mirror the structure of
+  addition.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Meaning by Isomorphism}
+
+  \defBox{}{\, An \term{isomorphism} is a structure-preserving
+  correspondence. When the theorems of a formal system are mirrored
+  faithfully by the true statements of some domain, the symbols
+  \textit{acquire} meaning.}
+
+  \pause
+  \vspace{\fill}
+
+  But notice: this is a \term{passive} meaning. \textit{We} read it
+  in, from outside. The pq- system doesn't ``know'' arithmetic any
+  more than a grammar ``knows'' what programs do--it is the
+  syntax/semantics split, all over again.
+
+  \pause
+  \vspace{\fill}
+
+  Symbols push symbols around; an isomorphism is what makes the
+  pushing \textit{about} something.
+
+  \pause
+  \vspace{\fill}
+
+  Addition is a small domain, and it fits
+  inside a small system. What if the domain that a system mirrored
+  was the system itself?
+\end{frame}
+
+% \begin{frame}[fragile]
+%   \frametitle{Propositional Calculus}
+
+%   For a brief rejoinder, let us discuss discrete mathematics.
+
+%   The language of math uses a few symbols like $\forall$, $\exists$,
+%   and $\rightarrow$ to express mathematical statements. For instance,
+%   we may write:
+
+%   \begin{itemize}
+%     \item $\forall x:
+%   \end{itemize}
+
+% \end{frame}
+
+\sectionSlide{3}{Self-Reference in Mathematics}
+
+% ---------------------------------------------------------------------------
+% Beat 3a: THE GOAL. Hilbert's program, then the whole construction spoiled
+% on one slide so every later frame slots into a known plan.
+% ---------------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{The Dream: Hilbert's Program}
+
+  Why have we been playing with symbol games? Because a century ago,
+  the world's greatest mathematicians bet everything on one.
+
+  \pause
+  \vspace{\fill}
+
+  At the start of the 1900s, paradoxes were shaking the foundations
+  of mathematics--Russell's ``set of all sets that do not contain
+  themselves'' is a strange loop with teeth. David Hilbert proposed
+  a rescue: rebuild \textit{all of mathematics} as a formal system.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\, \term{Hilbert's program}: find a formal system for
+  mathematics that is \term{consistent}--it never proves a
+  falsehood--and \term{complete}--every true statement is derivable
+  from its axioms.}
+
+  \pause
+  \vspace{\fill}
+
+  If it worked, every mathematical statement would be provably true
+  or provably false by mechanical rule-following alone. Mathematics
+  as one enormous MIU system: no genius required, only patience.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Plan of Attack}
+
+  Here is the rest of this section on one slide. G\"odel killed the
+  dream by \textit{constructing} a sentence of arithmetic that says
+
+  \begin{center}
+    {\large $G$: \quad ``I am not provable.''}
+  \end{center}
+
+  If the system proves $G$, it has proved a falsehood; if it cannot,
+  a truth escapes it. Either way, the dream dies.
+
+  \pause
+  \vspace{\fill}
+
+  But arithmetic talks about \textit{numbers}--not about provability,
+  and certainly not about itself. So the construction needs three
+  tools:
+
+  \begin{enumerate}
+    \item \textbf{Encode}: turn statements into \gnum{numbers}, so
+      facts \textit{about statements} become facts \textit{about
+      numbers} \hfill {\small (G\"odel numbering)}
+    \item \textbf{Express provability}: make ``is provable'' an
+      arithmetic property of those numbers \hfill {\small (\THM)}
+    \item \textbf{Self-reference}: build a statement that talks
+      about \textit{its own} number \hfill {\small (arithmoquining)}
+  \end{enumerate}
+
+  \pause
+  \vspace{\fill}
+
+  Every frame that follows builds one of these tools. When in doubt,
+  ask: \textit{which tool are we holding?}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% Beat 3b: number theory as a symbol game, and Godel's two-level trick
+% ---------------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{TNT: Typographical Number Theory}
+
+  \term{Typographical Number Theory (TNT)} is GEB's formal system for
+  arithmetic: all of number theory, rebuilt as a symbol game in the
+  style of MIU and pq-.
+
+  \pause
+
+  \begin{center}
+  \begin{tabular}{c c c c c c}
+    \tnt{0} & \tnt{S} & \tnt{+} \; \tnt{\cdot} & \tnt{=} \; \tnt{{\sim}} & \tnt{\forall} \; \tnt{\exists} & \tnt{a}, \tnt{b}, \tnt{c}, \ldots \\
+    {\small zero} & {\small successor} & {\small plus, times} & {\small equals, not} & {\small quantifiers} & {\small variables}
+  \end{tabular}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  Strings of TNT read as statements about numbers:
+
+  \vspace{-5pt}
+  \begin{align*}
+    \tnt{\forall a{:}{\sim}Sa{=}0} & \quad\text{``no number's successor is zero''} \\
+    \tnt{{\sim}\exists a{:}\exists b{:}(SSa{\cdot}SSb){=}SSSSSSSSSSSSS0} & \quad\text{``13 is prime''}
+  \end{align*}
+
+  \pause
+  \vspace{\fill}
+
+  This is the arena where Hilbert's dream will live or die: if the
+  program can work anywhere, it must work here.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{TNT: Typographical Number Theory}
+
+  Typographical number theory is a bog-standard language for talking
+  about math. Things worth noting:
+
+  \pause
+  \vspace{10pt}
+
+  \begin{itemize}
+    \item We use unary numbers, so \tnt{SSO} refers to 2, the successor of the successor of zero.
+    \item The $\sim$ character denotes negation
+    \item We use multiple letters when writing variables in text, but
+    to simplify things, technically we will use an increasing number of
+    primes per variable, e.g. \tnt{a}, \tnt{a'}, \tnt{a''}, \tnt{a'''}
+  \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{G\"odel Numbering}
+
+  \textbf{Tool 1: encode.} G\"odel's move--assign every TNT symbol
+  a three-digit \term{codon}:
+
+  \begin{center}
+    \tnt{0} $\mapsto$ \gnum{666} \qquad
+    \tnt{S} $\mapsto$ \gnum{123} \qquad
+    \tnt{=} $\mapsto$ \gnum{111} \qquad \ldots
+  \end{center}
+
+  \pause
+
+  Reading off codons turns any \textit{string} into a \textit{number}.
+  We write \gn{S} for the G\"odel number of the string $S$:
+
+  \[
+  \gn{\tnt{0{=}0}} \; = \; \gnum{666\,111\,666}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  From here on, the colors are doing real work:
+
+  \begin{itemize}
+    \item \tm{cream typewriter} is a \textit{string}: the typographical level
+    \item \gnum{teal} is a \textit{number}: the arithmetical level
+    \item \gn{S}, the \term{G\"odel number} of $S$, is the bridge that
+      carries a string down to a number
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Every statement \textit{about strings} is now secretly a statement
+  \textit{about numbers}. And statements about numbers are exactly
+  what TNT makes. The levels just tangled: \textbf{TNT can talk about
+  TNT.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Codon Table}
+
+  Here is the complete assignment--twenty symbols, twenty codons:
+
+  \vspace{\fill}
+
+  \begin{center}
+  {\large
+  \renewcommand{\arraystretch}{1.6}
+  \begin{tabular}{c c c c c}
+    \cod{0}{666} & \cod{(}{362} & \cod{[}{312} & \cod{\wedge}{161} & \cod{\exists}{333} \\
+    \cod{S}{123} & \cod{)}{323} & \cod{]}{313} & \cod{\vee}{616} & \cod{\forall}{626} \\
+    \cod{a}{262} & \cod{<}{212} & \cod{+}{112} & \cod{\supset}{633} & \cod{:}{636} \\
+    \cod{\tm{'}}{163} & \cod{>}{213} & \cod{{\cdot}}{236} & \cod{{\sim}}{223} & \cod{=}{111} \\
+  \end{tabular}
+  }
+  \end{center}
+
+  \vspace{\fill}
+  \pause
+
+  Hofstadter picked the numbers with jokes baked in.\footnote{%
+  \gnum{112} for \tnt{+}, since $1+1=2$; \gnum{236} for
+  \tnt{{\cdot}}, since $2 \cdot 3 = 6$; \gnum{223} for \tnt{{\sim}},
+  since $2+2$ is \textit{not} $3$; \gnum{123} for \tnt{S},
+  successorship; and the Number of the Beast for the mysterious
+  \tnt{0}.} What matters is that every codon is exactly
+  three digits, so a G\"odel number can be understood in terms
+  of its codons easily and unambiguously.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Dictionary}
+
+  What the encoding buys us is a two-way \term{dictionary} between
+  talk about \textit{strings} and talk about \gnum{numbers}:
+
+  \begin{center}
+  \begin{tabular}{r c l}
+    {\small\textbf{about strings}} & & {\small\textbf{about numbers}} \\[4pt]
+    the string $S$ & $\longleftrightarrow$ & the number \gn{S} \\[2pt]
+    ``$S$ contains a \tnt{0}'' & $\longleftrightarrow$ & ``\gn{S} contains codon \gnum{666}'' \\[2pt]
+    applying a rule to $S$ & $\longleftrightarrow$ & an arithmetic operation on \gn{S} \\[2pt]
+    ``$S$ follows from the axioms'' & $\longleftrightarrow$ & \textit{...some arithmetic property of \gn{S}?} \\
+  \end{tabular}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  Every \textit{mechanical} fact about strings--anything you could
+  check by shuffling symbols--has a twin that is pure arithmetic.
+  This dictionary is the whole trick. And that last row, still a
+  question mark, is exactly Tool 2.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{One String, Two Meanings}
+
+  % the MUMON quote (full text in the section comment above) -- the
+  % Godel/Escher/Bach braid stated in one breath. MUMON's upward
+  % reading is about the MIU system (GEB ch. 9); TNT-about-TNT comes
+  % in the next beat.
+
+  Back to the MU-puzzle. G\"odel-number the MIU system too:
+
+  \begin{center}
+    \cod{M}{3} \qquad \cod{I}{1} \qquad \cod{U}{0}
+  \end{center}
+
+  \vspace{-3pt}
+  Now \tm{MI} \textit{is} \gnum{31}, \tm{MU} \textit{is} \gnum{30},
+  and each rule becomes arithmetic--rule \rname{I}, ``append \tm{U},''
+  is just $n \mapsto 10n$. Derivability becomes a \textit{property of numbers}.
+
+  \pause
+  \vspace{\fill}
+
+  So there is a TNT string--Hofstadter names it MUMON--expressing the
+  arithmetical statement ``\gnum{30} cannot be produced from
+  \gnum{31}.'' Two readings, both true:
+
+  \begin{itemize}
+    \item read directly: a (huge, ugly) statement about \gnum{numbers}
+    \item read \textit{upward}, through the code: ``\tm{MU} is not a
+      theorem of the MIU system''--our puzzle, written in arithmetic
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  \begin{quote}
+    {\small \textit{``Just as a single musical line may serve as both
+    harmony and melody in a single piece; just as `BACH' may be
+    interpreted as both a name and a melody\footnote{B-flat, A, C,
+    B-natural: in German notation, B--A--C--H.}... so MUMON can be
+    taken in (at least) two entirely different ways.''}}
+  \end{quote}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% Beat 4: building G for real -- provability first, then arithmoquining
+% ---------------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{Provability is a Property of Numbers}
+
+  % load-bearing step #1 -- go slow here.
+
+  \textbf{Tool 2: express provability.} What does ``$S$ is a
+  \term{theorem}'' actually assert? That a \term{derivation} of $S$
+  exists: a chain of strings, each following from the previous by a
+  rule.
+
+  \pause
+  \vspace{\fill}
+
+  Under G\"odel numbering, a chain of strings is a chain of numbers,
+  and each typographical rule becomes an arithmetical operation.
+  ``Somebody applied rule \rname{II} here'' is something you can
+  check with arithmetic.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\, Numbers $\gnum{m}$ and $\gnum{n}$ form a
+  \term{proof-pair} when $\gnum{m}$ codes a derivation whose final
+  line codes $\gnum{n}$. It is large and onerous to write, but
+  at the end of the day it is \textit{just
+  arithmetic}.}
+
+  \pause
+  \vspace{\fill}
+
+  So ``$\gnum{n}$ is a theorem-number'' means ``some $\gnum{m}$
+  proof-pairs with $\gnum{n}$''--a property of numbers! And properties
+  of numbers are what TNT expresses. There is a (huge, ugly, real) TNT
+  formula \THM{} such that:
+
+  \[
+  \THM(\gn{S}) \text{ is true} \iff S \text{ is a theorem of TNT}
+  \]
+
+  No self-reference yet. Just mechanics.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Quining: Self-Reference Without Pointing}
+
+  % load-bearing step #2, warmed up in English.
+
+  \textbf{Tool 3: self-reference.} We want the liar. First
+  attempt: write the string
+
+  \begin{center}
+    ``the string whose G\"odel number is $\gnum{g}$ is not a theorem''
+  \end{center}
+
+  where $\gnum{g}$ is that very string's own G\"odel number.
+
+  \pause
+  \vspace{\fill}
+
+  This cannot work directly: to contain the numeral for its own
+  G\"odel number, the string would have to be longer than
+  itself.\footnote{Each symbol costs three digits, so writing down
+  your own number takes triple your own length. You lose the race.}
+
+  \pause
+  \vspace{\fill}
+
+  The workaround is due to the quine-ification technique we saw earlier:
+
+  \begin{center}
+    \textit{``yields falsehood when preceded by its quotation''\\
+    yields falsehood when preceded by its quotation.}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  Read it slowly: its subject is built by an \textit{operation}
+  (precede-by-quotation) that reconstructs the whole sentence. It
+  never needs to say ``this sentence.'' The moral: \textbf{don't
+  contain yourself--contain a recipe for building yourself.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Numbers vs.\ Numerals}
+
+  One more subtlety before the punchline. A formula is a
+  \textit{string of symbols}--and a number is not a symbol. You
+  cannot staple the abstract number four into a piece of text.
+
+  \pause
+  \vspace{\fill}
+
+  \defBox{}{\, The \term{numeral} for a number $\gnum{n}$ is the
+  string \tnt{SS{\cdots}S0} containing exactly $\gnum{n}$ copies of
+  \tnt{S}: the number, spelled out in symbols.}
+
+  \vspace{-3pt}
+  \[
+  \gnum{0} \rightsquigarrow \tnt{0} \qquad
+  \gnum{4} \rightsquigarrow \tnt{SSSS0} \qquad
+  \gnum{262\,111\,123\,666} \rightsquigarrow
+    \underbrace{\tnt{SS{\cdots}S0}}_{\gnum{262\,111\,123\,666}\text{ copies of }\tnt{S}}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  So ``substitute the number $\gnum{n}$ into a formula'' always
+  means: substitute the \textit{numeral}--every occurrence of the
+  free variable \tnt{a} is replaced by \tnt{SS{\cdots}S0}.
+
+  \pause
+  \vspace{\fill}
+
+  Note the symmetry: G\"odel numbering ($\gn{\cdot}$) carries strings
+  \textit{down} to numbers; numerals carry numbers back \textit{up}
+  into strings.\footnote{Also note the cost: spelling $\gnum{n}$
+  takes $\gnum{n}+1$ symbols. Numerals are colossal--which is why
+  directly containing your own G\"odel number was never going to
+  work.}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Arithmoquining}
+
+  Here it is: the device that lets a statement reach its own number.
+
+  \defBox{}{\, To \term{arithmoquine} a formula with one free
+  variable is to substitute, for that variable, the \textit{numeral}
+  for the formula's own G\"odel number.}
+
+  \pause
+  \vspace{\fill}
+
+  Let's do one. Take the three-symbol formula
+
+  \[
+  F \;\triangleq\; \tnt{a{=}S0}
+  \qquad \text{\small ``\tnt{a} equals 1''}
+  \]
+
+  \pause
+
+  Reading off the codon table, $\gn{F} = \gnum{262\,111\,123\,666}$.
+  Arithmoquining $F$ swaps that number's numeral in for \tnt{a}:
+
+  \[
+  \underbrace{\tnt{SSS{\cdots}S0}}_{\gnum{262\,111\,123\,666}\text{ copies of }\tnt{S}}\tnt{\,{=}\,S0}
+  \qquad \text{\small ``262{,}111{,}123{,}666 equals 1''}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  A perfectly legal string of TNT (a false one--no matter). Notice
+  what it talks about: not itself, but \textit{the number of the
+  formula it was built from}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Arithmoquining Lives on Two Levels}
+
+  Arithmoquining is a \textit{string} operation. But substitution is
+  mechanical, so--like the rules, like proof-pairs--it casts a shadow
+  in arithmetic: a TNT-expressible function \AQ{} on
+  \textit{numbers}.\footnote{If this trick smells familiar: \AQ{}
+  plays exactly the role that self-application $(x \; x)$ played
+  inside \Y{}. Self-reference always costs one diagonal move.}
+
+  \pause
+  \vspace{\fill}
+
+  \[
+  \begin{array}{lccc}
+    \text{\small strings:} & F & \xrightarrow{\;\;\text{arithmoquine}\;\;} & F' \\[4pt]
+    & \big\downarrow\,\gn{\cdot} & & \big\downarrow\,\gn{\cdot} \\[4pt]
+    \text{\small numbers:} & \gn{F} & \xrightarrow{\;\;\AQ\;\;} & \gn{F'} \\
+  \end{array}
+  \]
+
+  \pause
+  \vspace{\fill}
+
+  Same act, two descriptions: \textit{arithmoquine} rewrites strings,
+  while \AQ{} maps the old string's number to the new string's
+  number. Keep the levels separate--we are about to need both at
+  once.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Building G}
+
+  All three tools are on the table. Write down \textit{one}
+  formula--GEB calls it the \term{uncle}--with free variable \tnt{a}:
+
+  \[
+  U \;\triangleq\; {\sim}\THM(\AQ(\tnt{a}))
+  \qquad \text{\small ``the arithmoquinification of \tnt{a} is not a theorem''}
+  \]
+
+  \pause
+
+  Let $\gnum{u} = \gn{U}$, and arithmoquine the uncle itself: swap
+  the numeral for $\gnum{u}$ in for \tnt{a}. Call the result $G$.
+
+  \pause
+  \vspace{\fill}
+
+  Hold both facts about $G$ at once:
+
+  \begin{itemize}
+    \item \textbf{Literally}, $G$ is the text
+      ${\sim}\THM(\AQ(\gnum{u}))$: just the uncle with a numeral
+      plugged in. It contains the numeral for $\gnum{u}$--not $G$
+      itself. No regress.
+    \item \textbf{Semantically}, $G$ \textit{is} the
+      arithmoquinification of $\gnum{u}$: that is exactly how we
+      just built it.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  Now read the text: $G$ asserts ``the arithmoquinification of
+  $\gnum{u}$ is not a theorem.'' But the arithmoquinification of
+  $\gnum{u}$ is $G$ itself. \textbf{$G$ says: ``$G$ is not a
+  theorem.''}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Breaking Math}
+
+  $G$ is a string of TNT asserting ``$G$ is not a theorem of TNT.''
+  Notice we built the liar's paradox weakened just enough to
+  exist--not ``I am false,'' but ``I am not provable.'' There are only
+  two possibilities:
+
+  \pause
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item \textbf{TNT proves $G$.} Then $G$ is a theorem, so what $G$
+      says is \textit{false}: TNT proves falsehoods. The system is
+      \term{inconsistent}.
+    \item \textbf{TNT does not prove $G$.} Then what $G$ says is
+      \textit{true}--and TNT cannot prove it. The system is
+      \term{incomplete}.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  \thmBox{G\"odel, 1931}{\, Any consistent formal system expressive
+  enough to describe arithmetic contains true statements that it
+  cannot prove.}
+
+  \pause
+  \vspace{\fill}
+
+  Notice where you are standing when you see that $G$ is true:
+  outside the system. Jumping out, again. And notice what actually
+  broke--not mathematics, just Hilbert's dream of mechanizing all of
+  it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Record That Breaks the Record Player}
+
+  In the \textit{Contracrostipunctus}, the Tortoise commissions
+  records titled \textit{``I Cannot Be Played on Record Player X''}:
+  grooves engineered so that playing them drives player X at its
+  resonant frequency--and shatters it.
+
+  \pause
+  \vspace{\fill}
+
+  The Crab keeps buying more perfect record players. It doesn't help.
+  A low-fidelity player survives, but cannot reproduce every sound. A
+  high-fidelity player reproduces every sound--including the one that
+  destroys it.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+  \begin{tabular}{r c l}
+    record player & $\longleftrightarrow$ & formal system \\
+    fidelity & $\longleftrightarrow$ & expressive power \\
+    the Tortoise's record & $\longleftrightarrow$ & $G$ \\
+    shattering & $\longleftrightarrow$ & incompleteness \\
+  \end{tabular}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  Any system hi-fi enough to express arithmetic can have a $G$
+  composed against it. And GEB told you this whole story in its
+  opening chapters--as an acrostic--decodable only in hindsight.
+\end{frame}
+
+\sectionSlide{4}{Meaning and Meaninglessness}
+
+% where does meaning arise from?
+% information-bearers vs information-revealers
+% genotype vs phenotype
+
+% PACING: ~13 min, three frames: meaning, genotype/phenotype, then the
+% Gateless Gate as the capstone (Zen part two -- part one lives in
+% section 2, right after the MU resolution, where the pun lands).
+
+\begin{frame}[fragile]
+  \frametitle{Where Does Meaning Live?}
+
+  Section 2 kept gesturing at a question. Time to face it: where does
+  meaning actually \textit{live}?
+
+  \pause
+  \vspace{\fill}
+
+  Take a vinyl record. Is the music in the grooves? They are just
+  wiggles in plastic. In the record player, then? An empty player in a
+  silent room isn't music either.
+
+  \pause
+  \vspace{\fill}
+
+  GEB splits the job in two:
+
+  \begin{itemize}
+    \item \term{information-bearers}: the record, the string, the
+      strand of DNA
+    \item \term{information-revealers}: the player, the reader, the
+      cell
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  This is all of section 2, restated: strings \textit{bear};
+  isomorphisms, plus something to apply them, \textit{reveal}.
+  \pqs{--p---q-----} sat there meaning nothing, until we brought the
+  right reading to it.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Genotype and Phenotype}
+
+  Biology runs this exact split, for real, in every cell of your body.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{itemize}
+    \item the \term{genotype}: DNA, a string over \tm{A}, \tm{C},
+      \tm{G}, \tm{T}. Pure syntax.
+    \item the \term{phenotype}: the organism. What the string
+      \textit{means}.
+  \end{itemize}
+
+  \pause
+  \vspace{\fill}
+
+  The revealer is the cell's chemical machinery. But that machinery
+  is itself built from instructions in the DNA: the decoder is
+  described by the very message it decodes. Another tangled hierarchy.
+
+  \pause
+  \vspace{\fill}
+
+  So how much of the meaning is in the string \textit{itself}? If an
+  alien found a strand of DNA--or a golden record of Bach drifting
+  past Jupiter\footnote{Not hypothetical: Voyager's Golden Record
+  carries three pieces of Bach. We really did mail him to the
+  aliens.}--could it reconstruct the message? GEB's answer: some
+  structure is rich enough to \textit{suggest its own decoding}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Gateless Gate}
+
+  Remember \term{mu}, and the Un-mode? Zen's actual
+  goal--enlightenment--is the limit of jumping out: to step outside
+  \textit{every} system. Logic, language, even the categories
+  ``self'' and ``world.''
+
+  \pause
+  \vspace{\fill}
+
+  Zen knows the paradox in this. The one doing the jumping \textit{is}
+  a system; you cannot jump out of your own brain. Even the struggle
+  against words is fought with words--the \textit{Mumonkan}, the koan
+  collection itself, is after all a book. Zen is a tangled hierarchy
+  that \textit{knows} it is one: the gate it asks you to pass through
+  isn't there.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Gateless Gate}
+
+  Escher kept drawing this dissolution: in his tiling of the plane
+  using birds,
+  the white birds are the background of the black birds, and vice
+  versa--the figure/ground dualism eating itself.
+
+  \pause
+  \vspace{\fill}
+
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{escher_birds.jpeg}
+  \end{center}
+
+\end{frame}
+
+\sectionSlide{5}{I Am a Strange Loop}
+% (section title nods to Hofstadter's 2007 follow-up book; rename freely)
+
+% PACING: ~16 min, four frames. pays off the promise planted in section
+% 1's "Strange Loops and Cognition" frame, now that Godel is in hand.
+
+\begin{frame}[fragile]
+  \frametitle{Aunt Hillary}
+
+  The \textit{Ant Fugue} introduces GEB's finest character:
+  \term{Aunt Hillary}, an ant colony who holds perfectly good
+  conversations with her friend the Anteater.
+
+  \pause
+  \vspace{\fill}
+
+  No single ant knows anything. Ants are dumb and interchangeable.
+  But teams of ants form \term{signals}, signals organize into
+  \term{symbols}, and the symbol-level activity carries real meaning:
+
+  \begin{center}
+    ants $\longrightarrow$ teams $\longrightarrow$ signals
+    $\longrightarrow$ symbols $\longrightarrow$ Aunt Hillary
+  \end{center}
+
+  Aunt Hillary \textit{thinks}, even though no individual ant inside
+  her does.
+
+  \pause
+  \vspace{\fill}
+
+  The Anteater eating her ants is not murder but actually an act of neural
+  surgery. It destroys ants at one level, but performs critical maintenance
+  at another.
+
+  % TODO: the MU-picture from the Prelude -- a big MU whose strokes
+  % are the words HOLISM and REDUCTIONISM, each built from the other.
+  % one more Zen wink.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Brain as a Formal System}
+
+  \begin{center}
+    \includegraphics[width=0.8\textwidth]{mu.png}
+  \end{center}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{The Brain as a Formal System}
+
+  \begin{center}
+    \includegraphics[width=0.45\textwidth]{bad_math.jpeg}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Brain as a Formal System}
+
+  Now swap the substrate:
+
+  \begin{center}
+  \begin{tabular}{r c l}
+    ants & $\longleftrightarrow$ & neurons \\
+    signals & $\longleftrightarrow$ & patterns of activation \\
+    symbols & $\longleftrightarrow$ & concepts \\
+    Aunt Hillary & $\longleftrightarrow$ & you \\
+  \end{tabular}
+  \end{center}
+
+  \pause
+  \vspace{\fill}
+
+  A neuron follows its rules as blindly as the MIU system follows
+  \rname{II}. Meaning enters exactly the way it did in the pq-
+  system: an isomorphism between the symbol-level dance and the world
+  outside.
+
+  \pause
+  \vspace{\fill}
+
+  And here is the G\"odel move: a symbol system rich enough to
+  represent the world is rich enough to represent \textit{itself}.
+  Somewhere in your symbol vocabulary, there is a symbol for
+  \textit{you}.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Self as a Strange Loop}
+
+  \defBox{}{\, The \term{self}, on Hofstadter's account, is a strange
+  loop: the brain models the world, the model includes the modeler,
+  and the loop closes.}
+
+  \pause
+  \vspace{\fill}
+
+  Recall where we started:
+
+  \begin{quote}
+    \textit{``...how can a self come out of stuff that is as selfless
+    as a stone or a puddle?''}
+  \end{quote}
+
+  GEB's answer is not a magic substance. It is levels, meaning by
+  isomorphism, and self-reference--the same pattern, in four costumes:
+
+  \begin{itemize}
+    \item \tm{MU}: a system that cannot answer questions about itself
+    \item $G$: a system made to \textit{describe} itself
+    \item \textit{Drawing Hands}, the rising canon: form folding back
+      into itself
+    \item you: matter that built a symbol of itself
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Does G\"odel Prove We Aren't Machines?}
+
+  In 1961, the philosopher J.\,R.\ Lucas argued, roughly:
+
+  \begin{quote}
+    {\small\itshape No machine can assert its own G\"odel
+    sentence--but we just saw that $G$ is true. A human can do what
+    the machine cannot. Therefore minds are not machines.}
+  \end{quote}
+
+  \pause
+  \vspace{\fill}
+
+  Tempting! And Hofstadter thinks it is exactly wrong. Look carefully
+  at where we were standing when we ``saw'' that $G$ is true:
+  \textit{outside TNT}. We jumped out of TNT's system--not out of our
+  own.
+
+  \pause
+  \vspace{\fill}
+
+  If a mind is a formal system, then it has its own G\"odel
+  sentence: a truth about itself that it can never reach. Lucas's
+  argument needs us to see \textit{our own} $G$. That is precisely
+  what the theorem forbids.
+
+  \pause
+  \vspace{\fill}
+
+  The koan, one last time: you cannot jump out of your own brain.
+  G\"odel doesn't prove that minds exceed machines--it proves that
+  \textit{any} system rich enough to model itself, machine or mind,
+  carries a blind spot at the center of its own loop.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{GEB and AI, Then and Now}
+
+  % your editorial -- this prose is a starting point; make it yours
+
+  In 1979, GEB was a bet about where intelligence would come from:
+  symbols, rules, and self-reference, assembled by hand. Good
+  old-fashioned AI.
+
+  \pause
+  \vspace{\fill}
+
+  That is not how it happened. LLMs are statistical, sub-symbolic,
+  with no hand-built self-model at all--yet trained on the largest
+  pile of symbols ever assembled, and strangely capable of discussing
+  this very slide.
+
+  \pause
+  \vspace{\fill}
+
+  Questions to leave with:
+
+  \begin{itemize}
+    \item Do LLMs ever \textit{jump out of the system}--or only ever
+      follow rules?
+    \item Is a model reasoning about its own outputs a strange loop,
+      or an imitation of one?
+    \item Do the "features" of LLMs that correspond to particular ideas
+    map onto Hofstadter's ideas of symbols?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Final Thoughts}
+  \koan{Douglas Hofstadter}{
+It also makes me feel that maybe the human mind is not so mysterious and complex
+and impenetrably complex as I imagined it was when I was writing Gödel,
+Escher, Bach and writing I Am a Strange Loop. I felt at those times, quite
+a number of years ago, that as I say, we were very far away from reaching
+anything computational that could possibly rival us. It was getting more
+fluid, but I didn't think it was going to happen, you know, within a very
+short time.
+\\
+
+And so it makes me feel diminished. It makes me feel, in some sense, like
+a very imperfect, flawed structure compared with these computational systems
+that have, you know, a million times or a billion times more knowledge than
+I have and are a billion times faster. It makes me feel extremely inferior.
+And I don't want to say deserving of being eclipsed, but it almost feels that
+way, as if we, all we humans, unbeknownst to us, are soon going to be eclipsed,
+and rightly so, because we're so imperfect and so fallible. We forget things all
+the time, we confuse things all the time, we contradict ourselves all the time.
+You know, it may very well be that that just shows how limited we are.
+  }
+\end{frame}
+
+\thankyou
+
+% \lecturePassword{HOFBYONE}
+\end{document}

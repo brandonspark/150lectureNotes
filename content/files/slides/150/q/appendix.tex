@@ -1,0 +1,52 @@
+\newpage
+
+\textbf{Appendix: The \code{SEQUENCE} Signature}
+
+\begin{codeblock}
+  signature SEQUENCE =
+    sig
+      (* ... *)
+
+      val empty : unit -> 'a seq
+      val singleton : 'a -> 'a seq
+      val tabulate : (int -> 'a ) -> int -> 'a seq
+      val fromList : 'a list -> 'a seq
+
+      val nth : 'a seq -> int -> 'a
+      val null : 'a seq -> bool
+      val length : 'a seq -> int
+      val toList : 'a seq -> 'a list
+
+      val filter : ('a -> bool) -> 'a seq -> 'a seq
+      val map : ('a -> 'b) -> 'a seq -> 'b seq
+      val reduce : ('a * 'a -> 'a) -> 'a -> 'a seq -> 'a
+
+      (* ... *)
+    end
+\end{codeblock}
+
+\vspace{20pt}
+
+\textbf{Appendix: The \code{STREAM} Signature}
+
+\begin{codeblock}
+signature STREAM =
+  sig
+    (* ... *)
+
+    val delay : (unit -> 'a front) -> 'a stream
+    val expose : 'a stream -> 'a front
+
+    val empty : 'a stream
+    val cons : 'a * 'a stream -> 'a stream
+    val fromList : 'a list -> 'a stream
+    val tabulate : (int -> 'a) -> 'a stream
+
+    (* ... *)
+  end
+\end{codeblock}
+
+
+
+% ------------------------------------------------------------------------------
+
